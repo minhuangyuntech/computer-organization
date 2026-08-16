@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>第 9 章 替代型計算機架構 | 計算機組織</title>
-  <meta name="description" content="計算機組織第 9 章 替代型計算機架構獨立頁面與相關週次教材。">
+  <meta name="description" content="計算機組織第 9 章 替代型計算機架構完整章節教材。">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23006d77'/%3E%3Cpath d='M14 18h36v28H14z' fill='%23f6bd60' stroke='%2320231f' stroke-width='4'/%3E%3Cpath d='M22 28h20M22 36h14' stroke='%2320231f' stroke-width='4'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="../styles.css">
 </head>
@@ -53,7 +53,6 @@
       </a><a class="chapter-nav-link" href="../chapters/chapter-13.html" title="第 13 章 儲存系統與介面選論">
         <strong>CH 13</strong><span>儲存介面</span>
       </a>
-      <a class="chapter-nav-weeks" href="../index.html#weeks">週次進度</a>
     </div>
   </nav>
   <main class="page-main">
@@ -67,25 +66,113 @@
         <p>由 RISC、Flynn taxonomy、superscalar、VLIW、vector 與 multiprocessor 比較不同平行方式，並延伸到 dataflow、neural network、systolic array 與 quantum computing。</p>
       </header>
       <section class="chapter-overview-focus">
-        <p class="eyebrow">Course connection</p>
-        <h3>本章與課程的連結</h3>
-        <p>第 1、11、17 週用來區分 pipeline throughput、instruction-level parallelism 與多處理器平行。</p>
-        <p>以下週次頁面收錄本章目前對應的完整講義、概念推導、原創圖表、逐步例題、自我檢核與解答。每個連結都是可直接引用與返回的獨立頁面。</p>
+        <p class="eyebrow">Chapter guide</p>
+        <h3>本章內容</h3>
+        <p>本章直接整合核心概念、原創圖表、推導、例題與自我檢核。所有內容都在同一章內連續閱讀，不需要切換到另一套分類頁面。</p>
       </section>
-      <section class="chapter-week-path">
-        <h2>本章相關週次教材</h2>
-        <div class="chapter-week-grid"><a class="chapter-week-card" href="../weeks/week-11.html">
-      <span>Week 11</span>
-      <h3>Pipeline 處理器的概念與效能分析</h3>
-      <p>instruction pipelining 與更廣義的 instruction-level parallelism。</p>
-      <small>第 4 版節次：5.5；9.2–9.4</small>
-    </a><a class="chapter-week-card" href="../weeks/week-17.html">
-      <span>Week 17</span>
-      <h3>計算機組織整體架構總整理與應用案例</h3>
-      <p>從 compiler、ISA、pipeline、memory 到 workload 的跨層效能分析。</p>
-      <small>第 4 版節次：8.4；9.2–9.4；10.2–10.3；11.2–11.5</small>
-    </a></div>
-      </section>
+      <div class="chapter-integrated-reading"><section class="chapter-topic" id="topic-1">
+    <header class="chapter-topic-head">
+      <p class="eyebrow">Core topic 01</p>
+      <h2>Pipeline 處理器的概念與效能分析</h2>
+      <p>Pipeline 將一條長組合路徑切成多段，讓不同指令同時占用不同 stage。它主要提高穩態 throughput；單一指令仍要穿過所有 stage，latency 不會因理想五級 pipeline 直接縮成五分之一。</p>
+    </header>
+    <figure class="learning-figure">
+    <h4>理想五級 Pipeline 時序</h4>
+    <div class="diagram-table-wrap"><table class="timeline-table"><thead><tr><th>Instruction</th><th>Cycle 1</th><th>Cycle 2</th><th>Cycle 3</th><th>Cycle 4</th><th>Cycle 5</th><th>Cycle 6</th><th>Cycle 7</th><th>Cycle 8</th><th>Cycle 9</th></tr></thead><tbody><tr><th>I1</th><td class="stage-if">IF</td><td class="stage-id">ID</td><td class="stage-ex">EX</td><td class="stage-mem">MEM</td><td class="stage-wb">WB</td><td class="stage-empty"></td><td class="stage-empty"></td><td class="stage-empty"></td><td class="stage-empty"></td></tr><tr><th>I2</th><td class="stage-empty"></td><td class="stage-if">IF</td><td class="stage-id">ID</td><td class="stage-ex">EX</td><td class="stage-mem">MEM</td><td class="stage-wb">WB</td><td class="stage-empty"></td><td class="stage-empty"></td><td class="stage-empty"></td></tr><tr><th>I3</th><td class="stage-empty"></td><td class="stage-empty"></td><td class="stage-if">IF</td><td class="stage-id">ID</td><td class="stage-ex">EX</td><td class="stage-mem">MEM</td><td class="stage-wb">WB</td><td class="stage-empty"></td><td class="stage-empty"></td></tr><tr><th>I4</th><td class="stage-empty"></td><td class="stage-empty"></td><td class="stage-empty"></td><td class="stage-if">IF</td><td class="stage-id">ID</td><td class="stage-ex">EX</td><td class="stage-mem">MEM</td><td class="stage-wb">WB</td><td class="stage-empty"></td></tr><tr><th>I5</th><td class="stage-empty"></td><td class="stage-empty"></td><td class="stage-empty"></td><td class="stage-empty"></td><td class="stage-if">IF</td><td class="stage-id">ID</td><td class="stage-ex">EX</td><td class="stage-mem">MEM</td><td class="stage-wb">WB</td></tr></tbody></table></div>
+    <figcaption>5 條指令在理想五級 pipeline 中需要 5+5-1=9 cycles。</figcaption>
+  </figure>
+    <section class="chapter-topic-block">
+      <h3>學習成果</h3>
+      <ul><li>理解五階段 pipeline。</li><li>能分辨 latency 與 throughput。</li><li>估算 pipeline speedup 與限制。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>核心概念</h3>
+      <ul class="concept-list"><li><strong>五階段：</strong>典型 MIPS pipeline 分為 IF、ID、EX、MEM、WB。不同指令在不同階段重疊執行，提升吞吐量。</li><li><strong>Pipeline registers：</strong>IF/ID、ID/EX、EX/MEM、MEM/WB 暫存器保存每階段之間需要傳遞的資料與控制訊號。</li><li><strong>效能：</strong>理想 k-stage pipeline 的 throughput 可接近 k 倍，但實際受 stage imbalance、pipeline overhead、hazard 與 branch penalty 限制。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>Pipeline register 的必要性</h4><p>每個 stage 結束時，pipeline register 保存下一 stage 所需的 data 與 control。若只保存 ALU operand 卻漏掉目的 register number，後面的 WB 就不知道寫到哪裡。</p><p>Pipeline clock period 約等於最慢 stage delay 加 pipeline-register overhead。切得更深可縮短組合邏輯，但 register overhead、hazard 與 branch penalty 也會增加。</p></section><section class="deep-dive"><h4>Fill、Steady State 與 Drain</h4><p>理想 k-stage pipeline 執行 n 條指令需要 k+n-1 cycles。前 k-1 cycles 正在填滿，之後可達每 cycle 完成一條，最後再排空。</p><p>當 n 很大且 stages 平衡，speedup 才接近 k。短程式、stage 不平衡與 stalls 都會使實際 speedup 低於理想值。</p></section></div>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>補充說明</h3>
+      <p>Pipeline 不會讓單一指令的 latency 變短；它讓多個指令像生產線一樣重疊，因此完成一批指令的平均時間降低。</p><p>Pipeline clock period 由最慢 stage 加上 pipeline register overhead 決定。若各 stage 延遲差距很大，切更多階段不一定划算。</p><p>分析 pipeline 題目時，畫 cycle-by-cycle table 是最穩的方式。列是指令，欄是 cycle，填 IF/ID/EX/MEM/WB。</p>
+    </section>
+    <section class="worked-example chapter-topic-worked">
+      <p class="eyebrow">Worked example</p>
+      <h3>計算含 Pipeline-register overhead 的 Speedup</h3>
+      <p>非 pipeline 每條指令需 5×200 ps。Pipeline 每 stage 邏輯 200 ps，register overhead 20 ps；執行 100 條指令。</p>
+      <ol><li>非 pipeline 時間 = 100×1000 ps = 100,000 ps。</li><li>Pipeline clock = 200+20 = 220 ps。</li><li>Pipeline cycles = 5+100-1 = 104。</li><li>Pipeline 時間 = 104×220 = 22,880 ps。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>Speedup ≈ 100,000/22,880 = 4.37，低於理想 5 倍。</p>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>程式與計算例題</h3>
+      <h4>理想五階段 pipeline</h4>
+      <pre><code>I1: IF ID EX MEM WB
+I2:    IF ID EX MEM WB
+I3:       IF ID EX MEM WB
+I4:          IF ID EX MEM WB</code></pre>
+      <p>填滿後每個 cycle 完成一個指令，但前方有 fill time，尾端有 drain time。</p>
+    </section>
+    <section class="misconception-panel chapter-topic-misconceptions">
+      <h3>常見誤解</h3>
+      <ul><li>把 throughput 改善直接當成單指令 latency 改善。</li><li>忘記 k+n-1 的 fill/drain cycles。</li><li>只傳 data，不把 control signals 帶過 pipeline registers。</li></ul>
+    </section>
+    <section class="self-check chapter-topic-check">
+      <h3>自我檢核</h3>
+      <details><summary>1. 理想 5-stage pipeline 執行 20 條指令需幾 cycles？</summary><p>5+20-1=24 cycles。</p></details><details><summary>2. 為何 stage 不平衡會限制 clock rate？</summary><p>所有 stages 共用同一 clock period，必須容納最慢 stage 加 register overhead。</p></details>
+    </section>
+  </section><section class="chapter-topic" id="topic-2">
+    <header class="chapter-topic-head">
+      <p class="eyebrow">Core topic 02</p>
+      <h2>計算機組織整體架構總整理與應用案例</h2>
+      <p>完整系統分析要把程式、動態指令、pipeline 與 memory behavior 串成同一條證據鏈。先量測瓶頸，再改變一個可解釋因素，最後用 CPU Time 或 AMAT 驗證改善。</p>
+    </header>
+    <figure class="learning-figure">
+    <h4>跨層效能證據鏈</h4>
+    <div class="flow-diagram"><span class="flow-node">Source 與演算法</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Compiler 產生指令</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">ISA 動態指令流</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Pipeline stalls</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Cache / Memory stalls</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">CPI 與 CPU Time</span></div>
+    <figcaption>每一層都能提出假設，但最後要回到可量測的時間、CPI、miss rate 或 instruction count。</figcaption>
+  </figure>
+    <section class="chapter-topic-block">
+      <h3>學習成果</h3>
+      <ul><li>整合 ISA、datapath、pipeline、cache。</li><li>能用完整路徑解釋程式效能瓶頸。</li><li>準備期末專題報告。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>核心概念</h3>
+      <ul class="concept-list"><li><strong>整體路徑：</strong>一行程式經編譯成指令，指令由 PC 取出，經 decode 讀暫存器，在 ALU 計算，可能存取 cache/memory，最後寫回暫存器或記憶體。</li><li><strong>效能瓶頸：</strong>瓶頸可能來自指令數太多、CPI 過高、branch misprediction、cache miss、資料相依造成 stall，或演算法本身不具 locality。</li><li><strong>軟硬體共同設計：</strong>編譯器、資料結構、演算法與硬體設計會互相影響。例如 loop tiling 可改善 cache locality；branchless code 可減少 control hazard。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>從 Profile 到因果假設</h4><p>Profile 告訴我們時間集中在哪些函式、指令或 memory events，但相關不等於因果。若 cache misses 與慢函式同時出現，仍需檢查存取模式、working set 與 stall cycles 是否一致。</p><p>好的最佳化假設應能預測可觀察變化，例如 loop interchange 應降低跨列存取、提高 spatial locality，進而降低 miss rate 或 memory stall CPI。</p></section><section class="deep-dive"><h4>跨層折衷</h4><p>降低 instruction count 不一定降低 CPU time；較複雜指令可能提高 CPI 或 clock period。提高 block size 可能降低 compulsory miss，卻增加 miss penalty 與 cache pollution。</p><p>因此每次結論都要指出固定了哪些條件。效能數字若沒有 workload、輸入大小、編譯選項與硬體組態，就難以重現或比較。</p></section></div>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>補充說明</h3>
+      <p>期末專題可選擇一段程式或一個硬體主題，分析它與本課程概念的連結。好的專題不是堆名詞，而是能清楚展示問題、假設、方法、結果與限制。</p><p>真實系統中效能分析常用 profiling。先知道時間花在哪裡，再選擇從演算法、編譯、ISA 或記憶體行為下手。</p><p>本節可把所有公式與圖整合成一頁總表：CPU Time、pipeline speedup、AMAT、address breakdown、hazard 類型。</p>
+    </section>
+    <section class="worked-example chapter-topic-worked">
+      <p class="eyebrow">Worked example</p>
+      <h3>Row-major 矩陣的存取順序</h3>
+      <p>C 程式以 row-major 儲存 B，內層迴圈固定 j、遞增 k，存取 B[k][j]。</p>
+      <ol><li>相鄰 k 會跨到 B 的下一列，位址間距是一整列大小。</li><li>若一列大於 cache block，連續 iterations 很少使用同一 block 的鄰近元素。</li><li>交換迴圈或使用 blocking，可讓短時間內重用一小塊 A、B、C。</li><li>驗證時比較最佳化前後的 miss rate、memory stall cycles 與總 CPU time。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>最佳化的理由不是『巢狀迴圈比較快』，而是存取順序更符合 memory layout 與 cache block。</p>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>程式與計算例題</h3>
+      <h4>矩陣乘法案例</h4>
+      <pre><code>for (i)
+  for (j)
+    for (k)
+      C[i][j] += A[i][k] * B[k][j];</code></pre>
+      <p>若 B 以 row-major 儲存，內層固定 j、改變 k 會跨列存取，spatial locality 較差；調整迴圈或 blocking 可改善 cache 行為。</p>
+    </section>
+    <section class="misconception-panel chapter-topic-misconceptions">
+      <h3>常見誤解</h3>
+      <ul><li>只報 speedup，沒有說明 workload 與 baseline。</li><li>把 profile 的相關性直接當成因果。</li><li>一次改很多因素，導致無法解釋改善來源。</li></ul>
+    </section>
+    <section class="self-check chapter-topic-check">
+      <h3>自我檢核</h3>
+      <details><summary>1. Loop blocking 主要改善哪一種行為？</summary><p>讓一小塊資料在被替換前重複使用，提升 temporal locality，也常改善 spatial locality。</p></details><details><summary>2. Instruction count 降低是否保證 CPU time 降低？</summary><p>不保證；CPI 或 clock cycle time 可能同時增加。</p></details>
+    </section>
+  </section></div>
       <nav class="chapter-adjacent" aria-label="相鄰章節">
         <a href="chapter-08.html"><span>第 8 章</span><strong>系統軟體</strong></a><a href="chapter-10.html"><span>第 10 章</span><strong>嵌入式系統專題</strong></a>
       </nav>

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>第 7 章 輸出入與儲存系統 | 計算機組織</title>
-  <meta name="description" content="計算機組織第 7 章 輸出入與儲存系統獨立頁面與相關週次教材。">
+  <meta name="description" content="計算機組織第 7 章 輸出入與儲存系統完整章節教材。">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23006d77'/%3E%3Cpath d='M14 18h36v28H14z' fill='%23f6bd60' stroke='%2320231f' stroke-width='4'/%3E%3Cpath d='M22 28h20M22 36h14' stroke='%2320231f' stroke-width='4'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="../styles.css">
 </head>
@@ -53,7 +53,6 @@
       </a><a class="chapter-nav-link" href="../chapters/chapter-13.html" title="第 13 章 儲存系統與介面選論">
         <strong>CH 13</strong><span>儲存介面</span>
       </a>
-      <a class="chapter-nav-weeks" href="../index.html#weeks">週次進度</a>
     </div>
   </nav>
   <main class="page-main">
@@ -67,20 +66,60 @@
         <p>從 I/O 對效能的影響出發，比較控制方式、傳輸模式、磁碟、SSD、光碟、磁帶與 RAID。I/O 延遲與可平行比例也能用 Amdahl&#039;s Law 分析。</p>
       </header>
       <section class="chapter-overview-focus">
-        <p class="eyebrow">Course connection</p>
-        <h3>本章與課程的連結</h3>
-        <p>第 2、17 週用來連結 Amdahl&#039;s Law、system bottleneck 與非 CPU 成本。</p>
-        <p>以下週次頁面收錄本章目前對應的完整講義、概念推導、原創圖表、逐步例題、自我檢核與解答。每個連結都是可直接引用與返回的獨立頁面。</p>
+        <p class="eyebrow">Chapter guide</p>
+        <h3>本章內容</h3>
+        <p>本章直接整合核心概念、原創圖表、推導、例題與自我檢核。所有內容都在同一章內連續閱讀，不需要切換到另一套分類頁面。</p>
       </section>
-      <section class="chapter-week-path">
-        <h2>本章相關週次教材</h2>
-        <div class="chapter-week-grid"><a class="chapter-week-card" href="../weeks/week-02.html">
-      <span>Week 02</span>
-      <h3>計算機效能評估</h3>
-      <p>CPU performance equation、benchmark 限制與 Amdahl&#039;s Law。</p>
-      <small>第 4 版節次：11.2–11.5；7.2–7.3</small>
-    </a></div>
-      </section>
+      <div class="chapter-integrated-reading"><section class="chapter-topic" id="topic-1">
+    <header class="chapter-topic-head">
+      <p class="eyebrow">Core topic 01</p>
+      <h2>計算機效能評估</h2>
+      <p>效能不是單一規格值，而是工作量、每項工作所需週期與每個週期長度的乘積。先把因素拆開，才能判斷最佳化真正改變了哪一項。</p>
+    </header>
+    <figure class="learning-figure">
+    <h4>CPU 執行時間的三個乘數</h4>
+    <div class="factor-diagram"><div><strong>Instruction Count</strong><span>演算法、編譯器、ISA</span></div><span class="factor-op" aria-hidden="true">×</span><div><strong>CPI</strong><span>指令組合、hazard、cache miss</span></div><span class="factor-op" aria-hidden="true">×</span><div><strong>Cycle Time</strong><span>關鍵路徑、電路技術</span></div></div>
+    <figcaption>CPU Time = Instruction Count × CPI × Clock Cycle Time。三項任一降低都可能加速，但也可能彼此牽制。</figcaption>
+  </figure>
+    <section class="chapter-topic-block">
+      <h3>學習成果</h3>
+      <ul><li>能計算 CPU execution time。</li><li>能區分 response time 與 throughput。</li><li>能用 Amdahl&#039;s Law 判斷最佳化上限。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>核心概念</h3>
+      <ul class="concept-list"><li><strong>CPU execution time：</strong>CPU Time = Instruction Count × CPI × Clock Cycle Time，也等於 Instruction Count × CPI / Clock Rate。這個公式把軟體、ISA、編譯器與硬體設計放在同一張表中。</li><li><strong>CPI：</strong>Cycles Per Instruction 是平均每個指令需要的時脈週期數。不同指令類型可能 CPI 不同，因此常用加權平均：CPI = Σ(指令類型比例 × 該類型 CPI)。</li><li><strong>Amdahl&#039;s Law：</strong>若某部分佔總時間比例 F，被加速 S 倍，整體 speedup = 1 / ((1 - F) + F / S)。只加速少數部分，整體效能提升會很快遇到上限。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>三個乘數各由誰影響</h4><p>Instruction Count 受演算法、程式、編譯器與 ISA 影響；CPI 受指令組合、資料路徑、pipeline hazard 與 memory stall 影響；Clock Cycle Time 受最慢組合邏輯路徑與電路技術影響。</p><p>比較處理器時必須使用同一工作負載。若程式、編譯器選項或輸入資料不同，三個乘數可能一起改變，單看 clock rate 或核心數沒有足夠資訊。</p></section><section class="deep-dive"><h4>平均值、Speedup 與 Amdahl 上限</h4><p>平均 CPI 是動態指令比例的加權平均，不是各類 CPI 的普通平均。若 load 佔 25% 且成本很高，它對總時間的影響必須乘上 0.25。</p><p>Amdahl&#039;s Law 把總時間分為可改善與不可改善兩部分。即使可改善部分變成無限快，整體 speedup 仍不會超過 1/(1-F)。因此最佳化的第一步是量測時間比例，而不是先挑看起來最先進的元件。</p></section></div>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>補充說明</h3>
+      <p>不要只看 clock rate。較高頻率若伴隨較高 CPI 或更多指令數，不一定更快。效能比較必須指定工作負載，並同時考慮 instruction count、CPI 與 clock rate。</p><p>Response time 是單一任務完成時間，使用者通常直接感受到它；throughput 是單位時間完成多少工作，伺服器與批次系統常關心它。</p><p>最佳化前應先量測。若記憶體等待佔 40%，ALU 變快 10 倍也不會讓整體快 10 倍。</p>
+    </section>
+    <section class="worked-example chapter-topic-worked">
+      <p class="eyebrow">Worked example</p>
+      <h3>先求平均 CPI，再求 CPU Time</h3>
+      <p>某程式有 10^9 條指令：ALU 50%（CPI 1）、load/store 30%（CPI 2）、branch 20%（CPI 3），clock rate 為 2 GHz。</p>
+      <ol><li>平均 CPI = 0.50×1 + 0.30×2 + 0.20×3 = 1.7。</li><li>總 cycles = 10^9 × 1.7 = 1.7×10^9 cycles。</li><li>CPU Time = 1.7×10^9 / 2×10^9 = 0.85 秒。</li><li>若只把 branch CPI 從 3 降到 1，新的平均 CPI 為 1.3，CPU Time 為 0.65 秒。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>Speedup = 0.85/0.65 ≈ 1.31，而不是 3 倍，因為 branch 只佔全部指令的 20%。</p>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>程式與計算例題</h3>
+      <h4>CPU Time 計算</h4>
+      <pre><code>Program A: 2.0e9 instructions, CPI = 1.5, clock = 3 GHz
+CPU time = 2.0e9 × 1.5 / 3.0e9 = 1.0 s</code></pre>
+      <p>若另一台 CPU clock 較低但 CPI 也更低，仍可能更快。</p>
+    </section>
+    <section class="misconception-panel chapter-topic-misconceptions">
+      <h3>常見誤解</h3>
+      <ul><li>將 GHz 直接當成程式效能。</li><li>對不同指令類型的 CPI 做未加權平均。</li><li>把 speedup 30% 誤寫成執行時間減少 30%；兩者分母不同。</li></ul>
+    </section>
+    <section class="self-check chapter-topic-check">
+      <h3>自我檢核</h3>
+      <details><summary>1. 一段程式變成原來的 2 倍快，新時間是多少？</summary><p>Speedup = Told/Tnew = 2，所以 Tnew = Told/2，時間減少 50%。</p></details><details><summary>2. 若可改善部分 F=0.8，即使它無限快，最大 speedup 是多少？</summary><p>1/(1-0.8)=5。剩下 20% 的不可改善時間形成上限。</p></details>
+    </section>
+  </section></div>
       <nav class="chapter-adjacent" aria-label="相鄰章節">
         <a href="chapter-06.html"><span>第 6 章</span><strong>記憶體</strong></a><a href="chapter-08.html"><span>第 8 章</span><strong>系統軟體</strong></a>
       </nav>

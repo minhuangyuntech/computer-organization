@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>第 2 章 計算機系統的資料表示 | 計算機組織</title>
-  <meta name="description" content="計算機組織第 2 章 計算機系統的資料表示獨立頁面與相關週次教材。">
+  <meta name="description" content="計算機組織第 2 章 計算機系統的資料表示完整章節教材。">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23006d77'/%3E%3Cpath d='M14 18h36v28H14z' fill='%23f6bd60' stroke='%2320231f' stroke-width='4'/%3E%3Cpath d='M22 28h20M22 36h14' stroke='%2320231f' stroke-width='4'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="../styles.css">
 </head>
@@ -53,7 +53,6 @@
       </a><a class="chapter-nav-link" href="../chapters/chapter-13.html" title="第 13 章 儲存系統與介面選論">
         <strong>CH 13</strong><span>儲存介面</span>
       </a>
-      <a class="chapter-nav-weeks" href="../index.html#weeks">週次進度</a>
     </div>
   </nav>
   <main class="page-main">
@@ -67,35 +66,111 @@
         <p>涵蓋進位系統、補數、整數算術、浮點數、字元編碼與錯誤偵測。共同核心是：位元本身沒有型別，解讀規則決定數值、字元與錯誤檢查的意義。</p>
       </header>
       <section class="chapter-overview-focus">
-        <p class="eyebrow">Course connection</p>
-        <h3>本章與課程的連結</h3>
-        <p>第 3、7 週的 two&#039;s complement、carry/overflow、IEEE 754 與位元解讀。</p>
-        <p>以下週次頁面收錄本章目前對應的完整講義、概念推導、原創圖表、逐步例題、自我檢核與解答。每個連結都是可直接引用與返回的獨立頁面。</p>
+        <p class="eyebrow">Chapter guide</p>
+        <h3>本章內容</h3>
+        <p>本章直接整合核心概念、原創圖表、推導、例題與自我檢核。所有內容都在同一章內連續閱讀，不需要切換到另一套分類頁面。</p>
       </section>
-      <section class="chapter-week-path">
-        <h2>本章相關週次教材</h2>
-        <div class="chapter-week-grid"><a class="chapter-week-card" href="../weeks/week-03.html">
-      <span>Week 03</span>
-      <h3>數值表示法與資料儲存</h3>
-      <p>進位、補數、字元編碼與 big/little endian。</p>
-      <small>第 4 版節次：2.2–2.6；5.2.2</small>
-    </a><a class="chapter-week-card" href="../weeks/week-07.html">
-      <span>Week 07</span>
-      <h3>整數算術運算與浮點數表示法</h3>
-      <p>整數算術、carry/overflow、IEEE 754 與 arithmetic circuit。</p>
-      <small>第 4 版節次：2.4–2.5；3.5</small>
-    </a><a class="chapter-week-card" href="../weeks/week-09.html">
-      <span>Week 09</span>
-      <h3>期中考試週</h3>
-      <p>由抽象層、資料表示、指令週期、ISA 到效能方程式建立完整證據鏈。</p>
-      <small>第 4 版節次：前八週整合</small>
-    </a><a class="chapter-week-card" href="../weeks/week-18.html">
-      <span>Week 18</span>
-      <h3>期末測驗</h3>
-      <p>以 correctness、state、cycle、memory traffic 與 CPU Time 五種證據交叉檢查。</p>
-      <small>第 4 版節次：全課整合</small>
-    </a></div>
-      </section>
+      <div class="chapter-integrated-reading"><section class="chapter-topic" id="topic-1">
+    <header class="chapter-topic-head">
+      <p class="eyebrow">Core topic 01</p>
+      <h2>數值表示法與資料儲存</h2>
+      <p>位元沒有天生的資料型態。正確解讀必須同時知道位元寬度、signedness、編碼規則與 byte 順序；少掉任何一項都可能得到另一個完全不同的值。</p>
+    </header>
+    <figure class="learning-figure">
+    <h4>8-bit two&#039;s complement 權重</h4>
+    <div class="bit-diagram" style="--total-bits:8"><div class="bit-field" style="--field-bits:1"><strong>b7</strong><span>1 bit</span><small>-128</small></div><div class="bit-field" style="--field-bits:1"><strong>b6</strong><span>1 bit</span><small>64</small></div><div class="bit-field" style="--field-bits:1"><strong>b5</strong><span>1 bit</span><small>32</small></div><div class="bit-field" style="--field-bits:1"><strong>b4</strong><span>1 bit</span><small>16</small></div><div class="bit-field" style="--field-bits:1"><strong>b3</strong><span>1 bit</span><small>8</small></div><div class="bit-field" style="--field-bits:1"><strong>b2</strong><span>1 bit</span><small>4</small></div><div class="bit-field" style="--field-bits:1"><strong>b1</strong><span>1 bit</span><small>2</small></div><div class="bit-field" style="--field-bits:1"><strong>b0</strong><span>1 bit</span><small>1</small></div></div>
+    <figcaption>最高位不是單純的正負標記，而是具有 -128 權重；因此 8-bit 範圍為 -128 到 127。</figcaption>
+  </figure>
+    <section class="chapter-topic-block">
+      <h3>學習成果</h3>
+      <ul><li>熟悉二進位、十六進位與位元運算。</li><li>能用 two&#039;s complement 表示有號整數。</li><li>理解 byte addressing 與 endianness。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>核心概念</h3>
+      <ul class="concept-list"><li><strong>位元與編碼：</strong>電腦儲存的是位元樣式；同一串位元可依情境解讀為整數、字元、指令或浮點數。資料型態不是位元本身，而是解讀規則。</li><li><strong>Two&#039;s complement：</strong>n 位元 two&#039;s complement 範圍為 -2^(n-1) 到 2^(n-1)-1。負數可由正數取反加一得到。加減法硬體可共用同一個加法器。</li><li><strong>位元延伸：</strong>有號數做 sign extension，無號數做 zero extension。若把有號/無號混用，常造成條件判斷錯誤。</li><li><strong>Endianness：</strong>Little endian 與 big endian 決定多位元組資料在記憶體中的 byte 順序。它不改變暫存器中的數值，只影響記憶體表示與資料交換。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>Two&#039;s complement 的權重觀點</h4><p>n-bit two&#039;s complement 的最高位權重是 -2^(n-1)，其餘位元仍是正的 2 的冪。這個觀點可直接解讀負數，不必每次都取反加一。例如 11010110 的值是 -128+64+16+4+2=-42。</p><p>Carry out 是無號加法超出 n bits 的訊號；signed overflow 則表示有號結果超出可表示範圍。兩者判斷的數學模型不同，不能互換。</p></section><section class="deep-dive"><h4>Byte address 與 Endianness</h4><p>Byte-addressed memory 中每個位址指向 8 bits。32-bit word 會佔用四個連續位址。Little endian 把最低有效 byte 放在最低位址，big endian 則把最高有效 byte 放在最低位址。</p><p>Endianness 不會顛倒一個 byte 內的 bit，也不會改變暫存器看到的數值。它只在多 byte 資料被拆到記憶體或通訊封包時產生差異。</p></section></div>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>補充說明</h3>
+      <p>二進位與十六進位轉換是後續看 instruction encoding、cache address breakdown 的基本功。十六進位每一位剛好對應 4 bits，適合表達 32-bit 指令與位址。</p><p>Overflow 只對固定寬度的有號運算有意義。兩個正數相加得到負數、或兩個負數相加得到正數，就是 two&#039;s complement overflow 的典型跡象。</p><p>資料對齊（alignment）會影響硬體存取效率。MIPS word 通常要求 4-byte alignment，位址最低兩個 bit 應為 00。</p>
+    </section>
+    <section class="worked-example chapter-topic-worked">
+      <p class="eyebrow">Worked example</p>
+      <h3>同一位元樣式的三種解讀</h3>
+      <p>解讀 8-bit pattern 11010110，並排列 0x12345678 在 little-endian memory 的四個 bytes。</p>
+      <ol><li>Unsigned：128+64+16+4+2 = 214。</li><li>Signed two&#039;s complement：214-256 = -42。</li><li>若只當作單一 8-bit code，其語意還需由字元集或通訊協定決定。</li><li>0x12345678 的 bytes 為 12、34、56、78；little endian 由低位址起依序存 78、56、34、12。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>位元樣式相同不代表值相同；metadata 與使用情境決定解讀。</p>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>程式與計算例題</h3>
+      <h4>8-bit two&#039;s complement</h4>
+      <pre><code>+18 = 0001 0010
+-18 = 1110 1110  # invert 0001 0010 =&gt; 1110 1101, plus 1</code></pre>
+      <p>以 8-bit 來看，1110 1110 若解讀為 unsigned 是 238，若解讀為 signed 是 -18。</p>
+    </section>
+    <section class="misconception-panel chapter-topic-misconceptions">
+      <h3>常見誤解</h3>
+      <ul><li>把 sign bit 當成 signed-magnitude 的正負號。</li><li>用 carry out 判斷 signed overflow。</li><li>把 little endian 誤解為每個 byte 的 bits 也反向。</li></ul>
+    </section>
+    <section class="self-check chapter-topic-check">
+      <h3>自我檢核</h3>
+      <details><summary>1. 8-bit 11111111 分別代表多少 unsigned 與 signed 值？</summary><p>Unsigned 是 255；two&#039;s complement signed 是 -1。</p></details><details><summary>2. 兩個負數相加得到正數時，carry out 一定能指出 overflow 嗎？</summary><p>不能只看 carry out。Signed overflow 應看兩個 operand 同號而結果異號。</p></details>
+    </section>
+  </section><section class="chapter-topic" id="topic-2">
+    <header class="chapter-topic-head">
+      <p class="eyebrow">Core topic 02</p>
+      <h2>整數算術運算與浮點數表示法</h2>
+      <p>固定寬度整數追求精確但範圍有限；浮點數以有限有效位數換取極大動態範圍。理解兩者的錯誤條件，才能知道硬體旗標與程式數值何時可信。</p>
+    </header>
+    <figure class="learning-figure">
+    <h4>IEEE 754 single precision</h4>
+    <div class="bit-diagram" style="--total-bits:32"><div class="bit-field" style="--field-bits:1"><strong>Sign</strong><span>1 bit</span><small>正負</small></div><div class="bit-field" style="--field-bits:8"><strong>Exponent</strong><span>8 bits</span><small>bias 127</small></div><div class="bit-field" style="--field-bits:23"><strong>Fraction</strong><span>23 bits</span><small>有效位數</small></div></div>
+    <figcaption>Normalized value = (-1)^sign × 1.fraction × 2^(exponent-127)。</figcaption>
+  </figure>
+    <section class="chapter-topic-block">
+      <h3>學習成果</h3>
+      <ul><li>理解加減乘除的硬體概念。</li><li>能判斷 signed overflow。</li><li>理解 IEEE 754 floating-point 的 sign/exponent/fraction。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>核心概念</h3>
+      <ul class="concept-list"><li><strong>加減法器：</strong>Two&#039;s complement 讓加法與減法可用同一加法器完成。減法 A - B 可轉成 A + (~B + 1)。</li><li><strong>乘除法：</strong>硬體乘法可視為 shift-and-add；除法可視為 shift-and-subtract。速度與面積常需折衷，因此高效處理器會使用更複雜的乘法器。</li><li><strong>IEEE 754：</strong>Single precision 由 1-bit sign、8-bit exponent、23-bit fraction 組成。Exponent 使用 bias 表示，能同時表示極大與極小數。</li><li><strong>浮點誤差：</strong>浮點數不是實數；許多十進位小數無法用有限二進位精確表示。運算順序可能改變 rounding error。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>Adder、Carry 與 Overflow</h4><p>A-B 可由 A+(~B)+1 完成，因此加法器只需用控制訊號決定是否反相 B 並設定初始 carry-in。Unsigned overflow 看最高位 carry out；signed overflow 看同號 operands 是否產生異號結果。</p><p>乘法的完整結果可能需要兩倍位元寬度。若只保留低 n bits，程式必須知道高位是否被捨棄；除法則同時產生 quotient 與 remainder。</p></section><section class="deep-dive"><h4>IEEE 754 的範圍與精度</h4><p>Normalized single precision 的值為 (-1)^s × 1.f × 2^(E-127)。隱藏的 leading 1 不佔 fraction 欄位，因此 23-bit fraction 提供 24 bits 的有效精度。</p><p>Exponent 全 0 用於 zero 與 subnormal；全 1 用於 infinity 與 NaN。浮點加法前必須對齊 exponent，較小數的 significand 右移後可能失去低位，這是吸收與 rounding error 的來源。</p></section></div>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>補充說明</h3>
+      <p>整數 overflow 是位元寬度有限造成的結果。硬體可以用 operand sign 與 result sign 判斷加法 overflow。</p><p>浮點數用科學記號的想法換取範圍，但犧牲精確度。越大的數，相鄰可表示數之間的間距也越大。</p><p>學會辨認 special values：zero、subnormal、infinity、NaN。這些設計讓浮點運算能處理 underflow、overflow 與未定義結果。</p>
+    </section>
+    <section class="worked-example chapter-topic-worked">
+      <p class="eyebrow">Worked example</p>
+      <h3>解讀 0xC1200000</h3>
+      <p>將 IEEE 754 single pattern 0xC1200000 轉為十進位。</p>
+      <ol><li>最高位 sign=1，所以結果為負。</li><li>Exponent bits 對應 130，因此實際 exponent = 130-127 = 3。</li><li>Fraction 形成 significand 1.25。</li><li>值 = -1.25×2^3 = -10.0。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>欄位拆解順序應固定為 sign、biased exponent、significand，最後才合成數值。</p>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>程式與計算例題</h3>
+      <h4>浮點格式拆解</h4>
+      <pre><code>IEEE 754 single:
+value = (-1)^sign × 1.fraction × 2^(exponent - 127)
+0 10000001 01000000000000000000000
+= +1.25 × 2^2 = 5.0</code></pre>
+      <p>Normalized number 的 leading 1 不儲存在 fraction 中，稱為 hidden bit。</p>
+    </section>
+    <section class="misconception-panel chapter-topic-misconceptions">
+      <h3>常見誤解</h3>
+      <ul><li>把 carry out 當 signed overflow。</li><li>忘記 normalized number 的 hidden 1。</li><li>假設浮點加法符合實數的結合律。</li></ul>
+    </section>
+    <section class="self-check chapter-topic-check">
+      <h3>自我檢核</h3>
+      <details><summary>1. 兩個正的 8-bit signed 數相加得到負數，發生什麼事？</summary><p>發生 signed overflow；真實數學結果超過 127。</p></details><details><summary>2. Exponent 全 1 且 fraction 非 0 代表什麼？</summary><p>代表 NaN；若 fraction 為 0 則是正或負 infinity。</p></details>
+    </section>
+  </section></div>
       <nav class="chapter-adjacent" aria-label="相鄰章節">
         <a href="chapter-01.html"><span>第 1 章</span><strong>導論</strong></a><a href="chapter-03.html"><span>第 3 章</span><strong>布林代數與數位邏輯</strong></a>
       </nav>

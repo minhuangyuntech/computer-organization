@@ -53,7 +53,6 @@
       </a><a class="chapter-nav-link" href="chapters/chapter-13.html" title="第 13 章 儲存系統與介面選論">
         <strong>CH 13</strong><span>儲存介面</span>
       </a>
-      <a class="chapter-nav-weeks" href="index.html#weeks">週次進度</a>
     </div>
   </nav>
   <main class="page-main">
@@ -62,7 +61,7 @@
         <header class="cpu-hero-copy">
           <p class="eyebrow">從程式到硬體的可追蹤路徑</p>
           <h2>看懂一行指令如何穿過暫存器、ALU、Pipeline 與 Cache</h2>
-          <p>本講義依據課綱 18 週進度展開。每週都有獨立 URL，可依序自學、反覆推導、完成練習、課後複習，並可列印成 PDF 離線閱讀。</p>
+          <p>本講義以 13 個章節建立完整學習路徑。每章都有獨立 URL，可依序閱讀、反覆推導、完成練習，並可列印成 PDF 離線使用。</p>
         </header>
         <figure class="modern-cpu-diagram">
           <div class="diagram-heading">
@@ -210,152 +209,13 @@
       <small>Selected Storage Systems and Interfaces</small>
     </a></div>
       </section>
-      <section class="overview-grid">
-    <article>
-      <h3>系統與效能基礎</h3>
-      <p>建立抽象層、效能公式與資料表示能力，用來理解系統如何被描述與量測。</p>
-      <p class="note">週次：第 1 週、第 2 週、第 3 週</p>
-    </article>
-    <article>
-      <h3>MIPS 指令與程式</h3>
-      <p>用 MIPS 連接高階程式與機器指令，涵蓋暫存器、記憶體存取、函式、算術與指令編碼。</p>
-      <p class="note">週次：第 4 週、第 5 週、第 6 週、第 7 週、第 8 週</p>
-    </article>
-    <article>
-      <h3>處理器資料路徑與 Pipeline</h3>
-      <p>從單週期資料路徑進入 pipeline，分析控制訊號、效能、資料相依與分支代價。</p>
-      <p class="note">週次：第 10 週、第 11 週、第 12 週</p>
-    </article>
-    <article>
-      <h3>記憶體階層與 Cache</h3>
-      <p>理解 locality、AMAT、cache block、mapping、replacement policy 與實際效能折衷。</p>
-      <p class="note">週次：第 13 週、第 14 週、第 15 週、第 16 週</p>
-    </article>
-    <article>
-      <h3>整合與評量</h3>
-      <p>安排期中、期末與專題整合，把公式、指令、資料路徑與 cache 放回完整系統。</p>
-      <p class="note">週次：第 9 週、第 17 週、第 18 週</p>
-    </article></section>
       <section class="reference-note">
         <p class="eyebrow">Independent study edition</p>
         <h2>內容範圍與編寫原則</h2>
         <p>本站依課程大綱撰寫，並對照 Linda Null 與 Julia Lobur《The Essentials of Computer Organization and Architecture》第 4 版（2015，ISBN 9781284033144）的章節架構。所有中文敘述、例題、推導與圖表均為本站獨立編寫，不重製書中文字或原圖。</p>
-        <div class="reference-actions"><a href="#chapters">前往 13 章教材</a><a href="fourth-edition-map.html">第 4 版章節與週次對照</a><a href="https://samples.jblearning.com/9781284123036/Transition_Guide_FinalforPubHub.pdf" rel="noreferrer">出版社章節對照資料</a></div>
+        <div class="reference-actions"><a href="#chapters">前往 13 章教材</a><a href="fourth-edition-map.html">第 4 版章節對照</a><a href="https://samples.jblearning.com/9781284123036/Transition_Guide_FinalforPubHub.pdf" rel="noreferrer">出版社章節資料</a></div>
       </section>
-      <section class="lecture-view" id="weeks">
-        <p class="eyebrow">Week-based course schedule</p>
-        <h2>18 週課程進度</h2>
-        <p><strong>週次不等於章次。</strong>一個課程週次可能整合多個章節，同一章也可能分散在不同週次。每週頁面包含學習目標、自學導讀、原創圖表、概念推導、逐步例題、自我檢核與公式速查。</p>
-        <div class="week-card-grid">
-    <a class="week-card" href="weeks/week-01.html" data-search="計算機系統的抽象層次與課程介紹 introduction to computer systems and levels of abstraction abstraction isa hardware/software interface 說明應用程式、系統軟體、指令集架構、微架構與電路之間的分工。 理解計算機組織關心的是「指令如何被硬體執行」。 建立本課程的學習地圖：效能、mips、算術、datapath、pipeline、memory hierarchy。">
-      <span>Week 01</span>
-      <h3>計算機系統的抽象層次與課程介紹</h3>
-      <p>Introduction to Computer Systems and Levels of Abstraction</p>
-      <div class="tags"><small class="tag">abstraction</small><small class="tag">ISA</small><small class="tag">hardware/software interface</small></div>
-    </a>
-    <a class="week-card" href="weeks/week-02.html" data-search="計算機效能評估 computer performance evaluation: cpu time, clock rate, and cpi cpu time cpi amdahl&#039;s law 能計算 cpu execution time。 能區分 response time 與 throughput。 能用 amdahl&#039;s law 判斷最佳化上限。">
-      <span>Week 02</span>
-      <h3>計算機效能評估</h3>
-      <p>Computer Performance Evaluation: CPU Time, Clock Rate, and CPI</p>
-      <div class="tags"><small class="tag">CPU time</small><small class="tag">CPI</small><small class="tag">Amdahl&#039;s Law</small></div>
-    </a>
-    <a class="week-card" href="weeks/week-03.html" data-search="數值表示法與資料儲存 data representation and information storage in computers binary two&#039;s complement endianness 熟悉二進位、十六進位與位元運算。 能用 two&#039;s complement 表示有號整數。 理解 byte addressing 與 endianness。">
-      <span>Week 03</span>
-      <h3>數值表示法與資料儲存</h3>
-      <p>Data Representation and Information Storage in Computers</p>
-      <div class="tags"><small class="tag">binary</small><small class="tag">two&#039;s complement</small><small class="tag">endianness</small></div>
-    </a>
-    <a class="week-card" href="weeks/week-04.html" data-search="mips 組合語言與暫存器架構 introduction to mips assembly language and register organization mips registers assembly 認識 mips register convention。 理解 load-store architecture。 能讀懂基本 arithmetic 指令。">
-      <span>Week 04</span>
-      <h3>MIPS 組合語言與暫存器架構</h3>
-      <p>Introduction to MIPS Assembly Language and Register Organization</p>
-      <div class="tags"><small class="tag">MIPS</small><small class="tag">registers</small><small class="tag">assembly</small></div>
-    </a>
-    <a class="week-card" href="weeks/week-05.html" data-search="mips 基本指令與記憶體存取 mips instructions and memory access operations lw sw branch addressing 熟悉 lw/sw base+offset addressing。 能撰寫 if/else 與 loop。 理解 branch target 與 pc 更新。">
-      <span>Week 05</span>
-      <h3>MIPS 基本指令與記憶體存取</h3>
-      <p>MIPS Instructions and Memory Access Operations</p>
-      <div class="tags"><small class="tag">lw</small><small class="tag">sw</small><small class="tag">branch</small><small class="tag">addressing</small></div>
-    </a>
-    <a class="week-card" href="weeks/week-06.html" data-search="mips 程式設計與指令執行流程 mips programming and instruction execution process procedure stack calling convention 理解函式呼叫與 stack frame。 能追蹤 jal/jr 與 $ra。 能將小型 c 函式翻成 mips。">
-      <span>Week 06</span>
-      <h3>MIPS 程式設計與指令執行流程</h3>
-      <p>MIPS Programming and Instruction Execution Process</p>
-      <div class="tags"><small class="tag">procedure</small><small class="tag">stack</small><small class="tag">calling convention</small></div>
-    </a>
-    <a class="week-card" href="weeks/week-07.html" data-search="整數算術運算與浮點數表示法 integer arithmetic and floating-point representation alu overflow ieee 754 理解加減乘除的硬體概念。 能判斷 signed overflow。 理解 ieee 754 floating-point 的 sign/exponent/fraction。">
-      <span>Week 07</span>
-      <h3>整數算術運算與浮點數表示法</h3>
-      <p>Integer Arithmetic and Floating-Point Representation</p>
-      <div class="tags"><small class="tag">ALU</small><small class="tag">overflow</small><small class="tag">IEEE 754</small></div>
-    </a>
-    <a class="week-card" href="weeks/week-08.html" data-search="指令編碼與 cpu 執行指令的基本流程 instruction encoding and cpu instruction execution cycle instruction encoding r/i/j format control 能辨識 mips r/i/j format。 理解 opcode、rs、rt、rd、shamt、funct。 銜接指令格式到 datapath 控制訊號。">
-      <span>Week 08</span>
-      <h3>指令編碼與 CPU 執行指令的基本流程</h3>
-      <p>Instruction Encoding and CPU Instruction Execution Cycle</p>
-      <div class="tags"><small class="tag">instruction encoding</small><small class="tag">R/I/J format</small><small class="tag">control</small></div>
-    </a>
-    <a class="week-card" href="weeks/week-09.html" data-search="期中考試週 midterm examination review exam 整合第 1-8 週觀念。 熟練效能公式、mips 指令、數值表示與指令格式。 能用文字解釋而非只代公式。">
-      <span>Week 09</span>
-      <h3>期中考試週</h3>
-      <p>Midterm Examination</p>
-      <div class="tags"><small class="tag">review</small><small class="tag">exam</small></div>
-    </a>
-    <a class="week-card" href="weeks/week-10.html" data-search="cpu 資料路徑與單週期處理器架構 cpu datapath and single-cycle processor architecture datapath single-cycle control signals 能追蹤單週期 datapath。 理解 control signals 的角色。 分析單週期設計的 clock period 限制。">
-      <span>Week 10</span>
-      <h3>CPU 資料路徑與單週期處理器架構</h3>
-      <p>CPU Datapath and Single-Cycle Processor Architecture</p>
-      <div class="tags"><small class="tag">datapath</small><small class="tag">single-cycle</small><small class="tag">control signals</small></div>
-    </a>
-    <a class="week-card" href="weeks/week-11.html" data-search="pipeline 處理器的概念與效能分析 pipelined processor concepts and performance analysis pipeline if id ex mem wb speedup 理解五階段 pipeline。 能分辨 latency 與 throughput。 估算 pipeline speedup 與限制。">
-      <span>Week 11</span>
-      <h3>Pipeline 處理器的概念與效能分析</h3>
-      <p>Pipelined Processor Concepts and Performance Analysis</p>
-      <div class="tags"><small class="tag">pipeline</small><small class="tag">IF ID EX MEM WB</small><small class="tag">speedup</small></div>
-    </a>
-    <a class="week-card" href="weeks/week-12.html" data-search="pipeline hazard 的種類與基本解決方法 pipeline hazards and basic resolution techniques data hazard control hazard forwarding stall 辨識 structural、data、control hazards。 理解 forwarding 與 stall。 能處理 load-use hazard 與 branch penalty。">
-      <span>Week 12</span>
-      <h3>Pipeline Hazard 的種類與基本解決方法</h3>
-      <p>Pipeline Hazards and Basic Resolution Techniques</p>
-      <div class="tags"><small class="tag">data hazard</small><small class="tag">control hazard</small><small class="tag">forwarding</small><small class="tag">stall</small></div>
-    </a>
-    <a class="week-card" href="weeks/week-13.html" data-search="記憶體階層架構與區域性原理 memory hierarchy and the principle of locality memory hierarchy locality amat 理解 memory hierarchy 的成本/速度/容量折衷。 能說明 temporal 與 spatial locality。 能計算 average memory access time。">
-      <span>Week 13</span>
-      <h3>記憶體階層架構與區域性原理</h3>
-      <p>Memory Hierarchy and the Principle of Locality</p>
-      <div class="tags"><small class="tag">memory hierarchy</small><small class="tag">locality</small><small class="tag">AMAT</small></div>
-    </a>
-    <a class="week-card" href="weeks/week-14.html" data-search="cache memory 的基本運作原理 fundamentals of cache memory operation cache tag valid bit write policy 理解 cache block、tag、index、offset。 能判斷 hit/miss。 理解 write-through 與 write-back。">
-      <span>Week 14</span>
-      <h3>Cache Memory 的基本運作原理</h3>
-      <p>Fundamentals of Cache Memory Operation</p>
-      <div class="tags"><small class="tag">cache</small><small class="tag">tag</small><small class="tag">valid bit</small><small class="tag">write policy</small></div>
-    </a>
-    <a class="week-card" href="weeks/week-15.html" data-search="cache mapping 方法介紹 cache mapping techniques: direct-mapped, set-associative, and fully associative direct mapped set associative fully associative 能比較三種 mapping。 能計算 set、way、index、tag bits。 理解 conflict miss 與 associativity 的關係。">
-      <span>Week 15</span>
-      <h3>Cache Mapping 方法介紹</h3>
-      <p>Cache Mapping Techniques: Direct-Mapped, Set-Associative, and Fully Associative</p>
-      <div class="tags"><small class="tag">direct mapped</small><small class="tag">set associative</small><small class="tag">fully associative</small></div>
-    </a>
-    <a class="week-card" href="weeks/week-16.html" data-search="cache replacement policy 與效能分析 cache replacement policies and performance analysis lru fifo random cache performance 理解 replacement policy。 能模擬 lru/fifo。 以 amat 評估 cache 參數變化。">
-      <span>Week 16</span>
-      <h3>Cache Replacement Policy 與效能分析</h3>
-      <p>Cache Replacement Policies and Performance Analysis</p>
-      <div class="tags"><small class="tag">LRU</small><small class="tag">FIFO</small><small class="tag">random</small><small class="tag">cache performance</small></div>
-    </a>
-    <a class="week-card" href="weeks/week-17.html" data-search="計算機組織整體架構總整理與應用案例 computer organization overview and practical applications integration case study optimization 整合 isa、datapath、pipeline、cache。 能用完整路徑解釋程式效能瓶頸。 準備期末專題報告。">
-      <span>Week 17</span>
-      <h3>計算機組織整體架構總整理與應用案例</h3>
-      <p>Computer Organization Overview and Practical Applications</p>
-      <div class="tags"><small class="tag">integration</small><small class="tag">case study</small><small class="tag">optimization</small></div>
-    </a>
-    <a class="week-card" href="weeks/week-18.html" data-search="期末測驗 final examination final project review 完成全學期整合複習。 展示期末專題或完成期末測驗。 能從硬體/軟體介面角度解釋系統行為。">
-      <span>Week 18</span>
-      <h3>期末測驗</h3>
-      <p>Final Examination</p>
-      <div class="tags"><small class="tag">final</small><small class="tag">project</small><small class="tag">review</small></div>
-    </a></div>
-      </section>
+
     </section>
   </main>
   <footer class="footer">

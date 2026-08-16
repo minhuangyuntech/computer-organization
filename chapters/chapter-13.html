@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>第 13 章 儲存系統與介面選論 | 計算機組織</title>
-  <meta name="description" content="計算機組織第 13 章 儲存系統與介面選論獨立頁面與相關週次教材。">
+  <meta name="description" content="計算機組織第 13 章 儲存系統與介面選論完整章節教材。">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23006d77'/%3E%3Cpath d='M14 18h36v28H14z' fill='%23f6bd60' stroke='%2320231f' stroke-width='4'/%3E%3Cpath d='M22 28h20M22 36h14' stroke='%2320231f' stroke-width='4'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="../styles.css">
 </head>
@@ -53,7 +53,6 @@
       </a><a class="chapter-nav-link active" href="../chapters/chapter-13.html" aria-current="page" title="第 13 章 儲存系統與介面選論">
         <strong>CH 13</strong><span>儲存介面</span>
       </a>
-      <a class="chapter-nav-weeks" href="../index.html#weeks">週次進度</a>
     </div>
   </nav>
   <main class="page-main">
@@ -67,19 +66,14 @@
         <p>比較 SCSI、iSCSI、SAN、SATA、SAS、PCI、USB 與 cloud storage，重點是介面如何規範命令、資料傳輸與裝置互通。</p>
       </header>
       <section class="chapter-overview-focus">
-        <p class="eyebrow">Course connection</p>
-        <h3>本章與課程的連結</h3>
-        <p>可延伸第 7 章的 I/O 與儲存觀念；不列入本課 18 週硬體主線。</p>
-        <p>以下週次頁面收錄本章目前對應的完整講義、概念推導、原創圖表、逐步例題、自我檢核與解答。每個連結都是可直接引用與返回的獨立頁面。</p>
+        <p class="eyebrow">Chapter guide</p>
+        <h3>本章內容</h3>
+        <p>本章直接整合核心概念、原創圖表、推導、例題與自我檢核。所有內容都在同一章內連續閱讀，不需要切換到另一套分類頁面。</p>
       </section>
-      <section class="chapter-week-path">
-        <h2>本章相關週次教材</h2>
-        <div class="chapter-week-grid"><div class="chapter-extension">
-    <h3>課程延伸範圍</h3>
-    <p>本章不配置單獨週次，但它延伸了前面章節建立的資料表示、I/O、記憶體階層與系統介面概念。可先從完整章節對照確認它在全書中的位置，再回到相關基礎週次建立所需術語。</p>
-    <div class="reference-actions"><a href="../fourth-edition-map.html#chapter-13">查看本章與全書的關係</a><a href="../index.html#weeks">返回 18 週講義索引</a></div>
-  </div></div>
-      </section>
+      <div class="chapter-integrated-reading"><section class="standalone-chapter-content">
+    <section class="chapter-topic-block"><p class="eyebrow">Core topic 01</p><h2>儲存介面的角色</h2><p>儲存介面規範主機如何描述命令、定位資料、回報完成狀態與處理錯誤。裝置內部可以採用不同媒體與控制器，只要遵守介面契約，作業系統就能透過一致的驅動模型存取。</p></section><section class="chapter-topic-block"><p class="eyebrow">Core topic 02</p><h2>命令、佇列與資料搬移</h2><p>現代儲存路徑通常把控制命令與大量資料傳輸分開。CPU 建立描述子與命令佇列，控制器再透過 DMA 搬移資料；佇列深度與並行度會影響吞吐量，也可能增加單一請求的等待時間。</p></section><section class="chapter-topic-block"><p class="eyebrow">Core topic 03</p><h2>直連、網路與共享儲存</h2><p>直連介面讓裝置靠近單一主機；網路型儲存則把 block 或 file 服務放到可共享的網路端點。比較架構時應同時檢查延遲、頻寬、可用性、一致性、管理成本與故障範圍。</p></section>
+    <section class="self-check chapter-topic-check"><h2>自我檢核</h2><details><summary>1. 為何 DMA 適合大量儲存資料傳輸？</summary><p>CPU 只需設定傳輸描述，控制器即可直接在裝置與主記憶體間搬移資料，減少逐字搬移所需的指令與中斷。</p></details><details><summary>2. 較深的命令佇列一定能降低延遲嗎？</summary><p>不一定。較深佇列可以提高裝置利用率與吞吐量，但請求也可能等待更久，因此吞吐量與尾端延遲必須分別量測。</p></details></section>
+  </section></div>
       <nav class="chapter-adjacent" aria-label="相鄰章節">
         <a href="chapter-12.html"><span>第 12 章</span><strong>網路組織與架構</strong></a>
       </nav>

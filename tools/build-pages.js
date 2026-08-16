@@ -25,14 +25,6 @@ const chapterDetails = extractConst(chapterSource, "chapterDetails");
 
 const favicon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23006d77'/%3E%3Cpath d='M14 18h36v28H14z' fill='%23f6bd60' stroke='%2320231f' stroke-width='4'/%3E%3Cpath d='M22 28h20M22 36h14' stroke='%2320231f' stroke-width='4'/%3E%3C/svg%3E";
 
-const units = [
-  { title: "系統與效能基礎", weeks: [1, 2, 3], text: "建立抽象層、效能公式與資料表示能力，用來理解系統如何被描述與量測。" },
-  { title: "MIPS 指令與程式", weeks: [4, 5, 6, 7, 8], text: "用 MIPS 連接高階程式與機器指令，涵蓋暫存器、記憶體存取、函式、算術與指令編碼。" },
-  { title: "處理器資料路徑與 Pipeline", weeks: [10, 11, 12], text: "從單週期資料路徑進入 pipeline，分析控制訊號、效能、資料相依與分支代價。" },
-  { title: "記憶體階層與 Cache", weeks: [13, 14, 15, 16], text: "理解 locality、AMAT、cache block、mapping、replacement policy 與實際效能折衷。" },
-  { title: "整合與評量", weeks: [9, 17, 18], text: "安排期中、期末與專題整合，把公式、指令、資料路徑與 cache 放回完整系統。" }
-];
-
 const chapterNavLabels = [
   "導論", "資料表示", "數位邏輯", "MARIE", "ISA", "記憶體", "I/O",
   "系統軟體", "替代架構", "嵌入式", "效能", "網路", "儲存介面"
@@ -101,7 +93,6 @@ function chapterNav(activeChapter = 0, depth = 0, activeView = "") {
     <div class="chapter-nav-inner">
       <a class="chapter-nav-home${activeView === "home" ? " active" : ""}" href="${prefix}index.html"${activeView === "home" ? " aria-current=\"page\"" : ""}>首頁</a>
       ${chapterLinks}
-      <a class="chapter-nav-weeks${activeView === "weeks" ? " active" : ""}" href="${prefix}index.html#weeks"${activeView === "weeks" ? " aria-current=\"page\"" : ""}>週次進度</a>
     </div>
   </nav>`;
 }
@@ -193,6 +184,105 @@ function supplementSections(lecture) {
     </section>`;
 }
 
+function chapterText(value) {
+  return String(value)
+    .replaceAll("本週", "本節")
+    .replace(/第\s*\d+\s*週/g, "本課程");
+}
+
+function integratedChapterTopic(lecture, topicIndex) {
+  const supplement = supplements.find((item) => item.week === lecture.week);
+  return `<section class="chapter-topic" id="topic-${topicIndex}">
+    <header class="chapter-topic-head">
+      <p class="eyebrow">Core topic ${String(topicIndex).padStart(2, "0")}</p>
+      <h2>${esc(chapterText(lecture.title))}</h2>
+      <p>${esc(chapterText(supplement.bridge))}</p>
+    </header>
+    ${diagram(supplement.diagram)}
+    <section class="chapter-topic-block">
+      <h3>學習成果</h3>
+      <ul>${lecture.goals.map((goal) => `<li>${esc(chapterText(goal))}</li>`).join("")}</ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>核心概念</h3>
+      <ul class="concept-list">${lecture.concepts.map(([term, text]) => `<li><strong>${esc(term)}：</strong>${esc(chapterText(text))}</li>`).join("")}</ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid">${supplement.sections.map((section) => `<section class="deep-dive"><h4>${esc(section.title)}</h4>${section.paragraphs.map((paragraph) => `<p>${esc(chapterText(paragraph))}</p>`).join("")}</section>`).join("")}</div>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>補充說明</h3>
+      ${lecture.notes.map((note) => `<p>${esc(chapterText(note))}</p>`).join("")}
+    </section>
+    <section class="worked-example chapter-topic-worked">
+      <p class="eyebrow">Worked example</p>
+      <h3>${esc(supplement.worked.title)}</h3>
+      <p>${esc(chapterText(supplement.worked.prompt))}</p>
+      <ol>${supplement.worked.steps.map((step) => `<li>${esc(chapterText(step))}</li>`).join("")}</ol>
+      <p class="worked-result"><strong>結論：</strong>${esc(chapterText(supplement.worked.result))}</p>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>程式與計算例題</h3>
+      <h4>${esc(lecture.example.title)}</h4>
+      <pre><code>${esc(lecture.example.code)}</code></pre>
+      <p>${esc(chapterText(lecture.example.explanation))}</p>
+    </section>
+    <section class="misconception-panel chapter-topic-misconceptions">
+      <h3>常見誤解</h3>
+      <ul>${supplement.pitfalls.map((pitfall) => `<li>${esc(chapterText(pitfall))}</li>`).join("")}</ul>
+    </section>
+    <section class="self-check chapter-topic-check">
+      <h3>自我檢核</h3>
+      ${supplement.selfTest.map((item, index) => `<details><summary>${index + 1}. ${esc(chapterText(item.q))}</summary><p>${esc(chapterText(item.a))}</p></details>`).join("")}
+    </section>
+  </section>`;
+}
+
+const standaloneChapterContent = {
+  12: {
+    sections: [
+      ["分層與封裝", "網路分層把複雜通訊拆成具有明確介面的服務。應用資料向下傳遞時，各層加入自己的控制資訊；接收端再依相反順序解除封裝。這和 ISA 隱藏微架構細節的做法相同：上層依賴介面，不必知道所有實作。"],
+      ["交換與路由", "交換器主要依區域網路中的鏈路層位址轉送 frame，路由器則依網路層位址在不同網路間選擇 packet 路徑。兩者都使用表格進行查找，但所處層次、位址語意與更新機制不同。"],
+      ["延遲、頻寬與佇列", "總通訊時間不能只看鏈路頻寬。傳播延遲、傳輸延遲、處理延遲與排隊延遲會共同決定完成時間；當封包到達率接近服務率時，排隊延遲會快速增加。"]
+    ],
+    checks: [
+      ["為何分層介面能降低系統複雜度？", "每一層只承諾可觀察的服務與資料格式，下層實作可以改變而不迫使所有上層一起修改。"],
+      ["頻寬提高是否必然等比例縮短回應時間？", "不一定。若主要成本來自傳播、處理或排隊延遲，只提高傳輸頻寬的改善幅度會受到限制。"]
+    ]
+  },
+  13: {
+    sections: [
+      ["儲存介面的角色", "儲存介面規範主機如何描述命令、定位資料、回報完成狀態與處理錯誤。裝置內部可以採用不同媒體與控制器，只要遵守介面契約，作業系統就能透過一致的驅動模型存取。"],
+      ["命令、佇列與資料搬移", "現代儲存路徑通常把控制命令與大量資料傳輸分開。CPU 建立描述子與命令佇列，控制器再透過 DMA 搬移資料；佇列深度與並行度會影響吞吐量，也可能增加單一請求的等待時間。"],
+      ["直連、網路與共享儲存", "直連介面讓裝置靠近單一主機；網路型儲存則把 block 或 file 服務放到可共享的網路端點。比較架構時應同時檢查延遲、頻寬、可用性、一致性、管理成本與故障範圍。"]
+    ],
+    checks: [
+      ["為何 DMA 適合大量儲存資料傳輸？", "CPU 只需設定傳輸描述，控制器即可直接在裝置與主記憶體間搬移資料，減少逐字搬移所需的指令與中斷。"],
+      ["較深的命令佇列一定能降低延遲嗎？", "不一定。較深佇列可以提高裝置利用率與吞吐量，但請求也可能等待更久，因此吞吐量與尾端延遲必須分別量測。"]
+    ]
+  }
+};
+
+function standaloneChapterSections(chapter) {
+  const content = standaloneChapterContent[chapter.chapter];
+  if (!content) return "";
+  return `<section class="standalone-chapter-content">
+    ${content.sections.map(([title, text], index) => `<section class="chapter-topic-block"><p class="eyebrow">Core topic ${String(index + 1).padStart(2, "0")}</p><h2>${esc(title)}</h2><p>${esc(text)}</p></section>`).join("")}
+    <section class="self-check chapter-topic-check"><h2>自我檢核</h2>${content.checks.map(([question, answer], index) => `<details><summary>${index + 1}. ${esc(question)}</summary><p>${esc(answer)}</p></details>`).join("")}</section>
+  </section>`;
+}
+
+function courseSchedule() {
+  const rows = lectures.map((lecture) => `<tr><th>第 ${lecture.week} 週</th><td>${esc(lecture.title)}</td><td>${esc(lecture.goals[0])}</td></tr>`).join("");
+  return `<section class="chapter-schedule" id="course-schedule">
+    <p class="eyebrow">Course schedule</p>
+    <h2>18 週課程進度</h2>
+    <p>週次僅用來呈現學期時間安排；教材本體仍依章節組織，閱讀時可直接使用頂部章節導覽。</p>
+    <div class="diagram-table-wrap"><table class="course-schedule-table"><thead><tr><th>週次</th><th>主題</th><th>核心成果</th></tr></thead><tbody>${rows}</tbody></table></div>
+  </section>`;
+}
+
 function editionAlignment(lecture) {
   const mapping = fourthEdition.weekMap.find((item) => item.week === lecture.week);
   const chapters = mapping.chapters.map((chapter) => {
@@ -230,21 +320,6 @@ function pageShell({ title, description, body, activeChapter = 0, activeView = "
 }
 
 function indexPage() {
-  const cards = lectures.map((lecture) => `
-    <a class="week-card" href="weeks/${slug(lecture.week)}" data-search="${esc([lecture.title, lecture.english, lecture.tags.join(" "), lecture.goals.join(" ")].join(" ").toLowerCase())}">
-      <span>Week ${String(lecture.week).padStart(2, "0")}</span>
-      <h3>${esc(lecture.title)}</h3>
-      <p>${esc(lecture.english)}</p>
-      <div class="tags">${lecture.tags.map((tag) => `<small class="tag">${esc(tag)}</small>`).join("")}</div>
-    </a>`).join("");
-
-  const unitCards = units.map((unit) => `
-    <article>
-      <h3>${esc(unit.title)}</h3>
-      <p>${esc(unit.text)}</p>
-      <p class="note">週次：${unit.weeks.map((w) => `第 ${w} 週`).join("、")}</p>
-    </article>`).join("");
-
   const homeChapterCards = fourthEdition.chapters.map((chapter) => `
     <a class="home-chapter-card" href="chapters/chapter-${String(chapter.chapter).padStart(2, "0")}.html">
       <span>Chapter ${String(chapter.chapter).padStart(2, "0")}</span>
@@ -260,7 +335,7 @@ function indexPage() {
         <header class="cpu-hero-copy">
           <p class="eyebrow">從程式到硬體的可追蹤路徑</p>
           <h2>看懂一行指令如何穿過暫存器、ALU、Pipeline 與 Cache</h2>
-          <p>本講義依據課綱 18 週進度展開。每週都有獨立 URL，可依序自學、反覆推導、完成練習、課後複習，並可列印成 PDF 離線閱讀。</p>
+          <p>本講義以 13 個章節建立完整學習路徑。每章都有獨立 URL，可依序閱讀、反覆推導、完成練習，並可列印成 PDF 離線使用。</p>
         </header>
         <figure class="modern-cpu-diagram">
           <div class="diagram-heading">
@@ -330,19 +405,13 @@ function indexPage() {
         </header>
         <div class="home-chapter-grid">${homeChapterCards}</div>
       </section>
-      <section class="overview-grid">${unitCards}</section>
       <section class="reference-note">
         <p class="eyebrow">Independent study edition</p>
         <h2>內容範圍與編寫原則</h2>
         <p>本站依課程大綱撰寫，並對照 Linda Null 與 Julia Lobur《The Essentials of Computer Organization and Architecture》第 4 版（2015，ISBN 9781284033144）的章節架構。所有中文敘述、例題、推導與圖表均為本站獨立編寫，不重製書中文字或原圖。</p>
-        <div class="reference-actions"><a href="#chapters">前往 13 章教材</a><a href="fourth-edition-map.html">第 4 版章節與週次對照</a><a href="${fourthEdition.sources.chapters}" rel="noreferrer">出版社章節對照資料</a></div>
+        <div class="reference-actions"><a href="#chapters">前往 13 章教材</a><a href="fourth-edition-map.html">第 4 版章節對照</a><a href="${fourthEdition.sources.chapters}" rel="noreferrer">出版社章節資料</a></div>
       </section>
-      <section class="lecture-view" id="weeks">
-        <p class="eyebrow">Week-based course schedule</p>
-        <h2>18 週課程進度</h2>
-        <p><strong>週次不等於章次。</strong>一個課程週次可能整合多個章節，同一章也可能分散在不同週次。每週頁面包含學習目標、自學導讀、原創圖表、概念推導、逐步例題、自我檢核與公式速查。</p>
-        <div class="week-card-grid">${cards}</div>
-      </section>`,
+      `,
     activeChapter: 0,
     activeView: "home",
     depth: 0
@@ -425,15 +494,8 @@ function fourthEditionPage() {
       <h3>${esc(chapter.zh)}</h3>
       <p class="chapter-title">${esc(chapter.title)}</p>
       <p>${esc(chapter.summary)}</p>
-      <p class="chapter-course"><strong>本站對應：</strong>${esc(chapter.courseUse)}</p>
       <a class="chapter-detail-link" href="chapters/chapter-${String(chapter.chapter).padStart(2, "0")}.html">進入本章獨立頁面</a>
     </article>`;
-  }).join("");
-
-  const weekRows = fourthEdition.weekMap.map((mapping) => {
-    const lecture = lectures.find((item) => item.week === mapping.week);
-    const chapters = mapping.chapters.map((chapter) => `<a href="#chapter-${chapter}">第 ${chapter} 章</a>`).join("、");
-    return `<tr><th>第 ${mapping.week} 週</th><td>${esc(lecture.title)}</td><td>${chapters}<small>${esc(mapping.sections)}</small></td><td>${esc(mapping.focus)}</td></tr>`;
   }).join("");
 
   const marie = fourthEdition.marie;
@@ -449,7 +511,7 @@ function fourthEditionPage() {
 
   return pageShell({
     title: "第 4 版章節對照與 MARIE–MIPS 概念橋接 | 計算機組織",
-    description: "計算機組織 18 週講義與 The Essentials of Computer Organization and Architecture 第 4 版的章節對照，以及 MARIE 與 MIPS 比較。",
+    description: "計算機組織章節與 The Essentials of Computer Organization and Architecture 第 4 版的對照，以及 MARIE 與 MIPS 比較。",
     body: `<article class="edition-page">
         <nav class="breadcrumb" aria-label="麵包屑"><a href="index.html">課程首頁</a><span>第 4 版章節對照</span></nav>
         <header class="edition-hero">
@@ -458,11 +520,6 @@ function fourthEditionPage() {
           <p>${esc(fourthEdition.authors.join("、"))}，${esc(fourthEdition.title)}，第 ${fourthEdition.edition} 版，${fourthEdition.year}，ISBN ${esc(fourthEdition.isbn)}。</p>
           <p>課程依正式課綱使用 MIPS 作為主要 ISA；第 4 版第 4 章則以 MARIE 建立 CPU 基本模型。兩條路徑共享 register transfer、instruction cycle、datapath 與 control 等核心概念。</p>
         </header>
-        <section class="section" id="week-map">
-          <h3>18 週與第 4 版節次對照</h3>
-          <p>表中的章名為本站對照名稱；節次依第 4 版英文目錄標示，方便在中譯本中以章號與主題定位。</p>
-          <div class="diagram-table-wrap"><table class="edition-map-table"><thead><tr><th>週次</th><th>本站主題</th><th>第 4 版</th><th>概念交集</th></tr></thead><tbody>${weekRows}</tbody></table></div>
-        </section>
         <section class="section">
           <h3>第 4 版 13 章學習地圖</h3>
           <div class="chapter-grid">${chapterCards}</div>
@@ -515,6 +572,8 @@ function fourthEditionPage() {
 function chapterPage(chapter) {
   const bookChapter = fourthEdition.chapters.find((item) => item.chapter === chapter.chapter);
   const sectionNav = chapter.sections.map((section, index) => `<a href="#section-${index + 1}">${esc(section.title)}</a>`).join("");
+  const schedule = chapter.chapter === 1 ? courseSchedule() : "";
+  const scheduleNav = chapter.chapter === 1 ? `<a href="#course-schedule">18 週課程進度</a>` : "";
   const sections = chapter.sections.map((section, index) => `<section class="chapter-section" id="section-${index + 1}">
       <h3>${esc(section.title)}</h3>
       ${section.paragraphs.map((paragraph) => `<p>${esc(paragraph)}</p>`).join("")}
@@ -552,7 +611,8 @@ function chapterPage(chapter) {
           <h3>完成本章後應能做到</h3>
           <ol>${chapter.outcomes.map((outcome) => `<li>${esc(outcome)}</li>`).join("")}</ol>
         </section>
-        <nav class="chapter-toc" aria-label="本章目錄"><h3>本章路徑</h3>${sectionNav}<a href="#worked-examples">逐步例題</a><a href="#exercises">分級練習與詳解</a><a href="#glossary">術語表</a></nav>
+        ${schedule}
+        <nav class="chapter-toc" aria-label="本章目錄"><h3>本章路徑</h3>${scheduleNav}${sectionNav}<a href="#worked-examples">逐步例題</a><a href="#exercises">分級練習與詳解</a><a href="#glossary">術語表</a></nav>
         <div class="chapter-reading">${sections}</div>
         <section class="chapter-worked-list" id="worked-examples"><h2>逐步例題</h2>${worked}</section>
         <section class="chapter-misconceptions misconception-panel"><h2>常見誤解與修正</h2><div>${misconceptions}</div></section>
@@ -566,26 +626,17 @@ function chapterPage(chapter) {
 }
 
 function chapterOverviewPage(chapter) {
-  const relatedWeeks = fourthEdition.weekMap.filter((mapping) => mapping.chapters.includes(chapter.chapter));
-  const weekCards = relatedWeeks.map((mapping) => {
-    const lecture = lectures.find((item) => item.week === mapping.week);
-    return `<a class="chapter-week-card" href="../weeks/${slug(mapping.week)}">
-      <span>Week ${String(mapping.week).padStart(2, "0")}</span>
-      <h3>${esc(lecture.title)}</h3>
-      <p>${esc(mapping.focus)}</p>
-      <small>第 4 版節次：${esc(mapping.sections)}</small>
-    </a>`;
-  }).join("");
-  const weekPath = weekCards || `<div class="chapter-extension">
-    <h3>課程延伸範圍</h3>
-    <p>本章不配置單獨週次，但它延伸了前面章節建立的資料表示、I/O、記憶體階層與系統介面概念。可先從完整章節對照確認它在全書中的位置，再回到相關基礎週次建立所需術語。</p>
-    <div class="reference-actions"><a href="../fourth-edition-map.html#chapter-${chapter.chapter}">查看本章與全書的關係</a><a href="../index.html#weeks">返回 18 週講義索引</a></div>
-  </div>`;
+  const topicLectures = fourthEdition.weekMap
+    .filter((mapping) => mapping.chapters.includes(chapter.chapter) && ![9, 18].includes(mapping.week))
+    .map((mapping) => lectures.find((item) => item.week === mapping.week))
+    .filter((lecture, index, items) => lecture && items.findIndex((item) => item.week === lecture.week) === index);
+  const integratedTopics = topicLectures.map((lecture, index) => integratedChapterTopic(lecture, index + 1)).join("");
+  const standaloneTopics = standaloneChapterSections(chapter);
 
   const adjacent = fourthEdition.chapters.filter((item) => Math.abs(item.chapter - chapter.chapter) === 1);
   return pageShell({
     title: `第 ${chapter.chapter} 章 ${chapter.zh} | 計算機組織`,
-    description: `計算機組織第 ${chapter.chapter} 章 ${chapter.zh}獨立頁面與相關週次教材。`,
+    description: `計算機組織第 ${chapter.chapter} 章 ${chapter.zh}完整章節教材。`,
     body: `<article class="chapter-overview-page">
       <nav class="breadcrumb" aria-label="麵包屑"><a href="../index.html">課程首頁</a><a href="../fourth-edition-map.html">第 4 版對照</a><span>第 ${chapter.chapter} 章</span></nav>
       <header class="chapter-overview-hero">
@@ -595,15 +646,11 @@ function chapterOverviewPage(chapter) {
         <p>${esc(chapter.summary)}</p>
       </header>
       <section class="chapter-overview-focus">
-        <p class="eyebrow">Course connection</p>
-        <h3>本章與課程的連結</h3>
-        <p>${esc(chapter.courseUse)}</p>
-        <p>以下週次頁面收錄本章目前對應的完整講義、概念推導、原創圖表、逐步例題、自我檢核與解答。每個連結都是可直接引用與返回的獨立頁面。</p>
+        <p class="eyebrow">Chapter guide</p>
+        <h3>本章內容</h3>
+        <p>本章直接整合核心概念、原創圖表、推導、例題與自我檢核。所有內容都在同一章內連續閱讀，不需要切換到另一套分類頁面。</p>
       </section>
-      <section class="chapter-week-path">
-        <h2>本章相關週次教材</h2>
-        <div class="chapter-week-grid">${weekPath}</div>
-      </section>
+      <div class="chapter-integrated-reading">${integratedTopics}${standaloneTopics}</div>
       <nav class="chapter-adjacent" aria-label="相鄰章節">
         ${adjacent.map((item) => `<a href="chapter-${String(item.chapter).padStart(2, "0")}.html"><span>第 ${item.chapter} 章</span><strong>${esc(item.zh)}</strong></a>`).join("")}
       </nav>
@@ -613,19 +660,16 @@ function chapterOverviewPage(chapter) {
   });
 }
 
-fs.mkdirSync(path.join(root, "weeks"), { recursive: true });
+fs.rmSync(path.join(root, "weeks"), { recursive: true, force: true });
 fs.mkdirSync(path.join(root, "chapters"), { recursive: true });
 const cleanHtml = (html) => html.replace(/[ \t]+$/gm, "");
 
 fs.writeFileSync(path.join(root, "index.html"), cleanHtml(indexPage()));
 fs.writeFileSync(path.join(root, "fourth-edition-map.html"), cleanHtml(fourthEditionPage()));
-for (const lecture of lectures) {
-  fs.writeFileSync(path.join(root, "weeks", slug(lecture.week)), cleanHtml(weekPage(lecture)));
-}
 for (const chapter of fourthEdition.chapters) {
   const detail = chapterDetails.find((item) => item.chapter === chapter.chapter);
   const html = detail ? chapterPage(detail) : chapterOverviewPage(chapter);
   fs.writeFileSync(path.join(root, "chapters", `chapter-${String(chapter.chapter).padStart(2, "0")}.html`), cleanHtml(html));
 }
 
-console.log(`Generated ${lectures.length + fourthEdition.chapters.length + 2} pages.`);
+console.log(`Generated ${fourthEdition.chapters.length + 2} chapter-first pages.`);

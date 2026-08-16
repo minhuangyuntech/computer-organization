@@ -803,6 +803,116 @@ dd { margin: 0; }
   border-left: 8px solid var(--accent-3);
 }
 
+.chapter-integrated-reading {
+  display: grid;
+  gap: 26px;
+}
+
+.chapter-topic,
+.standalone-chapter-content {
+  min-width: 0;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.chapter-topic-head {
+  padding: clamp(24px, 4vw, 42px);
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.chapter-topic-head h2 {
+  margin: 7px 0 12px;
+  font-size: clamp(28px, 4vw, 46px);
+  line-height: 1.1;
+}
+
+.chapter-topic-head > p:last-child {
+  max-width: 900px;
+  margin-bottom: 0;
+  color: color-mix(in srgb, var(--bg) 86%, transparent);
+}
+
+.chapter-topic > .learning-figure {
+  margin: 0;
+  border-right: 0;
+  border-left: 0;
+  box-shadow: none;
+}
+
+.chapter-topic-block,
+.chapter-topic > .worked-example,
+.chapter-topic > .misconception-panel,
+.chapter-topic > .self-check,
+.standalone-chapter-content > section {
+  margin: 0;
+  padding: clamp(22px, 4vw, 38px);
+  border-bottom: 1px solid var(--line);
+}
+
+.chapter-topic-block:last-child,
+.standalone-chapter-content > section:last-child {
+  border-bottom: 0;
+}
+
+.chapter-topic-block > h2,
+.chapter-topic-block > h3 {
+  margin-top: 0;
+}
+
+.chapter-topic-worked {
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  box-shadow: none;
+}
+
+.chapter-topic-misconceptions {
+  border-left: 8px solid var(--accent-2);
+}
+
+.chapter-topic-check details:last-child {
+  margin-bottom: 0;
+}
+
+.chapter-schedule {
+  max-width: 1200px;
+  margin: 0 auto 24px;
+  padding: clamp(24px, 4vw, 42px);
+  border: 1px solid var(--line);
+  border-top: 7px solid var(--accent-3);
+  background: var(--panel);
+}
+
+.chapter-schedule h2 {
+  margin: 6px 0 10px;
+  font-size: clamp(28px, 4vw, 44px);
+}
+
+.course-schedule-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+}
+
+.course-schedule-table th,
+.course-schedule-table td {
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+  line-height: 1.55;
+}
+
+.course-schedule-table thead th {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.course-schedule-table tbody th {
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--accent-3) 22%, var(--panel));
+}
+
 .chapter-week-path > h2 {
   margin-top: 0;
 }
@@ -1977,7 +2087,13 @@ code {
   .chapter-hero,
   .chapter-overview-hero,
   .chapter-overview-focus,
-  .chapter-week-path,
+  .chapter-topic-head,
+  .chapter-topic-block,
+  .chapter-topic > .worked-example,
+  .chapter-topic > .misconception-panel,
+  .chapter-topic > .self-check,
+  .standalone-chapter-content > section,
+  .chapter-schedule,
   .chapter-outcomes,
   .chapter-toc,
   .chapter-reading,

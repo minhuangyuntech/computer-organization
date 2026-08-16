@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>第 3 章 布林代數與數位邏輯 | 計算機組織</title>
-  <meta name="description" content="計算機組織第 3 章 布林代數與數位邏輯獨立頁面與相關週次教材。">
+  <meta name="description" content="計算機組織第 3 章 布林代數與數位邏輯完整章節教材。">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23006d77'/%3E%3Cpath d='M14 18h36v28H14z' fill='%23f6bd60' stroke='%2320231f' stroke-width='4'/%3E%3Cpath d='M22 28h20M22 36h14' stroke='%2320231f' stroke-width='4'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="../styles.css">
 </head>
@@ -53,7 +53,6 @@
       </a><a class="chapter-nav-link" href="../chapters/chapter-13.html" title="第 13 章 儲存系統與介面選論">
         <strong>CH 13</strong><span>儲存介面</span>
       </a>
-      <a class="chapter-nav-weeks" href="../index.html#weeks">週次進度</a>
     </div>
   </nav>
   <main class="page-main">
@@ -67,25 +66,115 @@
         <p>由布林函數、邏輯閘與化簡進入組合電路和循序電路。資料路徑中的加法器與多工器屬於組合邏輯，暫存器與狀態機則依時脈保存狀態。</p>
       </header>
       <section class="chapter-overview-focus">
-        <p class="eyebrow">Course connection</p>
-        <h3>本章與課程的連結</h3>
-        <p>第 7、10 週理解 ALU、控制訊號、暫存器與 clocked state 的先備概念。</p>
-        <p>以下週次頁面收錄本章目前對應的完整講義、概念推導、原創圖表、逐步例題、自我檢核與解答。每個連結都是可直接引用與返回的獨立頁面。</p>
+        <p class="eyebrow">Chapter guide</p>
+        <h3>本章內容</h3>
+        <p>本章直接整合核心概念、原創圖表、推導、例題與自我檢核。所有內容都在同一章內連續閱讀，不需要切換到另一套分類頁面。</p>
       </section>
-      <section class="chapter-week-path">
-        <h2>本章相關週次教材</h2>
-        <div class="chapter-week-grid"><a class="chapter-week-card" href="../weeks/week-07.html">
-      <span>Week 07</span>
-      <h3>整數算術運算與浮點數表示法</h3>
-      <p>整數算術、carry/overflow、IEEE 754 與 arithmetic circuit。</p>
-      <small>第 4 版節次：2.4–2.5；3.5</small>
-    </a><a class="chapter-week-card" href="../weeks/week-10.html">
-      <span>Week 10</span>
-      <h3>CPU 資料路徑與單週期處理器架構</h3>
-      <p>組合邏輯、clocked state、bus、register transfer 與控制單元。</p>
-      <small>第 4 版節次：3.5–3.6；4.2–4.3、4.9、4.13</small>
-    </a></div>
-      </section>
+      <div class="chapter-integrated-reading"><section class="chapter-topic" id="topic-1">
+    <header class="chapter-topic-head">
+      <p class="eyebrow">Core topic 01</p>
+      <h2>整數算術運算與浮點數表示法</h2>
+      <p>固定寬度整數追求精確但範圍有限；浮點數以有限有效位數換取極大動態範圍。理解兩者的錯誤條件，才能知道硬體旗標與程式數值何時可信。</p>
+    </header>
+    <figure class="learning-figure">
+    <h4>IEEE 754 single precision</h4>
+    <div class="bit-diagram" style="--total-bits:32"><div class="bit-field" style="--field-bits:1"><strong>Sign</strong><span>1 bit</span><small>正負</small></div><div class="bit-field" style="--field-bits:8"><strong>Exponent</strong><span>8 bits</span><small>bias 127</small></div><div class="bit-field" style="--field-bits:23"><strong>Fraction</strong><span>23 bits</span><small>有效位數</small></div></div>
+    <figcaption>Normalized value = (-1)^sign × 1.fraction × 2^(exponent-127)。</figcaption>
+  </figure>
+    <section class="chapter-topic-block">
+      <h3>學習成果</h3>
+      <ul><li>理解加減乘除的硬體概念。</li><li>能判斷 signed overflow。</li><li>理解 IEEE 754 floating-point 的 sign/exponent/fraction。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>核心概念</h3>
+      <ul class="concept-list"><li><strong>加減法器：</strong>Two&#039;s complement 讓加法與減法可用同一加法器完成。減法 A - B 可轉成 A + (~B + 1)。</li><li><strong>乘除法：</strong>硬體乘法可視為 shift-and-add；除法可視為 shift-and-subtract。速度與面積常需折衷，因此高效處理器會使用更複雜的乘法器。</li><li><strong>IEEE 754：</strong>Single precision 由 1-bit sign、8-bit exponent、23-bit fraction 組成。Exponent 使用 bias 表示，能同時表示極大與極小數。</li><li><strong>浮點誤差：</strong>浮點數不是實數；許多十進位小數無法用有限二進位精確表示。運算順序可能改變 rounding error。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>Adder、Carry 與 Overflow</h4><p>A-B 可由 A+(~B)+1 完成，因此加法器只需用控制訊號決定是否反相 B 並設定初始 carry-in。Unsigned overflow 看最高位 carry out；signed overflow 看同號 operands 是否產生異號結果。</p><p>乘法的完整結果可能需要兩倍位元寬度。若只保留低 n bits，程式必須知道高位是否被捨棄；除法則同時產生 quotient 與 remainder。</p></section><section class="deep-dive"><h4>IEEE 754 的範圍與精度</h4><p>Normalized single precision 的值為 (-1)^s × 1.f × 2^(E-127)。隱藏的 leading 1 不佔 fraction 欄位，因此 23-bit fraction 提供 24 bits 的有效精度。</p><p>Exponent 全 0 用於 zero 與 subnormal；全 1 用於 infinity 與 NaN。浮點加法前必須對齊 exponent，較小數的 significand 右移後可能失去低位，這是吸收與 rounding error 的來源。</p></section></div>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>補充說明</h3>
+      <p>整數 overflow 是位元寬度有限造成的結果。硬體可以用 operand sign 與 result sign 判斷加法 overflow。</p><p>浮點數用科學記號的想法換取範圍，但犧牲精確度。越大的數，相鄰可表示數之間的間距也越大。</p><p>學會辨認 special values：zero、subnormal、infinity、NaN。這些設計讓浮點運算能處理 underflow、overflow 與未定義結果。</p>
+    </section>
+    <section class="worked-example chapter-topic-worked">
+      <p class="eyebrow">Worked example</p>
+      <h3>解讀 0xC1200000</h3>
+      <p>將 IEEE 754 single pattern 0xC1200000 轉為十進位。</p>
+      <ol><li>最高位 sign=1，所以結果為負。</li><li>Exponent bits 對應 130，因此實際 exponent = 130-127 = 3。</li><li>Fraction 形成 significand 1.25。</li><li>值 = -1.25×2^3 = -10.0。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>欄位拆解順序應固定為 sign、biased exponent、significand，最後才合成數值。</p>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>程式與計算例題</h3>
+      <h4>浮點格式拆解</h4>
+      <pre><code>IEEE 754 single:
+value = (-1)^sign × 1.fraction × 2^(exponent - 127)
+0 10000001 01000000000000000000000
+= +1.25 × 2^2 = 5.0</code></pre>
+      <p>Normalized number 的 leading 1 不儲存在 fraction 中，稱為 hidden bit。</p>
+    </section>
+    <section class="misconception-panel chapter-topic-misconceptions">
+      <h3>常見誤解</h3>
+      <ul><li>把 carry out 當 signed overflow。</li><li>忘記 normalized number 的 hidden 1。</li><li>假設浮點加法符合實數的結合律。</li></ul>
+    </section>
+    <section class="self-check chapter-topic-check">
+      <h3>自我檢核</h3>
+      <details><summary>1. 兩個正的 8-bit signed 數相加得到負數，發生什麼事？</summary><p>發生 signed overflow；真實數學結果超過 127。</p></details><details><summary>2. Exponent 全 1 且 fraction 非 0 代表什麼？</summary><p>代表 NaN；若 fraction 為 0 則是正或負 infinity。</p></details>
+    </section>
+  </section><section class="chapter-topic" id="topic-2">
+    <header class="chapter-topic-head">
+      <p class="eyebrow">Core topic 02</p>
+      <h2>CPU 資料路徑與單週期處理器架構</h2>
+      <p>單週期 datapath 是一張因果圖：指令欄位提供位址與控制輸入，資料穿過 register file、ALU 與 memory，mux 在每個分岔點選擇正確來源。追蹤一條指令時，只保留它真正使用的路徑。</p>
+    </header>
+    <figure class="learning-figure">
+    <h4>lw 在單週期資料路徑中的主路徑</h4>
+    <div class="flow-diagram"><span class="flow-node">PC</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Instruction Memory</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Register File</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">ALU 算位址</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Data Memory</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">MemtoReg Mux</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Register File 寫回</span></div>
+    <figcaption>PC+4 與控制訊號在旁路同步產生；此圖只畫 lw 的資料主路徑。</figcaption>
+  </figure>
+    <section class="chapter-topic-block">
+      <h3>學習成果</h3>
+      <ul><li>能追蹤單週期 datapath。</li><li>理解 control signals 的角色。</li><li>分析單週期設計的 clock period 限制。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>核心概念</h3>
+      <ul class="concept-list"><li><strong>Datapath：</strong>資料路徑是資料流經的硬體元件與連線，包括 PC、instruction memory、register file、ALU、data memory、sign extend、shift-left、adder 與 multiplexers。</li><li><strong>Control：</strong>控制單元根據 opcode/funct 產生控制訊號，決定 mux 選哪條路、ALU 做什麼、是否讀寫記憶體、是否寫暫存器與是否更新 PC 為 branch target。</li><li><strong>Single-cycle：</strong>每個指令都在一個 clock cycle 完成。設計簡單，但 clock period 必須長到能容納最慢指令，通常是 load 指令。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>由 Register Transfer 描述指令</h4><p>R-format 可寫成 R[rd] ← R[rs] op R[rt]；lw 可寫成 R[rt] ← Mem[R[rs]+signext(imm)]；sw 則是 Mem[R[rs]+signext(imm)] ← R[rt]。這些描述直接指出來源、運算與目的。</p><p>Datapath 圖中的每個 mux 都對應一個選擇問題：目的 register 是 rt 或 rd？ALU operand 來自 rt 或 immediate？寫回資料來自 ALU 或 memory？下一個 PC 是 PC+4 或 branch target？</p></section><section class="deep-dive"><h4>關鍵路徑決定 Clock Period</h4><p>單週期設計要求最慢指令也在一個 cycle 內完成。lw 通常依序經 instruction memory、register read、ALU、data memory 與 write-back mux，因此比只經 ALU 的 add 更慢。</p><p>即使 add 提早得到結果，也必須等共同 cycle 結束才能開始下一指令。單週期的簡單控制換來較長 clock period，這正是 pipeline 要改善的限制。</p></section></div>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>補充說明</h3>
+      <p>分析 datapath 最重要的是問三個問題：資料從哪裡來？經過哪些元件？最後寫到哪裡？控制訊號如何讓這條路成立？</p><p>`lw` 會使用 instruction memory、register file、ALU、data memory、write back mux。`add` 不用 data memory。`beq` 會使用 ALU 做比較並可能改變 PC。</p><p>單週期處理器不是高效設計，但它把每個指令需要的硬體路徑攤在一張圖上，因此很適合作為處理器資料路徑的入門模型。</p>
+    </section>
+    <section class="worked-example chapter-topic-worked">
+      <p class="eyebrow">Worked example</p>
+      <h3>為四種指令判斷關鍵控制</h3>
+      <p>比較 add、lw、sw、beq 的 RegWrite、MemRead、MemWrite 與 ALUSrc。</p>
+      <ol><li>add：RegWrite=1、ALUSrc=0，不讀寫 data memory。</li><li>lw：RegWrite=1、MemRead=1、ALUSrc=1，寫回來源為 memory。</li><li>sw：RegWrite=0、MemWrite=1、ALUSrc=1。</li><li>beq：RegWrite=0、ALUSrc=0，ALU 比較兩個 registers，Branch=1。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>控制訊號不是獨立背誦項目，而是由 register-transfer 行為反推。</p>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>程式與計算例題</h3>
+      <h4>`lw $t0, 8($s1)` 的路徑</h4>
+      <pre><code>1. Fetch instruction at PC
+2. Read $s1 from register file
+3. Sign-extend immediate 8
+4. ALU computes $s1 + 8
+5. Data memory reads effective address
+6. Write data back to $t0</code></pre>
+      <p>控制訊號包含 ALUSrc=1、MemRead=1、MemtoReg=1、RegWrite=1。</p>
+    </section>
+    <section class="misconception-panel chapter-topic-misconceptions">
+      <h3>常見誤解</h3>
+      <ul><li>把 instruction memory 與 data memory 的角色混在一起。</li><li>認為 sw 需要 RegWrite。</li><li>忽略 lw 的最長路徑對所有指令 clock period 的影響。</li></ul>
+    </section>
+    <section class="self-check chapter-topic-check">
+      <h3>自我檢核</h3>
+      <details><summary>1. 為何 lw 的 ALUSrc 通常為 1？</summary><p>ALU 第二個 operand 是 sign-extended immediate，用來和 base register 相加。</p></details><details><summary>2. beq 需要 data memory 嗎？</summary><p>不需要。它用 ALU 比較 registers，並以比較結果決定 PC。</p></details>
+    </section>
+  </section></div>
       <nav class="chapter-adjacent" aria-label="相鄰章節">
         <a href="chapter-02.html"><span>第 2 章</span><strong>計算機系統的資料表示</strong></a><a href="chapter-04.html"><span>第 4 章</span><strong>MARIE：簡易計算機導論</strong></a>
       </nav>

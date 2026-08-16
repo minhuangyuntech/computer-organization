@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>第 5 章 深入指令集架構 | 計算機組織</title>
-  <meta name="description" content="計算機組織第 5 章 深入指令集架構獨立頁面與相關週次教材。">
+  <meta name="description" content="計算機組織第 5 章 深入指令集架構完整章節教材。">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23006d77'/%3E%3Cpath d='M14 18h36v28H14z' fill='%23f6bd60' stroke='%2320231f' stroke-width='4'/%3E%3Cpath d='M22 28h20M22 36h14' stroke='%2320231f' stroke-width='4'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="../styles.css">
 </head>
@@ -53,7 +53,6 @@
       </a><a class="chapter-nav-link" href="../chapters/chapter-13.html" title="第 13 章 儲存系統與介面選論">
         <strong>CH 13</strong><span>儲存介面</span>
       </a>
-      <a class="chapter-nav-weeks" href="../index.html#weeks">週次進度</a>
     </div>
   </nav>
   <main class="page-main">
@@ -67,55 +66,313 @@
         <p>比較指令格式、operand 數量、指令類型、addressing mode、pipeline 與不同真實 ISA。ISA 的每個編碼決策都會影響程式表達能力與硬體解碼成本。</p>
       </header>
       <section class="chapter-overview-focus">
-        <p class="eyebrow">Course connection</p>
-        <h3>本章與課程的連結</h3>
-        <p>第 4 至 8 週的 MIPS，以及第 11、12 週的 instruction pipelining。</p>
-        <p>以下週次頁面收錄本章目前對應的完整講義、概念推導、原創圖表、逐步例題、自我檢核與解答。每個連結都是可直接引用與返回的獨立頁面。</p>
+        <p class="eyebrow">Chapter guide</p>
+        <h3>本章內容</h3>
+        <p>本章直接整合核心概念、原創圖表、推導、例題與自我檢核。所有內容都在同一章內連續閱讀，不需要切換到另一套分類頁面。</p>
       </section>
-      <section class="chapter-week-path">
-        <h2>本章相關週次教材</h2>
-        <div class="chapter-week-grid"><a class="chapter-week-card" href="../weeks/week-03.html">
-      <span>Week 03</span>
-      <h3>數值表示法與資料儲存</h3>
-      <p>進位、補數、字元編碼與 big/little endian。</p>
-      <small>第 4 版節次：2.2–2.6；5.2.2</small>
-    </a><a class="chapter-week-card" href="../weeks/week-04.html">
-      <span>Week 04</span>
-      <h3>MIPS 組合語言與暫存器架構</h3>
-      <p>先由 MARIE 的累加器模型看見狀態，再進入 MIPS register file 與 load-store。</p>
-      <small>第 4 版節次：4.8、4.14.2；5.3、5.6.2</small>
-    </a><a class="chapter-week-card" href="../weeks/week-05.html">
-      <span>Week 05</span>
-      <h3>MIPS 基本指令與記憶體存取</h3>
-      <p>資料移動、控制轉移、addressing mode 與 MIPS memory operand。</p>
-      <small>第 4 版節次：5.3–5.4、5.6.2</small>
-    </a><a class="chapter-week-card" href="../weeks/week-08.html">
-      <span>Week 08</span>
-      <h3>指令編碼與 CPU 執行指令的基本流程</h3>
-      <p>instruction format、decode、hardwired control 與 MIPS 編碼。</p>
-      <small>第 4 版節次：4.13–4.14；5.2、5.6.2</small>
-    </a><a class="chapter-week-card" href="../weeks/week-09.html">
-      <span>Week 09</span>
-      <h3>期中考試週</h3>
-      <p>由抽象層、資料表示、指令週期、ISA 到效能方程式建立完整證據鏈。</p>
-      <small>第 4 版節次：前八週整合</small>
-    </a><a class="chapter-week-card" href="../weeks/week-11.html">
-      <span>Week 11</span>
-      <h3>Pipeline 處理器的概念與效能分析</h3>
-      <p>instruction pipelining 與更廣義的 instruction-level parallelism。</p>
-      <small>第 4 版節次：5.5；9.2–9.4</small>
-    </a><a class="chapter-week-card" href="../weeks/week-12.html">
-      <span>Week 12</span>
-      <h3>Pipeline Hazard 的種類與基本解決方法</h3>
-      <p>pipeline hazard、branch penalty 與 branch optimization。</p>
-      <small>第 4 版節次：5.5；11.5.1</small>
-    </a><a class="chapter-week-card" href="../weeks/week-18.html">
-      <span>Week 18</span>
-      <h3>期末測驗</h3>
-      <p>以 correctness、state、cycle、memory traffic 與 CPU Time 五種證據交叉檢查。</p>
-      <small>第 4 版節次：全課整合</small>
-    </a></div>
-      </section>
+      <div class="chapter-integrated-reading"><section class="chapter-topic" id="topic-1">
+    <header class="chapter-topic-head">
+      <p class="eyebrow">Core topic 01</p>
+      <h2>數值表示法與資料儲存</h2>
+      <p>位元沒有天生的資料型態。正確解讀必須同時知道位元寬度、signedness、編碼規則與 byte 順序；少掉任何一項都可能得到另一個完全不同的值。</p>
+    </header>
+    <figure class="learning-figure">
+    <h4>8-bit two&#039;s complement 權重</h4>
+    <div class="bit-diagram" style="--total-bits:8"><div class="bit-field" style="--field-bits:1"><strong>b7</strong><span>1 bit</span><small>-128</small></div><div class="bit-field" style="--field-bits:1"><strong>b6</strong><span>1 bit</span><small>64</small></div><div class="bit-field" style="--field-bits:1"><strong>b5</strong><span>1 bit</span><small>32</small></div><div class="bit-field" style="--field-bits:1"><strong>b4</strong><span>1 bit</span><small>16</small></div><div class="bit-field" style="--field-bits:1"><strong>b3</strong><span>1 bit</span><small>8</small></div><div class="bit-field" style="--field-bits:1"><strong>b2</strong><span>1 bit</span><small>4</small></div><div class="bit-field" style="--field-bits:1"><strong>b1</strong><span>1 bit</span><small>2</small></div><div class="bit-field" style="--field-bits:1"><strong>b0</strong><span>1 bit</span><small>1</small></div></div>
+    <figcaption>最高位不是單純的正負標記，而是具有 -128 權重；因此 8-bit 範圍為 -128 到 127。</figcaption>
+  </figure>
+    <section class="chapter-topic-block">
+      <h3>學習成果</h3>
+      <ul><li>熟悉二進位、十六進位與位元運算。</li><li>能用 two&#039;s complement 表示有號整數。</li><li>理解 byte addressing 與 endianness。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>核心概念</h3>
+      <ul class="concept-list"><li><strong>位元與編碼：</strong>電腦儲存的是位元樣式；同一串位元可依情境解讀為整數、字元、指令或浮點數。資料型態不是位元本身，而是解讀規則。</li><li><strong>Two&#039;s complement：</strong>n 位元 two&#039;s complement 範圍為 -2^(n-1) 到 2^(n-1)-1。負數可由正數取反加一得到。加減法硬體可共用同一個加法器。</li><li><strong>位元延伸：</strong>有號數做 sign extension，無號數做 zero extension。若把有號/無號混用，常造成條件判斷錯誤。</li><li><strong>Endianness：</strong>Little endian 與 big endian 決定多位元組資料在記憶體中的 byte 順序。它不改變暫存器中的數值，只影響記憶體表示與資料交換。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>Two&#039;s complement 的權重觀點</h4><p>n-bit two&#039;s complement 的最高位權重是 -2^(n-1)，其餘位元仍是正的 2 的冪。這個觀點可直接解讀負數，不必每次都取反加一。例如 11010110 的值是 -128+64+16+4+2=-42。</p><p>Carry out 是無號加法超出 n bits 的訊號；signed overflow 則表示有號結果超出可表示範圍。兩者判斷的數學模型不同，不能互換。</p></section><section class="deep-dive"><h4>Byte address 與 Endianness</h4><p>Byte-addressed memory 中每個位址指向 8 bits。32-bit word 會佔用四個連續位址。Little endian 把最低有效 byte 放在最低位址，big endian 則把最高有效 byte 放在最低位址。</p><p>Endianness 不會顛倒一個 byte 內的 bit，也不會改變暫存器看到的數值。它只在多 byte 資料被拆到記憶體或通訊封包時產生差異。</p></section></div>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>補充說明</h3>
+      <p>二進位與十六進位轉換是後續看 instruction encoding、cache address breakdown 的基本功。十六進位每一位剛好對應 4 bits，適合表達 32-bit 指令與位址。</p><p>Overflow 只對固定寬度的有號運算有意義。兩個正數相加得到負數、或兩個負數相加得到正數，就是 two&#039;s complement overflow 的典型跡象。</p><p>資料對齊（alignment）會影響硬體存取效率。MIPS word 通常要求 4-byte alignment，位址最低兩個 bit 應為 00。</p>
+    </section>
+    <section class="worked-example chapter-topic-worked">
+      <p class="eyebrow">Worked example</p>
+      <h3>同一位元樣式的三種解讀</h3>
+      <p>解讀 8-bit pattern 11010110，並排列 0x12345678 在 little-endian memory 的四個 bytes。</p>
+      <ol><li>Unsigned：128+64+16+4+2 = 214。</li><li>Signed two&#039;s complement：214-256 = -42。</li><li>若只當作單一 8-bit code，其語意還需由字元集或通訊協定決定。</li><li>0x12345678 的 bytes 為 12、34、56、78；little endian 由低位址起依序存 78、56、34、12。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>位元樣式相同不代表值相同；metadata 與使用情境決定解讀。</p>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>程式與計算例題</h3>
+      <h4>8-bit two&#039;s complement</h4>
+      <pre><code>+18 = 0001 0010
+-18 = 1110 1110  # invert 0001 0010 =&gt; 1110 1101, plus 1</code></pre>
+      <p>以 8-bit 來看，1110 1110 若解讀為 unsigned 是 238，若解讀為 signed 是 -18。</p>
+    </section>
+    <section class="misconception-panel chapter-topic-misconceptions">
+      <h3>常見誤解</h3>
+      <ul><li>把 sign bit 當成 signed-magnitude 的正負號。</li><li>用 carry out 判斷 signed overflow。</li><li>把 little endian 誤解為每個 byte 的 bits 也反向。</li></ul>
+    </section>
+    <section class="self-check chapter-topic-check">
+      <h3>自我檢核</h3>
+      <details><summary>1. 8-bit 11111111 分別代表多少 unsigned 與 signed 值？</summary><p>Unsigned 是 255；two&#039;s complement signed 是 -1。</p></details><details><summary>2. 兩個負數相加得到正數時，carry out 一定能指出 overflow 嗎？</summary><p>不能只看 carry out。Signed overflow 應看兩個 operand 同號而結果異號。</p></details>
+    </section>
+  </section><section class="chapter-topic" id="topic-2">
+    <header class="chapter-topic-head">
+      <p class="eyebrow">Core topic 02</p>
+      <h2>MIPS 組合語言與暫存器架構</h2>
+      <p>MIPS 將複雜程式拆成少數規則一致的基本操作。學習重點不是背語法，而是每行指令讀了哪些暫存器、寫了哪個暫存器，以及何時必須經過記憶體。</p>
+    </header>
+    <figure class="learning-figure">
+    <h4>Load-store 資料流</h4>
+    <div class="flow-diagram"><span class="flow-node">Memory 中的變數</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">lw 載入</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Register operands</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">ALU 運算</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Register result</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">sw 儲存</span></div>
+    <figcaption>ALU 不直接讀寫主記憶體；資料先進暫存器，計算後才由 store 寫回。</figcaption>
+  </figure>
+    <section class="chapter-topic-block">
+      <h3>學習成果</h3>
+      <ul><li>認識 MIPS register convention。</li><li>理解 load-store architecture。</li><li>能讀懂基本 arithmetic 指令。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>核心概念</h3>
+      <ul class="concept-list"><li><strong>Load-store 架構：</strong>MIPS 算術邏輯指令只操作暫存器，記憶體資料必須先用 lw 載入暫存器，計算後再用 sw 存回記憶體。這讓資料路徑較規則，便於 pipeline。</li><li><strong>暫存器：</strong>MIPS 有 32 個 general-purpose registers。$zero 永遠為 0；$t0-$t9 常作暫時值；$s0-$s7 常保存跨函式呼叫仍需保留的值；$a0-$a3 用於參數；$v0-$v1 用於回傳。</li><li><strong>R-format 指令：</strong>如 add、sub、and、or、slt，多數有三個 register operands：目的暫存器 rd、來源暫存器 rs 與 rt。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>Register file 與三運算元指令</h4><p>典型 MIPS register file 可同時讀兩個來源暫存器並寫一個目的暫存器，正好支援 add rd, rs, rt。目的與來源分離，可保留原始 operand，也讓編譯器更容易安排中間值。</p><p>$zero 的讀值固定為 0，寫入會被忽略。它讓 move、清零、比較與無條件分支可由既有指令組合完成，減少特殊硬體路徑。</p></section><section class="deep-dive"><h4>Load-store 的規則性</h4><p>算術指令只讀寫暫存器；只有 load/store 在暫存器與記憶體之間搬移資料。這使 ALU 指令具有一致的 operand 位置與執行流程，也降低 pipeline 控制複雜度。</p><p>代價是高階語言的一個運算可能需要額外的 load 與 store。效能取決於編譯器是否能把常用值留在暫存器，以及 memory hierarchy 是否能快速提供資料。</p></section></div>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>補充說明</h3>
+      <p>組合語言的價值不是取代 C，而是讓我們看見編譯器和硬體中間的指令層。理解 MIPS 後，學習 RISC-V、ARM 或其他 RISC ISA 會容易很多。</p><p>暫存器數量有限，所以編譯器需要做 register allocation。當暫存器不夠時，資料會 spill 到 memory，效能通常下降。</p><p>良好的組合語言閱讀習慣：先標出變數放在哪些暫存器，再追蹤每行指令改變了哪些狀態。</p>
+    </section>
+    <section class="worked-example chapter-topic-worked">
+      <p class="eyebrow">Worked example</p>
+      <h3>將 f = (g + h) - i 翻成 MIPS</h3>
+      <p>令 f、g、h、i 分別位於 $s0、$s1、$s2、$s3。</p>
+      <ol><li>先計算 g+h：add $t0, $s1, $s2。</li><li>再減去 i：sub $s0, $t0, $s3。</li><li>$t0 是短暫中間值；最後結果才寫入保存 f 的 $s0。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>兩條 R-format 指令足以完成，且每條都只有 register operands。</p>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>程式與計算例題</h3>
+      <h4>三運算元設計</h4>
+      <pre><code>add $t0, $s1, $s2  # $t0 = $s1 + $s2
+sub $t1, $t0, $s3  # $t1 = $t0 - $s3
+slt $t2, $t1, $zero # if $t1 &lt; 0 then $t2 = 1</code></pre>
+      <p>目的暫存器放在最前面是 MIPS 語法特色，讀程式時要避免和數學式順序混淆。</p>
+    </section>
+    <section class="misconception-panel chapter-topic-misconceptions">
+      <h3>常見誤解</h3>
+      <ul><li>把目的暫存器放在指令最後。</li><li>以為 $t 與 $s 是硬體功能不同的暫存器；差異主要是 calling convention。</li><li>讓 add 直接使用 memory address 當 operand。</li></ul>
+    </section>
+    <section class="self-check chapter-topic-check">
+      <h3>自我檢核</h3>
+      <details><summary>1. 為何 move $t0,$t1 可由 add $t0,$t1,$zero 表示？</summary><p>$zero 的值固定為 0，所以加零不改變 $t1，結果寫入 $t0。</p></details><details><summary>2. Register allocation 失敗而 spill 時，會增加哪些指令？</summary><p>需要額外的 load/store 在暫存器與 stack memory 之間搬移值。</p></details>
+    </section>
+  </section><section class="chapter-topic" id="topic-3">
+    <header class="chapter-topic-head">
+      <p class="eyebrow">Core topic 03</p>
+      <h2>MIPS 基本指令與記憶體存取</h2>
+      <p>記憶體存取與控制流程看似是兩組指令，其實都依賴 ALU 做位址計算。掌握 base+offset、PC-relative 與 byte addressing，陣列和迴圈就能用同一套方法分析。</p>
+    </header>
+    <figure class="learning-figure">
+    <h4>lw 的有效位址計算</h4>
+    <div class="flow-diagram"><span class="flow-node">Base register</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">16-bit offset</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Sign extension</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">ALU 加法</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Byte address</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Data memory</span></div>
+    <figcaption>Offset 的單位是 byte；lw 一次傳回 4 bytes，但位址仍以 byte 編號。</figcaption>
+  </figure>
+    <section class="chapter-topic-block">
+      <h3>學習成果</h3>
+      <ul><li>熟悉 lw/sw base+offset addressing。</li><li>能撰寫 if/else 與 loop。</li><li>理解 branch target 與 PC 更新。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>核心概念</h3>
+      <ul class="concept-list"><li><strong>Base + offset：</strong>`lw $t0, 12($s1)` 的有效位址為 `$s1 + 12`。陣列元素位址常由 base address 加上 index × element size 得到。</li><li><strong>Branch：</strong>`beq` 與 `bne` 根據兩個暫存器是否相等決定是否改變 PC。條件判斷常搭配 `slt` 產生 0/1 結果。</li><li><strong>Jump：</strong>`j` 用於無條件跳躍；函式呼叫會使用 `jal` 儲存 return address 到 `$ra`，回傳用 `jr $ra`。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>有效位址與資料大小</h4><p>lw rt, offset(base) 先將 16-bit offset 做 sign extension，再由 ALU 與 base register 相加，所得結果是 byte address。Offset 可以是負數，因此 stack frame 兩側或結構欄位都能表示。</p><p>陣列 index 必須先乘上元素大小。int32 元素相差 4 bytes，因此 A[i] 位址是 base+4i；byte array 的元素則相差 1。Alignment 規則可讓硬體以較少次數完成存取。</p></section><section class="deep-dive"><h4>Branch 與 PC-relative 位址</h4><p>MIPS branch target 通常是 PC+4 + (sign-extended immediate &lt;&lt; 2)。左移兩位是因為指令 4-byte aligned，欄位不需儲存永遠為 00 的最低兩位。</p><p>Loop 的可靠閱讀方式是先找 back edge，再判斷 branch 是繼續迴圈還是離開。把每個 label 視為控制流程圖節點，比逐字翻譯更不容易顛倒條件。</p></section></div>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>補充說明</h3>
+      <p>MIPS memory 是 byte-addressed，但 `lw` 一次讀 4 bytes。若處理 int 陣列，index 要乘以 4；若處理 char 陣列，index 不需乘以 4。</p><p>組合語言沒有高階語言的區塊結構，只有 label 與 branch/jump。閱讀 loop 時，先找 label、條件跳出點與回跳指令。</p><p>Pseudo-instructions 如 `move`、`li`、`blt` 方便書寫，但硬體真正執行的是 assembler 展開後的基本指令。</p>
+    </section>
+    <section class="worked-example chapter-topic-worked">
+      <p class="eyebrow">Worked example</p>
+      <h3>計算 A[7] 的位址</h3>
+      <p>A 是 int32 陣列，base address = 0x10010000，求 A[7] 位址並寫出核心指令。</p>
+      <ol><li>每個元素 4 bytes，因此位移 = 7×4 = 28 = 0x1C。</li><li>有效位址 = 0x10010000 + 0x1C = 0x1001001C。</li><li>若 base 在 $s0，可用 lw $t0, 28($s0)。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>Offset 28 是 byte 數，不是第 28 個 word。</p>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>程式與計算例題</h3>
+      <h4>陣列讀寫</h4>
+      <pre><code># A[i] = A[i] + 1, base of A in $s0, i in $s1
+sll $t0, $s1, 2
+add $t0, $s0, $t0
+lw  $t1, 0($t0)
+addi $t1, $t1, 1
+sw  $t1, 0($t0)</code></pre>
+      <p>`sll` 左移 2 位相當於乘以 4，因為 int 是 4 bytes。</p>
+    </section>
+    <section class="misconception-panel chapter-topic-misconceptions">
+      <h3>常見誤解</h3>
+      <ul><li>忘記 index 乘上元素大小。</li><li>將 branch immediate 直接當 byte offset。</li><li>把 pseudo-instruction 當成新增的硬體指令格式。</li></ul>
+    </section>
+    <section class="self-check chapter-topic-check">
+      <h3>自我檢核</h3>
+      <details><summary>1. 為何 offset 需要 sign extension？</summary><p>有效位址可能位於 base 前方，負 offset 常見於 stack 與資料結構存取。</p></details><details><summary>2. 若 char array base 在 $s0，讀 A[7] 的 offset 是多少？</summary><p>是 7，因為每個 char 佔 1 byte。</p></details>
+    </section>
+  </section><section class="chapter-topic" id="topic-4">
+    <header class="chapter-topic-head">
+      <p class="eyebrow">Core topic 04</p>
+      <h2>指令編碼與 CPU 執行指令的基本流程</h2>
+      <p>指令格式是控制器讀取的契約。每個欄位不只代表一個數字，也決定 register file 讀寫埠、immediate 延伸方式、ALU 功能與下一個 PC 的來源。</p>
+    </header>
+    <figure class="learning-figure">
+    <h4>MIPS R-format 欄位</h4>
+    <div class="bit-diagram" style="--total-bits:32"><div class="bit-field" style="--field-bits:6"><strong>opcode</strong><span>6 bits</span><small>大類</small></div><div class="bit-field" style="--field-bits:5"><strong>rs</strong><span>5 bits</span><small>來源 1</small></div><div class="bit-field" style="--field-bits:5"><strong>rt</strong><span>5 bits</span><small>來源 2</small></div><div class="bit-field" style="--field-bits:5"><strong>rd</strong><span>5 bits</span><small>目的</small></div><div class="bit-field" style="--field-bits:5"><strong>shamt</strong><span>5 bits</span><small>位移量</small></div><div class="bit-field" style="--field-bits:6"><strong>funct</strong><span>6 bits</span><small>ALU 功能</small></div></div>
+    <figcaption>6+5+5+5+5+6=32 bits；每個 5-bit register field 可指定 32 個暫存器。</figcaption>
+  </figure>
+    <section class="chapter-topic-block">
+      <h3>學習成果</h3>
+      <ul><li>能辨識 MIPS R/I/J format。</li><li>理解 opcode、rs、rt、rd、shamt、funct。</li><li>銜接指令格式到 datapath 控制訊號。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>核心概念</h3>
+      <ul class="concept-list"><li><strong>Fixed-length encoding：</strong>MIPS 指令固定 32 bits，讓 fetch 與 decode 較規則。硬體每次 PC + 4 取得下一個 sequential instruction。</li><li><strong>R-format：</strong>用 opcode=0 搭配 funct 決定 ALU 操作，適合 register-register arithmetic/logical instructions。</li><li><strong>I-format：</strong>包含 16-bit immediate，適合 load/store、branch 與 addi。Immediate 可能需要 sign extension 或 zero extension。</li><li><strong>J-format：</strong>包含 26-bit target field，配合 PC 高位形成 jump target。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>固定長度與欄位折衷</h4><p>固定 32-bit 讓 PC 通常每次加 4，也讓 instruction memory 與 decode 邊界規則一致。代價是 opcode、register 與 immediate 必須共享固定空間，immediate 範圍受到限制。</p><p>R-format 以 funct 擴充 opcode=0 的 ALU 操作；I-format 犧牲一個 register 欄位換取 16-bit immediate；J-format 以更大的 target field 支援較遠跳躍。</p></section><section class="deep-dive"><h4>Decode 到控制訊號</h4><p>Opcode 先決定大類控制，例如是否讀 data memory、是否寫 register、ALU 第二個 operand 來自 register 或 immediate。R-format 再用 funct 決定 add、sub、and、or 或 slt。</p><p>編碼題最穩定的方法是先填十進位 register number，再依欄位寬度轉成二進位，最後每四 bits 分組轉十六進位。不要直接心算整個 32-bit pattern。</p></section></div>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>補充說明</h3>
+      <p>指令編碼不是單純背欄位，而是理解硬體如何從 bit pattern 產生控制訊號。Opcode 進入 control unit 後，決定 RegWrite、MemRead、MemWrite、ALUSrc、Branch 等訊號。</p><p>Branch offset 通常以 word 為單位並相對於 PC+4，這讓短距離迴圈可用較少 bits 表示。</p><p>期中考前請能手算：給一行 MIPS 指令，指出格式與主要欄位；給欄位，判斷它大致會啟動哪些資料路徑。</p>
+    </section>
+    <section class="worked-example chapter-topic-worked">
+      <p class="eyebrow">Worked example</p>
+      <h3>編碼 add $t0,$s1,$s2</h3>
+      <p>$s1=17、$s2=18、$t0=8，add funct=32。</p>
+      <ol><li>opcode=000000；rs=10001；rt=10010。</li><li>rd=01000；shamt=00000；funct=100000。</li><li>串接為 000000 10001 10010 01000 00000 100000。</li><li>每四 bits 分組得到 0x02324020。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>Decode 時 opcode=0 指向 R-format，再由 funct=32 選擇加法。</p>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>程式與計算例題</h3>
+      <h4>R-format 欄位</h4>
+      <pre><code>add $t0, $s1, $s2
+opcode | rs  | rt  | rd  | shamt | funct
+000000 | $s1 | $s2 | $t0 | 00000 | 100000</code></pre>
+      <p>控制單元看到 opcode=0 知道是 R-format，再由 funct 決定 ALU 做 add。</p>
+    </section>
+    <section class="misconception-panel chapter-topic-misconceptions">
+      <h3>常見誤解</h3>
+      <ul><li>把組合語言 operand 順序直接當成 rs、rt、rd 順序。</li><li>忘記 register number 必須補足 5 bits。</li><li>將 branch offset 當成絕對位址。</li></ul>
+    </section>
+    <section class="self-check chapter-topic-check">
+      <h3>自我檢核</h3>
+      <details><summary>1. 5-bit register field 最多能指定多少暫存器？</summary><p>2^5=32 個。</p></details><details><summary>2. 為何 lw 的 immediate 要 sign extension？</summary><p>Base+offset addressing 需要支援 base 前後的位址，所以 offset 可為負數。</p></details>
+    </section>
+  </section><section class="chapter-topic" id="topic-5">
+    <header class="chapter-topic-head">
+      <p class="eyebrow">Core topic 05</p>
+      <h2>Pipeline 處理器的概念與效能分析</h2>
+      <p>Pipeline 將一條長組合路徑切成多段，讓不同指令同時占用不同 stage。它主要提高穩態 throughput；單一指令仍要穿過所有 stage，latency 不會因理想五級 pipeline 直接縮成五分之一。</p>
+    </header>
+    <figure class="learning-figure">
+    <h4>理想五級 Pipeline 時序</h4>
+    <div class="diagram-table-wrap"><table class="timeline-table"><thead><tr><th>Instruction</th><th>Cycle 1</th><th>Cycle 2</th><th>Cycle 3</th><th>Cycle 4</th><th>Cycle 5</th><th>Cycle 6</th><th>Cycle 7</th><th>Cycle 8</th><th>Cycle 9</th></tr></thead><tbody><tr><th>I1</th><td class="stage-if">IF</td><td class="stage-id">ID</td><td class="stage-ex">EX</td><td class="stage-mem">MEM</td><td class="stage-wb">WB</td><td class="stage-empty"></td><td class="stage-empty"></td><td class="stage-empty"></td><td class="stage-empty"></td></tr><tr><th>I2</th><td class="stage-empty"></td><td class="stage-if">IF</td><td class="stage-id">ID</td><td class="stage-ex">EX</td><td class="stage-mem">MEM</td><td class="stage-wb">WB</td><td class="stage-empty"></td><td class="stage-empty"></td><td class="stage-empty"></td></tr><tr><th>I3</th><td class="stage-empty"></td><td class="stage-empty"></td><td class="stage-if">IF</td><td class="stage-id">ID</td><td class="stage-ex">EX</td><td class="stage-mem">MEM</td><td class="stage-wb">WB</td><td class="stage-empty"></td><td class="stage-empty"></td></tr><tr><th>I4</th><td class="stage-empty"></td><td class="stage-empty"></td><td class="stage-empty"></td><td class="stage-if">IF</td><td class="stage-id">ID</td><td class="stage-ex">EX</td><td class="stage-mem">MEM</td><td class="stage-wb">WB</td><td class="stage-empty"></td></tr><tr><th>I5</th><td class="stage-empty"></td><td class="stage-empty"></td><td class="stage-empty"></td><td class="stage-empty"></td><td class="stage-if">IF</td><td class="stage-id">ID</td><td class="stage-ex">EX</td><td class="stage-mem">MEM</td><td class="stage-wb">WB</td></tr></tbody></table></div>
+    <figcaption>5 條指令在理想五級 pipeline 中需要 5+5-1=9 cycles。</figcaption>
+  </figure>
+    <section class="chapter-topic-block">
+      <h3>學習成果</h3>
+      <ul><li>理解五階段 pipeline。</li><li>能分辨 latency 與 throughput。</li><li>估算 pipeline speedup 與限制。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>核心概念</h3>
+      <ul class="concept-list"><li><strong>五階段：</strong>典型 MIPS pipeline 分為 IF、ID、EX、MEM、WB。不同指令在不同階段重疊執行，提升吞吐量。</li><li><strong>Pipeline registers：</strong>IF/ID、ID/EX、EX/MEM、MEM/WB 暫存器保存每階段之間需要傳遞的資料與控制訊號。</li><li><strong>效能：</strong>理想 k-stage pipeline 的 throughput 可接近 k 倍，但實際受 stage imbalance、pipeline overhead、hazard 與 branch penalty 限制。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>Pipeline register 的必要性</h4><p>每個 stage 結束時，pipeline register 保存下一 stage 所需的 data 與 control。若只保存 ALU operand 卻漏掉目的 register number，後面的 WB 就不知道寫到哪裡。</p><p>Pipeline clock period 約等於最慢 stage delay 加 pipeline-register overhead。切得更深可縮短組合邏輯，但 register overhead、hazard 與 branch penalty 也會增加。</p></section><section class="deep-dive"><h4>Fill、Steady State 與 Drain</h4><p>理想 k-stage pipeline 執行 n 條指令需要 k+n-1 cycles。前 k-1 cycles 正在填滿，之後可達每 cycle 完成一條，最後再排空。</p><p>當 n 很大且 stages 平衡，speedup 才接近 k。短程式、stage 不平衡與 stalls 都會使實際 speedup 低於理想值。</p></section></div>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>補充說明</h3>
+      <p>Pipeline 不會讓單一指令的 latency 變短；它讓多個指令像生產線一樣重疊，因此完成一批指令的平均時間降低。</p><p>Pipeline clock period 由最慢 stage 加上 pipeline register overhead 決定。若各 stage 延遲差距很大，切更多階段不一定划算。</p><p>分析 pipeline 題目時，畫 cycle-by-cycle table 是最穩的方式。列是指令，欄是 cycle，填 IF/ID/EX/MEM/WB。</p>
+    </section>
+    <section class="worked-example chapter-topic-worked">
+      <p class="eyebrow">Worked example</p>
+      <h3>計算含 Pipeline-register overhead 的 Speedup</h3>
+      <p>非 pipeline 每條指令需 5×200 ps。Pipeline 每 stage 邏輯 200 ps，register overhead 20 ps；執行 100 條指令。</p>
+      <ol><li>非 pipeline 時間 = 100×1000 ps = 100,000 ps。</li><li>Pipeline clock = 200+20 = 220 ps。</li><li>Pipeline cycles = 5+100-1 = 104。</li><li>Pipeline 時間 = 104×220 = 22,880 ps。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>Speedup ≈ 100,000/22,880 = 4.37，低於理想 5 倍。</p>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>程式與計算例題</h3>
+      <h4>理想五階段 pipeline</h4>
+      <pre><code>I1: IF ID EX MEM WB
+I2:    IF ID EX MEM WB
+I3:       IF ID EX MEM WB
+I4:          IF ID EX MEM WB</code></pre>
+      <p>填滿後每個 cycle 完成一個指令，但前方有 fill time，尾端有 drain time。</p>
+    </section>
+    <section class="misconception-panel chapter-topic-misconceptions">
+      <h3>常見誤解</h3>
+      <ul><li>把 throughput 改善直接當成單指令 latency 改善。</li><li>忘記 k+n-1 的 fill/drain cycles。</li><li>只傳 data，不把 control signals 帶過 pipeline registers。</li></ul>
+    </section>
+    <section class="self-check chapter-topic-check">
+      <h3>自我檢核</h3>
+      <details><summary>1. 理想 5-stage pipeline 執行 20 條指令需幾 cycles？</summary><p>5+20-1=24 cycles。</p></details><details><summary>2. 為何 stage 不平衡會限制 clock rate？</summary><p>所有 stages 共用同一 clock period，必須容納最慢 stage 加 register overhead。</p></details>
+    </section>
+  </section><section class="chapter-topic" id="topic-6">
+    <header class="chapter-topic-head">
+      <p class="eyebrow">Core topic 06</p>
+      <h2>Pipeline Hazard 的種類與基本解決方法</h2>
+      <p>Hazard 是下一條指令在預定 cycle 無法取得正確資料或正確 PC。處理方式只有三類：提早提供結果、延後使用者，或推測後在錯誤時清除。</p>
+    </header>
+    <figure class="learning-figure">
+    <h4>Load-use Hazard 的一個 Stall</h4>
+    <div class="diagram-table-wrap"><table class="timeline-table"><thead><tr><th>Instruction</th><th>Cycle 1</th><th>Cycle 2</th><th>Cycle 3</th><th>Cycle 4</th><th>Cycle 5</th><th>Cycle 6</th><th>Cycle 7</th><th>Cycle 8</th></tr></thead><tbody><tr><th>lw</th><td class="stage-if">IF</td><td class="stage-id">ID</td><td class="stage-ex">EX</td><td class="stage-mem">MEM</td><td class="stage-wb">WB</td><td class="stage-empty"></td><td class="stage-empty"></td><td class="stage-empty"></td></tr><tr><th>add</th><td class="stage-empty"></td><td class="stage-if">IF</td><td class="stage-id">ID</td><td class="stage-stall">STALL</td><td class="stage-ex">EX</td><td class="stage-mem">MEM</td><td class="stage-wb">WB</td><td class="stage-empty"></td></tr><tr><th>next</th><td class="stage-empty"></td><td class="stage-empty"></td><td class="stage-if">IF</td><td class="stage-stall">STALL</td><td class="stage-id">ID</td><td class="stage-ex">EX</td><td class="stage-mem">MEM</td><td class="stage-wb">WB</td></tr></tbody></table></div>
+    <figcaption>lw 資料在 cycle 4 的 MEM 結束後可 forwarding 給 add 在 cycle 5 的 EX。</figcaption>
+  </figure>
+    <section class="chapter-topic-block">
+      <h3>學習成果</h3>
+      <ul><li>辨識 structural、data、control hazards。</li><li>理解 forwarding 與 stall。</li><li>能處理 load-use hazard 與 branch penalty。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>核心概念</h3>
+      <ul class="concept-list"><li><strong>Structural hazard：</strong>硬體資源不足造成衝突，例如同一 cycle 需要同一個 memory 同時取指令與讀資料。可用分離 instruction/data memory 或增加資源解決。</li><li><strong>Data hazard：</strong>後續指令需要前一指令尚未寫回的結果。常見解法是 forwarding/bypassing；若資料仍來不及，如 load-use，就必須 stall。</li><li><strong>Control hazard：</strong>branch/jump 改變 PC，使下一個要取的指令不確定。解法包含 stall、predict not taken、branch prediction 與延遲槽等。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>RAW 與 Forwarding 的時序條件</h4><p>五級 in-order MIPS 最常見的是 read-after-write。ALU 結果在 EX 後可從 EX/MEM 或 MEM/WB register forwarding 到下一指令的 EX input，不必等到 WB 寫回 register file。</p><p>Load 的資料到 MEM 結束才取得。緊接的使用者在下一 cycle 進 EX 時仍太早，因此即使有 forwarding，典型 load-use pair 仍需一個 stall。</p></section><section class="deep-dive"><h4>Control Hazard 與精確狀態</h4><p>Branch 結果確定前，fetch 不知道正確下一個 PC。Predict-not-taken 可先取 PC+4；若判斷錯誤，必須 flush 已進入 pipeline 的錯誤路徑指令。</p><p>Flush 的關鍵是阻止錯誤指令更新架構狀態，例如將它們的 RegWrite、MemWrite 控制變為 0。只丟棄指令文字而未清除控制，仍可能破壞結果。</p></section></div>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>補充說明</h3>
+      <p>Data hazard 的核心是 producer-consumer distance。ALU 結果通常 EX 後可 forward；load 的資料要到 MEM 後才可用，因此緊接使用通常需要一個 stall。</p><p>Forwarding 不等於不用 hazard detection。硬體仍需比較 pipeline registers 中的 rs/rt/rd，判斷是否改 ALU input mux。</p><p>Branch 越頻繁、prediction 越差，pipeline 效益越容易被 penalty 吃掉。</p>
+    </section>
+    <section class="worked-example chapter-topic-worked">
+      <p class="eyebrow">Worked example</p>
+      <h3>估算 Branch Misprediction 對 CPI 的影響</h3>
+      <p>Branch 佔 20%，misprediction rate 10%，每次錯誤 penalty 3 cycles，base CPI=1。</p>
+      <ol><li>每條指令成為錯誤 branch 的機率 = 0.20×0.10 = 0.02。</li><li>平均額外 cycles/instruction = 0.02×3 = 0.06。</li><li>新 CPI = 1+0.06 = 1.06。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>Penalty 必須乘 branch frequency 與 misprediction rate，不能對所有指令直接加 3。</p>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>程式與計算例題</h3>
+      <h4>Load-use hazard</h4>
+      <pre><code>lw  $t0, 0($s1)
+add $t2, $t0, $s3  # needs loaded data immediately</code></pre>
+      <p>即使有 forwarding，load data 通常到 MEM stage 結束才可用，因此 add 的 EX stage 需要延後。</p>
+    </section>
+    <section class="misconception-panel chapter-topic-misconceptions">
+      <h3>常見誤解</h3>
+      <ul><li>認為 forwarding 能消除所有 RAW hazards。</li><li>把 stall 與 flush 當成相同動作。</li><li>計算 branch cost 時漏乘 branch frequency。</li></ul>
+    </section>
+    <section class="self-check chapter-topic-check">
+      <h3>自我檢核</h3>
+      <details><summary>1. 為何 lw 後立刻使用通常仍需 stall？</summary><p>Load data 到 MEM 結束才可用，比下一指令原定 EX 所需時間晚一個 cycle。</p></details><details><summary>2. Flush 應如何避免錯誤指令改變狀態？</summary><p>將錯誤指令後續會寫 register 或 memory 的控制訊號清為 0。</p></details>
+    </section>
+  </section></div>
       <nav class="chapter-adjacent" aria-label="相鄰章節">
         <a href="chapter-04.html"><span>第 4 章</span><strong>MARIE：簡易計算機導論</strong></a><a href="chapter-06.html"><span>第 6 章</span><strong>記憶體</strong></a>
       </nav>

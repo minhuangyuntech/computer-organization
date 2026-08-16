@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>第 12 章 網路組織與架構 | 計算機組織</title>
-  <meta name="description" content="計算機組織第 12 章 網路組織與架構獨立頁面與相關週次教材。">
+  <meta name="description" content="計算機組織第 12 章 網路組織與架構完整章節教材。">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23006d77'/%3E%3Cpath d='M14 18h36v28H14z' fill='%23f6bd60' stroke='%2320231f' stroke-width='4'/%3E%3Cpath d='M22 28h20M22 36h14' stroke='%2320231f' stroke-width='4'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="../styles.css">
 </head>
@@ -53,7 +53,6 @@
       </a><a class="chapter-nav-link" href="../chapters/chapter-13.html" title="第 13 章 儲存系統與介面選論">
         <strong>CH 13</strong><span>儲存介面</span>
       </a>
-      <a class="chapter-nav-weeks" href="../index.html#weeks">週次進度</a>
     </div>
   </nav>
   <main class="page-main">
@@ -67,19 +66,14 @@
         <p>從 OSI 與 TCP/IP 分層進入傳輸媒介、switch、bridge、gateway 與 router。網路分層再次呈現 interface 隱藏實作細節的抽象方法。</p>
       </header>
       <section class="chapter-overview-focus">
-        <p class="eyebrow">Course connection</p>
-        <h3>本章與課程的連結</h3>
-        <p>可與第 1 週的層次抽象對照；不列入本課 18 週硬體主線。</p>
-        <p>以下週次頁面收錄本章目前對應的完整講義、概念推導、原創圖表、逐步例題、自我檢核與解答。每個連結都是可直接引用與返回的獨立頁面。</p>
+        <p class="eyebrow">Chapter guide</p>
+        <h3>本章內容</h3>
+        <p>本章直接整合核心概念、原創圖表、推導、例題與自我檢核。所有內容都在同一章內連續閱讀，不需要切換到另一套分類頁面。</p>
       </section>
-      <section class="chapter-week-path">
-        <h2>本章相關週次教材</h2>
-        <div class="chapter-week-grid"><div class="chapter-extension">
-    <h3>課程延伸範圍</h3>
-    <p>本章不配置單獨週次，但它延伸了前面章節建立的資料表示、I/O、記憶體階層與系統介面概念。可先從完整章節對照確認它在全書中的位置，再回到相關基礎週次建立所需術語。</p>
-    <div class="reference-actions"><a href="../fourth-edition-map.html#chapter-12">查看本章與全書的關係</a><a href="../index.html#weeks">返回 18 週講義索引</a></div>
-  </div></div>
-      </section>
+      <div class="chapter-integrated-reading"><section class="standalone-chapter-content">
+    <section class="chapter-topic-block"><p class="eyebrow">Core topic 01</p><h2>分層與封裝</h2><p>網路分層把複雜通訊拆成具有明確介面的服務。應用資料向下傳遞時，各層加入自己的控制資訊；接收端再依相反順序解除封裝。這和 ISA 隱藏微架構細節的做法相同：上層依賴介面，不必知道所有實作。</p></section><section class="chapter-topic-block"><p class="eyebrow">Core topic 02</p><h2>交換與路由</h2><p>交換器主要依區域網路中的鏈路層位址轉送 frame，路由器則依網路層位址在不同網路間選擇 packet 路徑。兩者都使用表格進行查找，但所處層次、位址語意與更新機制不同。</p></section><section class="chapter-topic-block"><p class="eyebrow">Core topic 03</p><h2>延遲、頻寬與佇列</h2><p>總通訊時間不能只看鏈路頻寬。傳播延遲、傳輸延遲、處理延遲與排隊延遲會共同決定完成時間；當封包到達率接近服務率時，排隊延遲會快速增加。</p></section>
+    <section class="self-check chapter-topic-check"><h2>自我檢核</h2><details><summary>1. 為何分層介面能降低系統複雜度？</summary><p>每一層只承諾可觀察的服務與資料格式，下層實作可以改變而不迫使所有上層一起修改。</p></details><details><summary>2. 頻寬提高是否必然等比例縮短回應時間？</summary><p>不一定。若主要成本來自傳播、處理或排隊延遲，只提高傳輸頻寬的改善幅度會受到限制。</p></details></section>
+  </section></div>
       <nav class="chapter-adjacent" aria-label="相鄰章節">
         <a href="chapter-11.html"><span>第 11 章</span><strong>效能量測與分析</strong></a><a href="chapter-13.html"><span>第 13 章</span><strong>儲存系統與介面選論</strong></a>
       </nav>

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>第 8 章 系統軟體 | 計算機組織</title>
-  <meta name="description" content="計算機組織第 8 章 系統軟體獨立頁面與相關週次教材。">
+  <meta name="description" content="計算機組織第 8 章 系統軟體完整章節教材。">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23006d77'/%3E%3Cpath d='M14 18h36v28H14z' fill='%23f6bd60' stroke='%2320231f' stroke-width='4'/%3E%3Cpath d='M22 28h20M22 36h14' stroke='%2320231f' stroke-width='4'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="../styles.css">
 </head>
@@ -53,7 +53,6 @@
       </a><a class="chapter-nav-link" href="../chapters/chapter-13.html" title="第 13 章 儲存系統與介面選論">
         <strong>CH 13</strong><span>儲存介面</span>
       </a>
-      <a class="chapter-nav-weeks" href="../index.html#weeks">週次進度</a>
     </div>
   </nav>
   <main class="page-main">
@@ -67,30 +66,171 @@
         <p>說明作業系統、保護環境、虛擬機、組譯器、linker、compiler 與 interpreter 如何把程式轉換成硬體可執行的狀態變化。</p>
       </header>
       <section class="chapter-overview-focus">
-        <p class="eyebrow">Course connection</p>
-        <h3>本章與課程的連結</h3>
-        <p>第 1、6、17 週的抽象層次、組譯流程、函式連結與 hardware/software interface。</p>
-        <p>以下週次頁面收錄本章目前對應的完整講義、概念推導、原創圖表、逐步例題、自我檢核與解答。每個連結都是可直接引用與返回的獨立頁面。</p>
+        <p class="eyebrow">Chapter guide</p>
+        <h3>本章內容</h3>
+        <p>本章直接整合核心概念、原創圖表、推導、例題與自我檢核。所有內容都在同一章內連續閱讀，不需要切換到另一套分類頁面。</p>
       </section>
-      <section class="chapter-week-path">
-        <h2>本章相關週次教材</h2>
-        <div class="chapter-week-grid"><a class="chapter-week-card" href="../weeks/week-01.html">
-      <span>Week 01</span>
-      <h3>計算機系統的抽象層次與課程介紹</h3>
-      <p>層次結構、von Neumann 模型，以及程式從系統軟體到 ISA 的界面。</p>
-      <small>第 4 版節次：1.6、1.8–1.10；8.4</small>
-    </a><a class="chapter-week-card" href="../weeks/week-06.html">
-      <span>Week 06</span>
-      <h3>MIPS 程式設計與指令執行流程</h3>
-      <p>instruction cycle、assembler、compiler 與函式呼叫狀態。</p>
-      <small>第 4 版節次：4.9–4.11；8.4.1–8.4.4</small>
-    </a><a class="chapter-week-card" href="../weeks/week-17.html">
-      <span>Week 17</span>
-      <h3>計算機組織整體架構總整理與應用案例</h3>
-      <p>從 compiler、ISA、pipeline、memory 到 workload 的跨層效能分析。</p>
-      <small>第 4 版節次：8.4；9.2–9.4；10.2–10.3；11.2–11.5</small>
-    </a></div>
-      </section>
+      <div class="chapter-integrated-reading"><section class="chapter-topic" id="topic-1">
+    <header class="chapter-topic-head">
+      <p class="eyebrow">Core topic 01</p>
+      <h2>計算機系統的抽象層次與課程介紹</h2>
+      <p>本節先建立一條不會迷路的主線：程式所看見的是 ISA，處理器內部實作的是微架構，而微架構最終由暫存器、組合邏輯與時脈電路構成。後續所有公式與圖都可以放回這條主線定位。</p>
+    </header>
+    <figure class="learning-figure">
+    <h4>從程式語意到電路狀態</h4>
+    <div class="flow-diagram"><span class="flow-node">高階程式</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">編譯器與組譯器</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">ISA 機器指令</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">微架構資料路徑</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">數位邏輯與電路</span></div>
+    <figcaption>向右是逐步降低抽象層次；向左則是下層為上層提供穩定介面。</figcaption>
+  </figure>
+    <section class="chapter-topic-block">
+      <h3>學習成果</h3>
+      <ul><li>說明應用程式、系統軟體、指令集架構、微架構與電路之間的分工。</li><li>理解計算機組織關心的是「指令如何被硬體執行」。</li><li>建立本課程的學習地圖：效能、MIPS、算術、datapath、pipeline、memory hierarchy。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>核心概念</h3>
+      <ul class="concept-list"><li><strong>抽象層次：</strong>計算機系統不是單一黑盒子，而是從高階語言、編譯器、作業系統、指令集架構（ISA）、處理器資料路徑、控制單元、記憶體系統一路堆疊而成。每一層向上一層提供較簡單的介面，同時隱藏下層大量細節。</li><li><strong>ISA 與微架構：</strong>ISA 定義程式能看見的指令、暫存器、記憶體位址模式與例外行為；微架構則是硬體如何實作 ISA。相同 ISA 可以有不同微架構，例如單週期、多週期、pipeline 或 superscalar。</li><li><strong>硬體/軟體介面：</strong>組合語言是理解硬體行為的低階入口。高階程式的一個敘述可能變成多個機器指令，而每個機器指令會驅動 ALU、暫存器檔、記憶體與控制訊號。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>Architecture 與 Organization 的分界</h4><p>Architecture 描述程式設計者可觀察的規格，例如指令、暫存器、資料型態、位址空間與例外。Organization 描述這些規格如何由資料路徑、控制器、pipeline 與記憶體階層實現。兩顆處理器可以執行相同機器碼，卻有不同的 pipeline 深度與 cache 大小。</p><p>判斷一項特徵屬於哪一層時，可問：既有機器碼是否必須知道它？若答案是肯定的，通常屬於 ISA；若只影響速度、功耗或面積，而不改變程式結果，通常屬於微架構。</p></section><section class="deep-dive"><h4>von Neumann 模型與指令週期</h4><p>典型儲存程式電腦把指令與資料放在可定址的記憶體中。CPU 以 PC 指向下一個指令位址，取出指令後解碼，讀取運算元，執行運算，必要時存取資料記憶體，最後更新架構狀態。</p><p>這個模型的重要性不在於每顆現代處理器都只有一條匯流排，而在於它提供了可追蹤的狀態轉移：每完成一個指令，PC、暫存器或記憶體中的某些值被更新。Pipeline 只是讓多個指令的不同階段重疊，不能破壞 ISA 所要求的結果。</p></section></div>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>補充說明</h3>
+      <p>本課程的核心問題是：一段程式如何變成可以在 CPU 上執行的二進位指令？CPU 又如何在有限硬體資源下快速且正確地完成這些指令？</p><p>學習計算機組織時，請同時保留兩種視角。第一種是程式設計者視角：指令、暫存器、記憶體位址、效能。第二種是硬體設計者視角：資料路徑、控制訊號、pipeline stage、cache hit/miss。</p><p>本學期前半段會建立 ISA 與算術基礎；後半段把指令放入處理器資料路徑，進一步分析 pipeline 與 cache 對效能的影響。</p>
+    </section>
+    <section class="worked-example chapter-topic-worked">
+      <p class="eyebrow">Worked example</p>
+      <h3>追蹤 x = x + A[i]</h3>
+      <p>假設 x、i 與陣列基底位址已在暫存器中，辨認這個敘述需要的硬體動作。</p>
+      <ol><li>用 i × 元素大小計算位移，再與 A 的基底位址相加。</li><li>由資料記憶體讀出 A[i]，暫時放入暫存器。</li><li>ALU 將 x 與 A[i] 相加，結果寫回保存 x 的暫存器。</li><li>每一條機器指令本身也必須先由 PC 指定的位置取出並解碼。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>一行高階敘述至少跨越位址計算、記憶體讀取與算術運算；這正是 ISA 連接程式與硬體的作用。</p>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>程式與計算例題</h3>
+      <h4>從 C 程式到硬體動作</h4>
+      <pre><code>int a = b + c;
+// 可能對應到 MIPS:
+lw  $t0, 0($s1)   # 讀 b
+lw  $t1, 0($s2)   # 讀 c
+add $t2, $t0, $t1 # ALU 加法
+sw  $t2, 0($s0)   # 寫回 a</code></pre>
+      <p>這四行指令已經牽涉 instruction fetch、decode、register read、ALU operation、data memory access、write back 等行為。</p>
+    </section>
+    <section class="misconception-panel chapter-topic-misconceptions">
+      <h3>常見誤解</h3>
+      <ul><li>把 ISA 當成特定處理器內部電路圖。</li><li>以為 pipeline 會改變程式可觀察到的指令順序與結果。</li><li>只記元件名稱，卻沒有追蹤哪些架構狀態被更新。</li></ul>
+    </section>
+    <section class="self-check chapter-topic-check">
+      <h3>自我檢核</h3>
+      <details><summary>1. 同一份 MIPS 機器碼能在單週期與 pipeline 處理器執行嗎？</summary><p>可以，只要兩者都正確實作相同 MIPS ISA。它們的執行時間與內部時序可以不同。</p></details><details><summary>2. PC 屬於程式可觀察的架構狀態嗎？</summary><p>PC 決定下一個指令位址，控制流程與例外行為會依賴它，因此在概念上屬於架構狀態。</p></details>
+    </section>
+  </section><section class="chapter-topic" id="topic-2">
+    <header class="chapter-topic-head">
+      <p class="eyebrow">Core topic 02</p>
+      <h2>MIPS 程式設計與指令執行流程</h2>
+      <p>函式呼叫的本質是跨越控制流程邊界仍要維持狀態契約。Calling convention 規定誰保存什麼；instruction cycle 則說明每個保存與跳躍動作如何由硬體完成。</p>
+    </header>
+    <figure class="learning-figure">
+    <h4>一個函式呼叫的控制與狀態</h4>
+    <div class="flow-diagram"><span class="flow-node">Caller 準備參數</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">jal 寫入 $ra</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">配置 stack frame</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">執行 callee</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">恢復 frame</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">jr $ra 回傳</span></div>
+    <figcaption>任何巢狀呼叫都可能覆寫 $ra，因此需要由 stack 保存尚未使用的 return address。</figcaption>
+  </figure>
+    <section class="chapter-topic-block">
+      <h3>學習成果</h3>
+      <ul><li>理解函式呼叫與 stack frame。</li><li>能追蹤 jal/jr 與 $ra。</li><li>能將小型 C 函式翻成 MIPS。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>核心概念</h3>
+      <ul class="concept-list"><li><strong>Calling convention：</strong>呼叫者負責傳參數與接收回傳值；被呼叫者若使用需保存的暫存器，必須在 stack 中保存並於回傳前恢復。</li><li><strong>Stack：</strong>Stack 通常向低位址成長。函式進入時配置 frame，存放 return address、saved registers、local variables；離開時釋放 frame。</li><li><strong>Instruction cycle：</strong>每一指令可概念性分成 fetch、decode/register read、execute、memory、write back。後續單週期與 pipeline 都會使用這個分解。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>Stack frame 是有生命週期的記憶體區域</h4><p>函式進入時先降低 $sp 配置 frame，再把必須保留的 $ra、$s registers 與 local values 寫入固定 offset。回傳前必須以相反順序恢復內容並將 $sp 加回原值。</p><p>Caller-saved 表示呼叫者若仍需要某值，必須在 jal 前保存；callee-saved 表示被呼叫者只要改動該暫存器，就必須先保存、後恢復。兩者共同避免不必要的全部保存。</p></section><section class="deep-dive"><h4>Fetch-Decode-Execute 的狀態轉移</h4><p>Fetch 使用 PC 讀 instruction memory 並形成 PC+4；Decode 解析 opcode 與 register fields；Execute 由 ALU 運算或計算位址；Memory 階段處理 load/store；Write back 更新 register file。</p><p>不是每種指令都需要所有結果。例如 sw 不寫 register，R-format 不讀 data memory。將流程拆成共同階段，是後續 pipeline 能重疊執行的基礎。</p></section></div>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>補充說明</h3>
+      <p>函式呼叫是最能串起軟硬體的例子：高階語言看起來是一個 function call，ISA 層面是 `jal`、參數暫存器與 stack 操作，硬體層面則是 PC 改變與暫存器寫入。</p><p>遞迴函式必須特別注意 `$ra` 與參數保存，否則下一次呼叫會覆蓋上一層返回位置。</p><p>追蹤 stack 時畫表格最清楚：列出位址、內容、何時 push、何時 pop。</p>
+    </section>
+    <section class="worked-example chapter-topic-worked">
+      <p class="eyebrow">Worked example</p>
+      <h3>為何 nested call 必須保存 $ra</h3>
+      <p>main 以 jal f 呼叫 f，而 f 內又以 jal g 呼叫 g。</p>
+      <ol><li>main 的 jal 把 main 返回位置寫入 $ra。</li><li>f 若直接執行 jal g，$ra 會被 g 的返回位置覆蓋。</li><li>因此 f 在呼叫 g 前先把原 $ra 存入自己的 stack frame。</li><li>g 返回後，f 從 stack 恢復原 $ra，最後才能回到 main。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>$ra 只有一個；遞迴與巢狀呼叫需要 stack 保存每一層尚未完成的返回位置。</p>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>程式與計算例題</h3>
+      <h4>簡單函式框架</h4>
+      <pre><code>func:
+  addi $sp, $sp, -8
+  sw   $ra, 4($sp)
+  sw   $s0, 0($sp)
+  # function body
+  lw   $s0, 0($sp)
+  lw   $ra, 4($sp)
+  addi $sp, $sp, 8
+  jr   $ra</code></pre>
+      <p>這個 prologue/epilogue 確保函式回來後，呼叫者期待被保留的狀態仍正確。</p>
+    </section>
+    <section class="misconception-panel chapter-topic-misconceptions">
+      <h3>常見誤解</h3>
+      <ul><li>配置 frame 後仍使用配置前的 offset。</li><li>恢復 $sp 的大小與配置大小不一致。</li><li>有 nested call 卻沒有保存 $ra。</li></ul>
+    </section>
+    <section class="self-check chapter-topic-check">
+      <h3>自我檢核</h3>
+      <details><summary>1. 若 leaf function 不呼叫其他函式，是否一定要保存 $ra？</summary><p>不一定。若它不改寫 $ra 且不需使用 stack，可直接 jr $ra。</p></details><details><summary>2. sw 指令的五階段中，WB 會寫什麼？</summary><p>不寫 register；對 sw 而言，真正的架構更新在 MEM 階段寫入資料記憶體。</p></details>
+    </section>
+  </section><section class="chapter-topic" id="topic-3">
+    <header class="chapter-topic-head">
+      <p class="eyebrow">Core topic 03</p>
+      <h2>計算機組織整體架構總整理與應用案例</h2>
+      <p>完整系統分析要把程式、動態指令、pipeline 與 memory behavior 串成同一條證據鏈。先量測瓶頸，再改變一個可解釋因素，最後用 CPU Time 或 AMAT 驗證改善。</p>
+    </header>
+    <figure class="learning-figure">
+    <h4>跨層效能證據鏈</h4>
+    <div class="flow-diagram"><span class="flow-node">Source 與演算法</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Compiler 產生指令</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">ISA 動態指令流</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Pipeline stalls</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Cache / Memory stalls</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">CPI 與 CPU Time</span></div>
+    <figcaption>每一層都能提出假設，但最後要回到可量測的時間、CPI、miss rate 或 instruction count。</figcaption>
+  </figure>
+    <section class="chapter-topic-block">
+      <h3>學習成果</h3>
+      <ul><li>整合 ISA、datapath、pipeline、cache。</li><li>能用完整路徑解釋程式效能瓶頸。</li><li>準備期末專題報告。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>核心概念</h3>
+      <ul class="concept-list"><li><strong>整體路徑：</strong>一行程式經編譯成指令，指令由 PC 取出，經 decode 讀暫存器，在 ALU 計算，可能存取 cache/memory，最後寫回暫存器或記憶體。</li><li><strong>效能瓶頸：</strong>瓶頸可能來自指令數太多、CPI 過高、branch misprediction、cache miss、資料相依造成 stall，或演算法本身不具 locality。</li><li><strong>軟硬體共同設計：</strong>編譯器、資料結構、演算法與硬體設計會互相影響。例如 loop tiling 可改善 cache locality；branchless code 可減少 control hazard。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>從 Profile 到因果假設</h4><p>Profile 告訴我們時間集中在哪些函式、指令或 memory events，但相關不等於因果。若 cache misses 與慢函式同時出現，仍需檢查存取模式、working set 與 stall cycles 是否一致。</p><p>好的最佳化假設應能預測可觀察變化，例如 loop interchange 應降低跨列存取、提高 spatial locality，進而降低 miss rate 或 memory stall CPI。</p></section><section class="deep-dive"><h4>跨層折衷</h4><p>降低 instruction count 不一定降低 CPU time；較複雜指令可能提高 CPI 或 clock period。提高 block size 可能降低 compulsory miss，卻增加 miss penalty 與 cache pollution。</p><p>因此每次結論都要指出固定了哪些條件。效能數字若沒有 workload、輸入大小、編譯選項與硬體組態，就難以重現或比較。</p></section></div>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>補充說明</h3>
+      <p>期末專題可選擇一段程式或一個硬體主題，分析它與本課程概念的連結。好的專題不是堆名詞，而是能清楚展示問題、假設、方法、結果與限制。</p><p>真實系統中效能分析常用 profiling。先知道時間花在哪裡，再選擇從演算法、編譯、ISA 或記憶體行為下手。</p><p>本節可把所有公式與圖整合成一頁總表：CPU Time、pipeline speedup、AMAT、address breakdown、hazard 類型。</p>
+    </section>
+    <section class="worked-example chapter-topic-worked">
+      <p class="eyebrow">Worked example</p>
+      <h3>Row-major 矩陣的存取順序</h3>
+      <p>C 程式以 row-major 儲存 B，內層迴圈固定 j、遞增 k，存取 B[k][j]。</p>
+      <ol><li>相鄰 k 會跨到 B 的下一列，位址間距是一整列大小。</li><li>若一列大於 cache block，連續 iterations 很少使用同一 block 的鄰近元素。</li><li>交換迴圈或使用 blocking，可讓短時間內重用一小塊 A、B、C。</li><li>驗證時比較最佳化前後的 miss rate、memory stall cycles 與總 CPU time。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>最佳化的理由不是『巢狀迴圈比較快』，而是存取順序更符合 memory layout 與 cache block。</p>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>程式與計算例題</h3>
+      <h4>矩陣乘法案例</h4>
+      <pre><code>for (i)
+  for (j)
+    for (k)
+      C[i][j] += A[i][k] * B[k][j];</code></pre>
+      <p>若 B 以 row-major 儲存，內層固定 j、改變 k 會跨列存取，spatial locality 較差；調整迴圈或 blocking 可改善 cache 行為。</p>
+    </section>
+    <section class="misconception-panel chapter-topic-misconceptions">
+      <h3>常見誤解</h3>
+      <ul><li>只報 speedup，沒有說明 workload 與 baseline。</li><li>把 profile 的相關性直接當成因果。</li><li>一次改很多因素，導致無法解釋改善來源。</li></ul>
+    </section>
+    <section class="self-check chapter-topic-check">
+      <h3>自我檢核</h3>
+      <details><summary>1. Loop blocking 主要改善哪一種行為？</summary><p>讓一小塊資料在被替換前重複使用，提升 temporal locality，也常改善 spatial locality。</p></details><details><summary>2. Instruction count 降低是否保證 CPU time 降低？</summary><p>不保證；CPI 或 clock cycle time 可能同時增加。</p></details>
+    </section>
+  </section></div>
       <nav class="chapter-adjacent" aria-label="相鄰章節">
         <a href="chapter-07.html"><span>第 7 章</span><strong>輸出入與儲存系統</strong></a><a href="chapter-09.html"><span>第 9 章</span><strong>替代型計算機架構</strong></a>
       </nav>

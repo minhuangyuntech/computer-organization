@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>第 4 章 MARIE：簡易計算機導論 | 計算機組織</title>
-  <meta name="description" content="計算機組織第 4 章 MARIE：簡易計算機導論獨立頁面與相關週次教材。">
+  <meta name="description" content="計算機組織第 4 章 MARIE：簡易計算機導論完整章節教材。">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23006d77'/%3E%3Cpath d='M14 18h36v28H14z' fill='%23f6bd60' stroke='%2320231f' stroke-width='4'/%3E%3Cpath d='M22 28h20M22 36h14' stroke='%2320231f' stroke-width='4'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="../styles.css">
 </head>
@@ -53,7 +53,6 @@
       </a><a class="chapter-nav-link" href="../chapters/chapter-13.html" title="第 13 章 儲存系統與介面選論">
         <strong>CH 13</strong><span>儲存介面</span>
       </a>
-      <a class="chapter-nav-weeks" href="../index.html#weeks">週次進度</a>
     </div>
   </nav>
   <main class="page-main">
@@ -67,45 +66,220 @@
         <p>以精簡累加器架構呈現 CPU、匯流排、記憶體、I/O、指令週期、組譯器與控制單元。MARIE 的價值是讓每一個 register transfer 都能被完整追蹤。</p>
       </header>
       <section class="chapter-overview-focus">
-        <p class="eyebrow">Course connection</p>
-        <h3>本章與課程的連結</h3>
-        <p>第 4、6、8、10 週以 MARIE 建立 CPU 基本模型，再以 MIPS 延伸到 register file 與 load-store ISA。</p>
-        <p>以下週次頁面收錄本章目前對應的完整講義、概念推導、原創圖表、逐步例題、自我檢核與解答。每個連結都是可直接引用與返回的獨立頁面。</p>
+        <p class="eyebrow">Chapter guide</p>
+        <h3>本章內容</h3>
+        <p>本章直接整合核心概念、原創圖表、推導、例題與自我檢核。所有內容都在同一章內連續閱讀，不需要切換到另一套分類頁面。</p>
       </section>
-      <section class="chapter-week-path">
-        <h2>本章相關週次教材</h2>
-        <div class="chapter-week-grid"><a class="chapter-week-card" href="../weeks/week-04.html">
-      <span>Week 04</span>
-      <h3>MIPS 組合語言與暫存器架構</h3>
-      <p>先由 MARIE 的累加器模型看見狀態，再進入 MIPS register file 與 load-store。</p>
-      <small>第 4 版節次：4.8、4.14.2；5.3、5.6.2</small>
-    </a><a class="chapter-week-card" href="../weeks/week-06.html">
-      <span>Week 06</span>
-      <h3>MIPS 程式設計與指令執行流程</h3>
-      <p>instruction cycle、assembler、compiler 與函式呼叫狀態。</p>
-      <small>第 4 版節次：4.9–4.11；8.4.1–8.4.4</small>
-    </a><a class="chapter-week-card" href="../weeks/week-08.html">
-      <span>Week 08</span>
-      <h3>指令編碼與 CPU 執行指令的基本流程</h3>
-      <p>instruction format、decode、hardwired control 與 MIPS 編碼。</p>
-      <small>第 4 版節次：4.13–4.14；5.2、5.6.2</small>
-    </a><a class="chapter-week-card" href="../weeks/week-09.html">
-      <span>Week 09</span>
-      <h3>期中考試週</h3>
-      <p>由抽象層、資料表示、指令週期、ISA 到效能方程式建立完整證據鏈。</p>
-      <small>第 4 版節次：前八週整合</small>
-    </a><a class="chapter-week-card" href="../weeks/week-10.html">
-      <span>Week 10</span>
-      <h3>CPU 資料路徑與單週期處理器架構</h3>
-      <p>組合邏輯、clocked state、bus、register transfer 與控制單元。</p>
-      <small>第 4 版節次：3.5–3.6；4.2–4.3、4.9、4.13</small>
-    </a><a class="chapter-week-card" href="../weeks/week-18.html">
-      <span>Week 18</span>
-      <h3>期末測驗</h3>
-      <p>以 correctness、state、cycle、memory traffic 與 CPU Time 五種證據交叉檢查。</p>
-      <small>第 4 版節次：全課整合</small>
-    </a></div>
-      </section>
+      <div class="chapter-integrated-reading"><section class="chapter-topic" id="topic-1">
+    <header class="chapter-topic-head">
+      <p class="eyebrow">Core topic 01</p>
+      <h2>MIPS 組合語言與暫存器架構</h2>
+      <p>MIPS 將複雜程式拆成少數規則一致的基本操作。學習重點不是背語法，而是每行指令讀了哪些暫存器、寫了哪個暫存器，以及何時必須經過記憶體。</p>
+    </header>
+    <figure class="learning-figure">
+    <h4>Load-store 資料流</h4>
+    <div class="flow-diagram"><span class="flow-node">Memory 中的變數</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">lw 載入</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Register operands</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">ALU 運算</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Register result</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">sw 儲存</span></div>
+    <figcaption>ALU 不直接讀寫主記憶體；資料先進暫存器，計算後才由 store 寫回。</figcaption>
+  </figure>
+    <section class="chapter-topic-block">
+      <h3>學習成果</h3>
+      <ul><li>認識 MIPS register convention。</li><li>理解 load-store architecture。</li><li>能讀懂基本 arithmetic 指令。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>核心概念</h3>
+      <ul class="concept-list"><li><strong>Load-store 架構：</strong>MIPS 算術邏輯指令只操作暫存器，記憶體資料必須先用 lw 載入暫存器，計算後再用 sw 存回記憶體。這讓資料路徑較規則，便於 pipeline。</li><li><strong>暫存器：</strong>MIPS 有 32 個 general-purpose registers。$zero 永遠為 0；$t0-$t9 常作暫時值；$s0-$s7 常保存跨函式呼叫仍需保留的值；$a0-$a3 用於參數；$v0-$v1 用於回傳。</li><li><strong>R-format 指令：</strong>如 add、sub、and、or、slt，多數有三個 register operands：目的暫存器 rd、來源暫存器 rs 與 rt。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>Register file 與三運算元指令</h4><p>典型 MIPS register file 可同時讀兩個來源暫存器並寫一個目的暫存器，正好支援 add rd, rs, rt。目的與來源分離，可保留原始 operand，也讓編譯器更容易安排中間值。</p><p>$zero 的讀值固定為 0，寫入會被忽略。它讓 move、清零、比較與無條件分支可由既有指令組合完成，減少特殊硬體路徑。</p></section><section class="deep-dive"><h4>Load-store 的規則性</h4><p>算術指令只讀寫暫存器；只有 load/store 在暫存器與記憶體之間搬移資料。這使 ALU 指令具有一致的 operand 位置與執行流程，也降低 pipeline 控制複雜度。</p><p>代價是高階語言的一個運算可能需要額外的 load 與 store。效能取決於編譯器是否能把常用值留在暫存器，以及 memory hierarchy 是否能快速提供資料。</p></section></div>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>補充說明</h3>
+      <p>組合語言的價值不是取代 C，而是讓我們看見編譯器和硬體中間的指令層。理解 MIPS 後，學習 RISC-V、ARM 或其他 RISC ISA 會容易很多。</p><p>暫存器數量有限，所以編譯器需要做 register allocation。當暫存器不夠時，資料會 spill 到 memory，效能通常下降。</p><p>良好的組合語言閱讀習慣：先標出變數放在哪些暫存器，再追蹤每行指令改變了哪些狀態。</p>
+    </section>
+    <section class="worked-example chapter-topic-worked">
+      <p class="eyebrow">Worked example</p>
+      <h3>將 f = (g + h) - i 翻成 MIPS</h3>
+      <p>令 f、g、h、i 分別位於 $s0、$s1、$s2、$s3。</p>
+      <ol><li>先計算 g+h：add $t0, $s1, $s2。</li><li>再減去 i：sub $s0, $t0, $s3。</li><li>$t0 是短暫中間值；最後結果才寫入保存 f 的 $s0。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>兩條 R-format 指令足以完成，且每條都只有 register operands。</p>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>程式與計算例題</h3>
+      <h4>三運算元設計</h4>
+      <pre><code>add $t0, $s1, $s2  # $t0 = $s1 + $s2
+sub $t1, $t0, $s3  # $t1 = $t0 - $s3
+slt $t2, $t1, $zero # if $t1 &lt; 0 then $t2 = 1</code></pre>
+      <p>目的暫存器放在最前面是 MIPS 語法特色，讀程式時要避免和數學式順序混淆。</p>
+    </section>
+    <section class="misconception-panel chapter-topic-misconceptions">
+      <h3>常見誤解</h3>
+      <ul><li>把目的暫存器放在指令最後。</li><li>以為 $t 與 $s 是硬體功能不同的暫存器；差異主要是 calling convention。</li><li>讓 add 直接使用 memory address 當 operand。</li></ul>
+    </section>
+    <section class="self-check chapter-topic-check">
+      <h3>自我檢核</h3>
+      <details><summary>1. 為何 move $t0,$t1 可由 add $t0,$t1,$zero 表示？</summary><p>$zero 的值固定為 0，所以加零不改變 $t1，結果寫入 $t0。</p></details><details><summary>2. Register allocation 失敗而 spill 時，會增加哪些指令？</summary><p>需要額外的 load/store 在暫存器與 stack memory 之間搬移值。</p></details>
+    </section>
+  </section><section class="chapter-topic" id="topic-2">
+    <header class="chapter-topic-head">
+      <p class="eyebrow">Core topic 02</p>
+      <h2>MIPS 程式設計與指令執行流程</h2>
+      <p>函式呼叫的本質是跨越控制流程邊界仍要維持狀態契約。Calling convention 規定誰保存什麼；instruction cycle 則說明每個保存與跳躍動作如何由硬體完成。</p>
+    </header>
+    <figure class="learning-figure">
+    <h4>一個函式呼叫的控制與狀態</h4>
+    <div class="flow-diagram"><span class="flow-node">Caller 準備參數</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">jal 寫入 $ra</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">配置 stack frame</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">執行 callee</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">恢復 frame</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">jr $ra 回傳</span></div>
+    <figcaption>任何巢狀呼叫都可能覆寫 $ra，因此需要由 stack 保存尚未使用的 return address。</figcaption>
+  </figure>
+    <section class="chapter-topic-block">
+      <h3>學習成果</h3>
+      <ul><li>理解函式呼叫與 stack frame。</li><li>能追蹤 jal/jr 與 $ra。</li><li>能將小型 C 函式翻成 MIPS。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>核心概念</h3>
+      <ul class="concept-list"><li><strong>Calling convention：</strong>呼叫者負責傳參數與接收回傳值；被呼叫者若使用需保存的暫存器，必須在 stack 中保存並於回傳前恢復。</li><li><strong>Stack：</strong>Stack 通常向低位址成長。函式進入時配置 frame，存放 return address、saved registers、local variables；離開時釋放 frame。</li><li><strong>Instruction cycle：</strong>每一指令可概念性分成 fetch、decode/register read、execute、memory、write back。後續單週期與 pipeline 都會使用這個分解。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>Stack frame 是有生命週期的記憶體區域</h4><p>函式進入時先降低 $sp 配置 frame，再把必須保留的 $ra、$s registers 與 local values 寫入固定 offset。回傳前必須以相反順序恢復內容並將 $sp 加回原值。</p><p>Caller-saved 表示呼叫者若仍需要某值，必須在 jal 前保存；callee-saved 表示被呼叫者只要改動該暫存器，就必須先保存、後恢復。兩者共同避免不必要的全部保存。</p></section><section class="deep-dive"><h4>Fetch-Decode-Execute 的狀態轉移</h4><p>Fetch 使用 PC 讀 instruction memory 並形成 PC+4；Decode 解析 opcode 與 register fields；Execute 由 ALU 運算或計算位址；Memory 階段處理 load/store；Write back 更新 register file。</p><p>不是每種指令都需要所有結果。例如 sw 不寫 register，R-format 不讀 data memory。將流程拆成共同階段，是後續 pipeline 能重疊執行的基礎。</p></section></div>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>補充說明</h3>
+      <p>函式呼叫是最能串起軟硬體的例子：高階語言看起來是一個 function call，ISA 層面是 `jal`、參數暫存器與 stack 操作，硬體層面則是 PC 改變與暫存器寫入。</p><p>遞迴函式必須特別注意 `$ra` 與參數保存，否則下一次呼叫會覆蓋上一層返回位置。</p><p>追蹤 stack 時畫表格最清楚：列出位址、內容、何時 push、何時 pop。</p>
+    </section>
+    <section class="worked-example chapter-topic-worked">
+      <p class="eyebrow">Worked example</p>
+      <h3>為何 nested call 必須保存 $ra</h3>
+      <p>main 以 jal f 呼叫 f，而 f 內又以 jal g 呼叫 g。</p>
+      <ol><li>main 的 jal 把 main 返回位置寫入 $ra。</li><li>f 若直接執行 jal g，$ra 會被 g 的返回位置覆蓋。</li><li>因此 f 在呼叫 g 前先把原 $ra 存入自己的 stack frame。</li><li>g 返回後，f 從 stack 恢復原 $ra，最後才能回到 main。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>$ra 只有一個；遞迴與巢狀呼叫需要 stack 保存每一層尚未完成的返回位置。</p>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>程式與計算例題</h3>
+      <h4>簡單函式框架</h4>
+      <pre><code>func:
+  addi $sp, $sp, -8
+  sw   $ra, 4($sp)
+  sw   $s0, 0($sp)
+  # function body
+  lw   $s0, 0($sp)
+  lw   $ra, 4($sp)
+  addi $sp, $sp, 8
+  jr   $ra</code></pre>
+      <p>這個 prologue/epilogue 確保函式回來後，呼叫者期待被保留的狀態仍正確。</p>
+    </section>
+    <section class="misconception-panel chapter-topic-misconceptions">
+      <h3>常見誤解</h3>
+      <ul><li>配置 frame 後仍使用配置前的 offset。</li><li>恢復 $sp 的大小與配置大小不一致。</li><li>有 nested call 卻沒有保存 $ra。</li></ul>
+    </section>
+    <section class="self-check chapter-topic-check">
+      <h3>自我檢核</h3>
+      <details><summary>1. 若 leaf function 不呼叫其他函式，是否一定要保存 $ra？</summary><p>不一定。若它不改寫 $ra 且不需使用 stack，可直接 jr $ra。</p></details><details><summary>2. sw 指令的五階段中，WB 會寫什麼？</summary><p>不寫 register；對 sw 而言，真正的架構更新在 MEM 階段寫入資料記憶體。</p></details>
+    </section>
+  </section><section class="chapter-topic" id="topic-3">
+    <header class="chapter-topic-head">
+      <p class="eyebrow">Core topic 03</p>
+      <h2>指令編碼與 CPU 執行指令的基本流程</h2>
+      <p>指令格式是控制器讀取的契約。每個欄位不只代表一個數字，也決定 register file 讀寫埠、immediate 延伸方式、ALU 功能與下一個 PC 的來源。</p>
+    </header>
+    <figure class="learning-figure">
+    <h4>MIPS R-format 欄位</h4>
+    <div class="bit-diagram" style="--total-bits:32"><div class="bit-field" style="--field-bits:6"><strong>opcode</strong><span>6 bits</span><small>大類</small></div><div class="bit-field" style="--field-bits:5"><strong>rs</strong><span>5 bits</span><small>來源 1</small></div><div class="bit-field" style="--field-bits:5"><strong>rt</strong><span>5 bits</span><small>來源 2</small></div><div class="bit-field" style="--field-bits:5"><strong>rd</strong><span>5 bits</span><small>目的</small></div><div class="bit-field" style="--field-bits:5"><strong>shamt</strong><span>5 bits</span><small>位移量</small></div><div class="bit-field" style="--field-bits:6"><strong>funct</strong><span>6 bits</span><small>ALU 功能</small></div></div>
+    <figcaption>6+5+5+5+5+6=32 bits；每個 5-bit register field 可指定 32 個暫存器。</figcaption>
+  </figure>
+    <section class="chapter-topic-block">
+      <h3>學習成果</h3>
+      <ul><li>能辨識 MIPS R/I/J format。</li><li>理解 opcode、rs、rt、rd、shamt、funct。</li><li>銜接指令格式到 datapath 控制訊號。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>核心概念</h3>
+      <ul class="concept-list"><li><strong>Fixed-length encoding：</strong>MIPS 指令固定 32 bits，讓 fetch 與 decode 較規則。硬體每次 PC + 4 取得下一個 sequential instruction。</li><li><strong>R-format：</strong>用 opcode=0 搭配 funct 決定 ALU 操作，適合 register-register arithmetic/logical instructions。</li><li><strong>I-format：</strong>包含 16-bit immediate，適合 load/store、branch 與 addi。Immediate 可能需要 sign extension 或 zero extension。</li><li><strong>J-format：</strong>包含 26-bit target field，配合 PC 高位形成 jump target。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>固定長度與欄位折衷</h4><p>固定 32-bit 讓 PC 通常每次加 4，也讓 instruction memory 與 decode 邊界規則一致。代價是 opcode、register 與 immediate 必須共享固定空間，immediate 範圍受到限制。</p><p>R-format 以 funct 擴充 opcode=0 的 ALU 操作；I-format 犧牲一個 register 欄位換取 16-bit immediate；J-format 以更大的 target field 支援較遠跳躍。</p></section><section class="deep-dive"><h4>Decode 到控制訊號</h4><p>Opcode 先決定大類控制，例如是否讀 data memory、是否寫 register、ALU 第二個 operand 來自 register 或 immediate。R-format 再用 funct 決定 add、sub、and、or 或 slt。</p><p>編碼題最穩定的方法是先填十進位 register number，再依欄位寬度轉成二進位，最後每四 bits 分組轉十六進位。不要直接心算整個 32-bit pattern。</p></section></div>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>補充說明</h3>
+      <p>指令編碼不是單純背欄位，而是理解硬體如何從 bit pattern 產生控制訊號。Opcode 進入 control unit 後，決定 RegWrite、MemRead、MemWrite、ALUSrc、Branch 等訊號。</p><p>Branch offset 通常以 word 為單位並相對於 PC+4，這讓短距離迴圈可用較少 bits 表示。</p><p>期中考前請能手算：給一行 MIPS 指令，指出格式與主要欄位；給欄位，判斷它大致會啟動哪些資料路徑。</p>
+    </section>
+    <section class="worked-example chapter-topic-worked">
+      <p class="eyebrow">Worked example</p>
+      <h3>編碼 add $t0,$s1,$s2</h3>
+      <p>$s1=17、$s2=18、$t0=8，add funct=32。</p>
+      <ol><li>opcode=000000；rs=10001；rt=10010。</li><li>rd=01000；shamt=00000；funct=100000。</li><li>串接為 000000 10001 10010 01000 00000 100000。</li><li>每四 bits 分組得到 0x02324020。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>Decode 時 opcode=0 指向 R-format，再由 funct=32 選擇加法。</p>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>程式與計算例題</h3>
+      <h4>R-format 欄位</h4>
+      <pre><code>add $t0, $s1, $s2
+opcode | rs  | rt  | rd  | shamt | funct
+000000 | $s1 | $s2 | $t0 | 00000 | 100000</code></pre>
+      <p>控制單元看到 opcode=0 知道是 R-format，再由 funct 決定 ALU 做 add。</p>
+    </section>
+    <section class="misconception-panel chapter-topic-misconceptions">
+      <h3>常見誤解</h3>
+      <ul><li>把組合語言 operand 順序直接當成 rs、rt、rd 順序。</li><li>忘記 register number 必須補足 5 bits。</li><li>將 branch offset 當成絕對位址。</li></ul>
+    </section>
+    <section class="self-check chapter-topic-check">
+      <h3>自我檢核</h3>
+      <details><summary>1. 5-bit register field 最多能指定多少暫存器？</summary><p>2^5=32 個。</p></details><details><summary>2. 為何 lw 的 immediate 要 sign extension？</summary><p>Base+offset addressing 需要支援 base 前後的位址，所以 offset 可為負數。</p></details>
+    </section>
+  </section><section class="chapter-topic" id="topic-4">
+    <header class="chapter-topic-head">
+      <p class="eyebrow">Core topic 04</p>
+      <h2>CPU 資料路徑與單週期處理器架構</h2>
+      <p>單週期 datapath 是一張因果圖：指令欄位提供位址與控制輸入，資料穿過 register file、ALU 與 memory，mux 在每個分岔點選擇正確來源。追蹤一條指令時，只保留它真正使用的路徑。</p>
+    </header>
+    <figure class="learning-figure">
+    <h4>lw 在單週期資料路徑中的主路徑</h4>
+    <div class="flow-diagram"><span class="flow-node">PC</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Instruction Memory</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Register File</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">ALU 算位址</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Data Memory</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">MemtoReg Mux</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Register File 寫回</span></div>
+    <figcaption>PC+4 與控制訊號在旁路同步產生；此圖只畫 lw 的資料主路徑。</figcaption>
+  </figure>
+    <section class="chapter-topic-block">
+      <h3>學習成果</h3>
+      <ul><li>能追蹤單週期 datapath。</li><li>理解 control signals 的角色。</li><li>分析單週期設計的 clock period 限制。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>核心概念</h3>
+      <ul class="concept-list"><li><strong>Datapath：</strong>資料路徑是資料流經的硬體元件與連線，包括 PC、instruction memory、register file、ALU、data memory、sign extend、shift-left、adder 與 multiplexers。</li><li><strong>Control：</strong>控制單元根據 opcode/funct 產生控制訊號，決定 mux 選哪條路、ALU 做什麼、是否讀寫記憶體、是否寫暫存器與是否更新 PC 為 branch target。</li><li><strong>Single-cycle：</strong>每個指令都在一個 clock cycle 完成。設計簡單，但 clock period 必須長到能容納最慢指令，通常是 load 指令。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>由 Register Transfer 描述指令</h4><p>R-format 可寫成 R[rd] ← R[rs] op R[rt]；lw 可寫成 R[rt] ← Mem[R[rs]+signext(imm)]；sw 則是 Mem[R[rs]+signext(imm)] ← R[rt]。這些描述直接指出來源、運算與目的。</p><p>Datapath 圖中的每個 mux 都對應一個選擇問題：目的 register 是 rt 或 rd？ALU operand 來自 rt 或 immediate？寫回資料來自 ALU 或 memory？下一個 PC 是 PC+4 或 branch target？</p></section><section class="deep-dive"><h4>關鍵路徑決定 Clock Period</h4><p>單週期設計要求最慢指令也在一個 cycle 內完成。lw 通常依序經 instruction memory、register read、ALU、data memory 與 write-back mux，因此比只經 ALU 的 add 更慢。</p><p>即使 add 提早得到結果，也必須等共同 cycle 結束才能開始下一指令。單週期的簡單控制換來較長 clock period，這正是 pipeline 要改善的限制。</p></section></div>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>補充說明</h3>
+      <p>分析 datapath 最重要的是問三個問題：資料從哪裡來？經過哪些元件？最後寫到哪裡？控制訊號如何讓這條路成立？</p><p>`lw` 會使用 instruction memory、register file、ALU、data memory、write back mux。`add` 不用 data memory。`beq` 會使用 ALU 做比較並可能改變 PC。</p><p>單週期處理器不是高效設計，但它把每個指令需要的硬體路徑攤在一張圖上，因此很適合作為處理器資料路徑的入門模型。</p>
+    </section>
+    <section class="worked-example chapter-topic-worked">
+      <p class="eyebrow">Worked example</p>
+      <h3>為四種指令判斷關鍵控制</h3>
+      <p>比較 add、lw、sw、beq 的 RegWrite、MemRead、MemWrite 與 ALUSrc。</p>
+      <ol><li>add：RegWrite=1、ALUSrc=0，不讀寫 data memory。</li><li>lw：RegWrite=1、MemRead=1、ALUSrc=1，寫回來源為 memory。</li><li>sw：RegWrite=0、MemWrite=1、ALUSrc=1。</li><li>beq：RegWrite=0、ALUSrc=0，ALU 比較兩個 registers，Branch=1。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>控制訊號不是獨立背誦項目，而是由 register-transfer 行為反推。</p>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>程式與計算例題</h3>
+      <h4>`lw $t0, 8($s1)` 的路徑</h4>
+      <pre><code>1. Fetch instruction at PC
+2. Read $s1 from register file
+3. Sign-extend immediate 8
+4. ALU computes $s1 + 8
+5. Data memory reads effective address
+6. Write data back to $t0</code></pre>
+      <p>控制訊號包含 ALUSrc=1、MemRead=1、MemtoReg=1、RegWrite=1。</p>
+    </section>
+    <section class="misconception-panel chapter-topic-misconceptions">
+      <h3>常見誤解</h3>
+      <ul><li>把 instruction memory 與 data memory 的角色混在一起。</li><li>認為 sw 需要 RegWrite。</li><li>忽略 lw 的最長路徑對所有指令 clock period 的影響。</li></ul>
+    </section>
+    <section class="self-check chapter-topic-check">
+      <h3>自我檢核</h3>
+      <details><summary>1. 為何 lw 的 ALUSrc 通常為 1？</summary><p>ALU 第二個 operand 是 sign-extended immediate，用來和 base register 相加。</p></details><details><summary>2. beq 需要 data memory 嗎？</summary><p>不需要。它用 ALU 比較 registers，並以比較結果決定 PC。</p></details>
+    </section>
+  </section></div>
       <nav class="chapter-adjacent" aria-label="相鄰章節">
         <a href="chapter-03.html"><span>第 3 章</span><strong>布林代數與數位邏輯</strong></a><a href="chapter-05.html"><span>第 5 章</span><strong>深入指令集架構</strong></a>
       </nav>

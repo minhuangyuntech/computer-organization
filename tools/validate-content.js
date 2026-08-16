@@ -124,11 +124,11 @@ assert(Math.abs((1.5e9 * 1.8 / 3.6e9) - 0.75) < 1e-12, "Chapter 1 exercise CPU B
 
 const homepage = path.join(root, "index.html");
 const editionPage = path.join(root, "fourth-edition-map.html");
-const weekFiles = Array.from({ length: 18 }, (_, index) => path.join(root, "weeks", `week-${String(index + 1).padStart(2, "0")}.html`));
 const chapterFiles = fourthEdition.chapters.map((chapter) => path.join(root, "chapters", `chapter-${String(chapter.chapter).padStart(2, "0")}.html`));
 const detailedChapterFiles = chapterDetails.map((chapter) => path.join(root, "chapters", `chapter-${String(chapter.chapter).padStart(2, "0")}.html`));
-const htmlFiles = [homepage, editionPage, ...weekFiles, ...chapterFiles];
+const htmlFiles = [homepage, editionPage, ...chapterFiles];
 const prohibited = /教學建議|授課|請學生|讓學生|給學生|要求學生/;
+const visibleWeekClassification = /Week\s*\d|第\s*\d+\s*週|週次|weeks\//;
 
 for (const file of htmlFiles) {
   const html = fs.readFileSync(file, "utf8");
@@ -138,13 +138,7 @@ for (const file of htmlFiles) {
   assert(!html.includes("<aside"), `Sidebar markup found in ${path.relative(root, file)}`);
   assert(!html.includes("class=\"sidebar\""), `Legacy sidebar found in ${path.relative(root, file)}`);
   assert(!html.includes("class=\"side-notes\""), `Legacy weekly sidebar found in ${path.relative(root, file)}`);
-  if (weekFiles.includes(file)) {
-    assert(html.includes("class=\"learning-figure\""), `Missing learning figure in ${path.relative(root, file)}`);
-    assert((html.match(/<details>/g) || []).length >= 2, `Missing self-check answers in ${path.relative(root, file)}`);
-    assert(html.includes("class=\"edition-alignment\""), `Missing fourth edition alignment in ${path.relative(root, file)}`);
-    assert(html.includes("class=\"chapter-nav-weeks active\""), `Week navigation is not active in ${path.relative(root, file)}`);
-    assert(!html.includes("class=\"chapter-nav-link active\""), `A week page incorrectly identifies itself as a chapter in ${path.relative(root, file)}`);
-  }
+  assert(!html.includes("class=\"chapter-nav-weeks"), `Week navigation found in ${path.relative(root, file)}`);
   if (detailedChapterFiles.includes(file)) {
     assert(html.includes("class=\"chapter-page\""), `Missing detailed chapter layout in ${path.relative(root, file)}`);
     assert((html.match(/class=\"chapter-nav-link active\"/g) || []).length === 1, `Detailed chapter must activate exactly one chapter navigation item in ${path.relative(root, file)}`);
@@ -153,7 +147,8 @@ for (const file of htmlFiles) {
   } else if (chapterFiles.includes(file)) {
     assert(html.includes("class=\"chapter-overview-page\""), `Missing independent chapter overview in ${path.relative(root, file)}`);
     assert((html.match(/class=\"chapter-nav-link active\"/g) || []).length === 1, `Chapter overview must activate exactly one chapter navigation item in ${path.relative(root, file)}`);
-    assert(html.includes("class=\"chapter-week-card\"") || html.includes("class=\"chapter-extension\""), `Missing chapter learning path in ${path.relative(root, file)}`);
+    assert(html.includes("class=\"chapter-topic\"") || html.includes("class=\"standalone-chapter-content\""), `Missing integrated chapter content in ${path.relative(root, file)}`);
+    assert(!visibleWeekClassification.test(html), `Week classification found outside the introduction in ${path.relative(root, file)}`);
   }
 
   for (const match of html.matchAll(/(?:href|src)="([^"]+)"/g)) {
@@ -170,8 +165,9 @@ assert(homepageHtml.includes("第 4 版（2015，ISBN 9781284033144）"), "Homep
 assert(!homepageHtml.includes("第六版"), "Homepage still references the sixth edition");
 assert(homepageHtml.includes("class=\"modern-cpu-diagram\""), "Homepage modern CPU diagram is missing");
 assert(!homepageHtml.includes("class=\"chip-visual\""), "Homepage still contains the legacy CPU image");
-assert(homepageHtml.includes("週次不等於章次"), "Homepage does not distinguish course weeks from textbook chapters");
 assert((homepageHtml.match(/class=\"home-chapter-card\"/g) || []).length === 13, "Homepage must show 13 chapter entry cards");
+assert(!homepageHtml.includes("class=\"week-card\""), "Homepage still contains week cards");
+assert(!visibleWeekClassification.test(homepageHtml), "Homepage still exposes week classification");
 const navChapterHrefs = [...homepageHtml.matchAll(/<a class=\"chapter-nav-link[^\"]*\" href=\"([^\"]+)\"/g)].map((match) => match[1]);
 const homeChapterHrefs = [...homepageHtml.matchAll(/<a class=\"home-chapter-card\" href=\"([^\"]+)\"/g)].map((match) => match[1]);
 assert(JSON.stringify(navChapterHrefs) === JSON.stringify(homeChapterHrefs), "Homepage chapter cards and top chapter navigation must target identical pages");
@@ -182,8 +178,13 @@ for (const label of ["Branch predictor", "L1 I-cache", "Fetch", "Decode", "Regis
 }
 assert(editionHtml.includes("MARIE 16-bit 指令格式"), "Fourth edition page is missing the MARIE format diagram");
 assert(editionHtml.includes("MAR ← PC"), "Fourth edition page is missing the MARIE fetch sequence");
+assert(!visibleWeekClassification.test(editionHtml), "Fourth edition page still exposes week classification");
 assert((editionHtml.match(/class=\"chapter-card\"/g) || []).length === 13, "Fourth edition page must show 13 chapter cards");
 assert((editionHtml.match(/<details>/g) || []).length === 3, "Fourth edition page must show three MARIE self-checks");
 assert(chapterFiles.every((file) => fs.existsSync(file)), "Every chapter navigation item needs an independent HTML page");
+const introductionHtml = fs.readFileSync(chapterFiles[0], "utf8");
+assert(introductionHtml.includes("class=\"chapter-schedule\""), "Introduction must contain the course schedule");
+assert((introductionHtml.match(/<tr><th>第 \d+ 週<\/th>/g) || []).length === 18, "Introduction course schedule must contain 18 weeks");
+assert(!fs.existsSync(path.join(root, "weeks")), "Legacy week pages must not be generated");
 
-console.log(`Validated 18 supplements, ${chapterDetails.length} detailed chapter, 13 independent chapter pages, fourth edition mapping, worked calculations, and ${htmlFiles.length} generated pages.`);
+console.log(`Validated chapter-first navigation, 18 source supplements, 13 chapter pages, introduction-only schedule, worked calculations, and ${htmlFiles.length} generated pages.`);

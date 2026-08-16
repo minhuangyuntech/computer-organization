@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>第 6 章 記憶體 | 計算機組織</title>
-  <meta name="description" content="計算機組織第 6 章 記憶體獨立頁面與相關週次教材。">
+  <meta name="description" content="計算機組織第 6 章 記憶體完整章節教材。">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23006d77'/%3E%3Cpath d='M14 18h36v28H14z' fill='%23f6bd60' stroke='%2320231f' stroke-width='4'/%3E%3Cpath d='M22 28h20M22 36h14' stroke='%2320231f' stroke-width='4'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="../styles.css">
 </head>
@@ -53,7 +53,6 @@
       </a><a class="chapter-nav-link" href="../chapters/chapter-13.html" title="第 13 章 儲存系統與介面選論">
         <strong>CH 13</strong><span>儲存介面</span>
       </a>
-      <a class="chapter-nav-weeks" href="../index.html#weeks">週次進度</a>
     </div>
   </nav>
   <main class="page-main">
@@ -67,40 +66,216 @@
         <p>由記憶體種類與階層進入 locality、cache mapping、replacement、effective access time、write policy，再延伸到 virtual memory、paging 與 segmentation。</p>
       </header>
       <section class="chapter-overview-focus">
-        <p class="eyebrow">Course connection</p>
-        <h3>本章與課程的連結</h3>
-        <p>第 13 至 16 週的 memory hierarchy、cache、mapping、replacement 與 AMAT。</p>
-        <p>以下週次頁面收錄本章目前對應的完整講義、概念推導、原創圖表、逐步例題、自我檢核與解答。每個連結都是可直接引用與返回的獨立頁面。</p>
+        <p class="eyebrow">Chapter guide</p>
+        <h3>本章內容</h3>
+        <p>本章直接整合核心概念、原創圖表、推導、例題與自我檢核。所有內容都在同一章內連續閱讀，不需要切換到另一套分類頁面。</p>
       </section>
-      <section class="chapter-week-path">
-        <h2>本章相關週次教材</h2>
-        <div class="chapter-week-grid"><a class="chapter-week-card" href="../weeks/week-13.html">
-      <span>Week 13</span>
-      <h3>記憶體階層架構與區域性原理</h3>
-      <p>memory type、hierarchy 與 temporal/spatial locality。</p>
-      <small>第 4 版節次：6.2–6.3</small>
-    </a><a class="chapter-week-card" href="../weeks/week-14.html">
-      <span>Week 14</span>
-      <h3>Cache Memory 的基本運作原理</h3>
-      <p>cache line 狀態、write policy、instruction/data cache 與多層 cache。</p>
-      <small>第 4 版節次：6.4、6.4.5–6.4.7</small>
-    </a><a class="chapter-week-card" href="../weeks/week-15.html">
-      <span>Week 15</span>
-      <h3>Cache Mapping 方法介紹</h3>
-      <p>mapping、tag/index/offset、hit ratio 與 effective access time。</p>
-      <small>第 4 版節次：6.4.1–6.4.3</small>
-    </a><a class="chapter-week-card" href="../weeks/week-16.html">
-      <span>Week 16</span>
-      <h3>Cache Replacement Policy 與效能分析</h3>
-      <p>replacement、多層 AMAT，以及 cache、TLB、paging 的成本分解。</p>
-      <small>第 4 版節次：6.4.2–6.5.4</small>
-    </a><a class="chapter-week-card" href="../weeks/week-18.html">
-      <span>Week 18</span>
-      <h3>期末測驗</h3>
-      <p>以 correctness、state、cycle、memory traffic 與 CPU Time 五種證據交叉檢查。</p>
-      <small>第 4 版節次：全課整合</small>
-    </a></div>
-      </section>
+      <div class="chapter-integrated-reading"><section class="chapter-topic" id="topic-1">
+    <header class="chapter-topic-head">
+      <p class="eyebrow">Core topic 01</p>
+      <h2>記憶體階層架構與區域性原理</h2>
+      <p>Memory hierarchy 利用 locality，讓少量快速儲存體保存近期最可能使用的 blocks。它不是讓所有存取都變快，而是讓常見路徑很快、少數 miss 承擔較大代價。</p>
+    </header>
+    <figure class="learning-figure">
+    <h4>Memory Hierarchy 的相對關係</h4>
+    <div class="hierarchy-diagram"><div style="--level:0"><strong>Registers</strong><span>最小、最快、由指令直接指定</span></div><div style="--level:1"><strong>L1 / L2 Cache</strong><span>以 block 自動搬移</span></div><div style="--level:2"><strong>Main Memory</strong><span>容量較大、miss penalty 明顯</span></div><div style="--level:3"><strong>SSD / Storage</strong><span>持久保存、延遲最高</span></div></div>
+    <figcaption>由上而下容量增加、每 bit 成本降低、延遲上升；圖示為概念相對關係，不代表固定硬體數值。</figcaption>
+  </figure>
+    <section class="chapter-topic-block">
+      <h3>學習成果</h3>
+      <ul><li>理解 memory hierarchy 的成本/速度/容量折衷。</li><li>能說明 temporal 與 spatial locality。</li><li>能計算 Average Memory Access Time。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>核心概念</h3>
+      <ul class="concept-list"><li><strong>階層：</strong>Register 最快最小，cache 次之，main memory 更大更慢，storage 最大也最慢。階層設計利用 locality 讓常用資料留在快的位置。</li><li><strong>Temporal locality：</strong>最近用過的資料很可能很快再被使用，例如迴圈中的變數與指令。</li><li><strong>Spatial locality：</strong>若某位址被使用，鄰近位址也可能很快被使用，例如 sequential instruction fetch 與陣列走訪。</li><li><strong>AMAT：</strong>Average Memory Access Time = Hit Time + Miss Rate × Miss Penalty。降低 miss rate、miss penalty 或 hit time 都能改善。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>Temporal 與 Spatial Locality</h4><p>Temporal locality 表示最近使用的資料可能再次使用，例如 loop counter；spatial locality 表示鄰近位址可能很快被使用，例如循序掃描陣列。Cache 以 block 為傳輸單位，同時利用兩者。</p><p>Locality 是程式行為，不是 cache 自動保證。隨機追蹤大型 linked structure 可能缺乏 spatial locality；working set 大於 cache 時，temporal reuse 也可能在重用前被替換。</p></section><section class="deep-dive"><h4>AMAT 與 Miss 分類</h4><p>AMAT = hit time + miss rate × miss penalty。Hit time 每次存取都支付；miss penalty 只在 miss 時支付，通常指超出 hit time 的額外延遲。</p><p>Compulsory miss 是 block 第一次出現；capacity miss 是工作集合超過 cache 容量；conflict miss 是 mapping 限制讓仍有總空間的 cache 發生碰撞。增加 associativity 主要降低 conflict misses。</p></section></div>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>補充說明</h3>
+      <p>Memory wall 是處理器速度提升遠快於主記憶體延遲改善造成的落差。Cache 是緩解 memory wall 的核心技術。</p><p>區域性不是硬體保證，而是程式行為。資料結構與迴圈順序會大幅影響 cache 表現。</p><p>AMAT 題目要小心單位。Hit time 可能是 cycles，miss penalty 也可能是 ns；計算前先統一。</p>
+    </section>
+    <section class="worked-example chapter-topic-worked">
+      <p class="eyebrow">Worked example</p>
+      <h3>AMAT 與單位檢查</h3>
+      <p>Cache hit time=1 ns、miss rate=5%、miss penalty=40 ns。</p>
+      <ol><li>將 5% 寫成 0.05。</li><li>平均 miss 額外成本 = 0.05×40 ns = 2 ns。</li><li>AMAT = 1+2 = 3 ns。</li><li>結果應介於 1 ns 與 41 ns 之間，3 ns 的量級合理。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>若把 5 直接代入會得到 201 ns，量級檢查能立即發現百分比錯誤。</p>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>程式與計算例題</h3>
+      <h4>AMAT</h4>
+      <pre><code>Hit time = 1 cycle
+Miss rate = 5%
+Miss penalty = 80 cycles
+AMAT = 1 + 0.05 × 80 = 5 cycles</code></pre>
+      <p>即使命中只要 1 cycle，少量 miss 也可能主導平均存取時間。</p>
+    </section>
+    <section class="misconception-panel chapter-topic-misconceptions">
+      <h3>常見誤解</h3>
+      <ul><li>把 miss rate 的百分比直接當整數代入。</li><li>以為 block 越大一定越好。</li><li>把 conflict miss 誤認為 cache 總容量不足。</li></ul>
+    </section>
+    <section class="self-check chapter-topic-check">
+      <h3>自我檢核</h3>
+      <details><summary>1. 循序讀取大型陣列主要利用哪種 locality？</summary><p>Spatial locality，因為連續元素位址相鄰。</p></details><details><summary>2. 提高 associativity 最直接減少哪類 miss？</summary><p>Conflict miss。Compulsory miss 通常不因此消失。</p></details>
+    </section>
+  </section><section class="chapter-topic" id="topic-2">
+    <header class="chapter-topic-head">
+      <p class="eyebrow">Core topic 02</p>
+      <h2>Cache Memory 的基本運作原理</h2>
+      <p>Cache line 不只有 data。Tag 說明它代表哪個 memory block，valid 說明內容是否可用，dirty 說明 write-back line 是否比 memory 新。寫入策略必須同時回答 hit 與 miss 兩種情況。</p>
+    </header>
+    <figure class="learning-figure">
+    <h4>Cache 寫入策略比較</h4>
+    <div class="diagram-table-wrap"><table class="diagram-table"><thead><tr><th>策略</th><th>Write hit</th><th>主要代價</th></tr></thead><tbody><tr><td>Write-through</td><td>Cache 與下一層都更新</td><td>寫入流量較高</td></tr><tr><td>Write-back</td><td>只更新 cache，設 dirty</td><td>替換 dirty line 時寫回</td></tr><tr><td>Write-allocate</td><td>Miss 時先取 block</td><td>多一次 line fill</td></tr><tr><td>No-write-allocate</td><td>Miss 時繞過 cache</td><td>可能失去後續 locality</td></tr></tbody></table></div>
+    <figcaption>Through/back 回答 hit 如何更新；allocate/no-allocate 回答 miss 是否把 block 帶入 cache。</figcaption>
+  </figure>
+    <section class="chapter-topic-block">
+      <h3>學習成果</h3>
+      <ul><li>理解 cache block、tag、index、offset。</li><li>能判斷 hit/miss。</li><li>理解 write-through 與 write-back。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>核心概念</h3>
+      <ul class="concept-list"><li><strong>Block：</strong>Cache 與 memory 之間以 block 為單位搬移資料。Block size 越大可利用 spatial locality，但過大可能增加 miss penalty 與 pollution。</li><li><strong>Tag / index / offset：</strong>位址切成 tag、index、block offset。Index 選 cache set/line，tag 比對是否為想要的 memory block，offset 選 block 內 byte/word。</li><li><strong>Valid bit：</strong>表示 cache line 內容是否有效。剛開機或被清除後，即使 tag 相同也不能視為 hit。</li><li><strong>Write policy：</strong>Write-through 每次寫 cache 同步寫 memory；write-back 只在 block 被替換時寫回，需要 dirty bit。Write allocate/no-write allocate 決定 write miss 時是否載入 block。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>Read Hit、Read Miss 與 Line Fill</h4><p>Read hit 先以 index 找 set，再比較 valid line 的 tag，命中後由 block offset 選出 byte/word。Read miss 則選 victim，必要時先寫回 dirty victim，再從下一層取整個 block 並更新 tag、valid 與 data。</p><p>Block size 增加可利用 spatial locality，但會提高 fill 時間、減少 line 數，並可能帶入未使用資料。最佳大小取決於程式存取模式與 memory burst 行為。</p></section><section class="deep-dive"><h4>Write Policy 必須成對描述</h4><p>Write-through 在 hit 時同時更新下一層，流量較大但一致性簡單；write-back 只更新 cache 並設 dirty，等替換時才寫回。</p><p>Write miss 還要選 write-allocate 或 no-write-allocate。常見搭配是 write-back + write-allocate，以及 write-through + no-write-allocate，但硬體也可依需求採其他組合。</p></section></div>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>補充說明</h3>
+      <p>判斷 hit/miss 的標準流程：用 index 找 line/set，檢查 valid，拿 tag 比對。若 tag match 且 valid=1 才是 hit。</p><p>Cache 設計沒有單一最佳答案。Block size、capacity、associativity、replacement、write policy 都會影響 hit time、miss rate、miss penalty 與硬體成本。</p><p>Direct-mapped cache 簡單快速，但容易發生 conflict miss。Associative cache 較彈性，但 tag comparison 和 replacement 較複雜。</p>
+    </section>
+    <section class="worked-example chapter-topic-worked">
+      <p class="eyebrow">Worked example</p>
+      <h3>Write-back Line 的狀態變化</h3>
+      <p>某 line 起初 invalid；先 read miss 載入 block，接著 write hit，最後被替換。</p>
+      <ol><li>Read miss 完成後：valid=1、dirty=0、tag 設為新 block tag。</li><li>Write hit 更新 cache data：valid=1、dirty=1。</li><li>替換前發現 dirty=1，先把整個 line 寫回下一層。</li><li>載入新 block 後更新 tag，dirty 回到 0。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>Dirty bit 只表示 cache 內容是否比下一層新，不表示 line 是否命中；命中仍需 valid 與 tag。</p>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>程式與計算例題</h3>
+      <h4>位址切割</h4>
+      <pre><code>32-bit address, 4KB direct-mapped cache, block size 16B
+Lines = 4096 / 16 = 256 =&gt; index = 8 bits
+offset = log2(16) = 4 bits
+tag = 32 - 8 - 4 = 20 bits</code></pre>
+      <p>Offset 選 block 內位置，index 選 cache line，tag 用於確認是否為正確 block。</p>
+    </section>
+    <section class="misconception-panel chapter-topic-misconceptions">
+      <h3>常見誤解</h3>
+      <ul><li>用 dirty bit 取代 valid bit。</li><li>只寫 write-back，卻未說明 write miss 是否 allocate。</li><li>替換 dirty victim 時漏算 write-back cost。</li></ul>
+    </section>
+    <section class="self-check chapter-topic-check">
+      <h3>自我檢核</h3>
+      <details><summary>1. Cold cache 中 tag 剛好相等就算 hit 嗎？</summary><p>不算，還必須 valid=1。</p></details><details><summary>2. Write-through cache 是否需要 dirty bit？</summary><p>一般不需要，因為下一層在每次 write hit 時同步更新。</p></details>
+    </section>
+  </section><section class="chapter-topic" id="topic-3">
+    <header class="chapter-topic-head">
+      <p class="eyebrow">Core topic 03</p>
+      <h2>Cache Mapping 方法介紹</h2>
+      <p>Mapping 題先由容量求 sets，再由 sets 求 index bits，由 block size 求 offset bits，剩下才是 tag。這個順序能避免把 ways、sets 與 lines 混在一起。</p>
+    </header>
+    <figure class="learning-figure">
+    <h4>32-bit 位址：16 KiB、4-way、64 B block</h4>
+    <div class="bit-diagram" style="--total-bits:32"><div class="bit-field" style="--field-bits:20"><strong>Tag</strong><span>20 bits</span><small>辨認 memory block</small></div><div class="bit-field" style="--field-bits:6"><strong>Set index</strong><span>6 bits</span><small>64 sets</small></div><div class="bit-field" style="--field-bits:6"><strong>Block offset</strong><span>6 bits</span><small>64 bytes</small></div></div>
+    <figcaption>Sets=16384/(64×4)=64，所以 index=6 bits；offset=log2(64)=6 bits；tag=20 bits。</figcaption>
+  </figure>
+    <section class="chapter-topic-block">
+      <h3>學習成果</h3>
+      <ul><li>能比較三種 mapping。</li><li>能計算 set、way、index、tag bits。</li><li>理解 conflict miss 與 associativity 的關係。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>核心概念</h3>
+      <ul class="concept-list"><li><strong>Direct-mapped：</strong>每個 memory block 只能放到一個 cache line。硬體簡單、hit time 短，但不同 block 若映到同 line，會互相趕走。</li><li><strong>Fully associative：</strong>任何 memory block 可放到任一 cache line。Conflict miss 最少，但需要同時比對很多 tags，硬體成本高。</li><li><strong>Set-associative：</strong>折衷設計。Cache 分成多個 sets，每個 set 有多個 ways。Block 由 index 選 set，再在 set 內任一 way 放置。</li><li><strong>Miss 類型：</strong>Compulsory miss 是第一次存取；capacity miss 是 cache 太小；conflict miss 是 mapping 限制使 blocks 互相衝突。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>Direct、Set-associative 與 Fully Associative</h4><p>Direct-mapped 每個 memory block 只有一個候選 line；N-way set-associative 有 N 個候選；fully associative 可放在任何 line。候選越多，conflict miss 越少，但 tag comparators、hit mux 與 replacement metadata 越多。</p><p>Set-associative cache 先用 index 選出一個 set，再平行比較該 set 每一 way 的 tag。Ways 不是 index 的額外 bits；它們是同一 index 下的多個候選位置。</p></section><section class="deep-dive"><h4>位址切割公式</h4><p>Sets = Cache data size / (block size × associativity)。Offset bits = log2(block size bytes)，index bits = log2(sets)，tag bits = address bits - index - offset。</p><p>容量題通常指 data capacity，不含 tag、valid、dirty 與 replacement bits。若題目問實際硬體儲存量，必須再把 metadata 加回每一 line。</p></section></div>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>補充說明</h3>
+      <p>n-way set associative cache 的 sets = cache size / (block size × n)。Index bits = log2(sets)，offset bits = log2(block size)。</p><p>Associativity 提高通常可降低 conflict miss，但也可能增加 hit time 與能耗。真實設計常以實驗工作負載評估。</p><p>手算題請先寫出 cache size、block size、ways，再推 lines、sets、offset/index/tag，不要跳步。</p>
+    </section>
+    <section class="worked-example chapter-topic-worked">
+      <p class="eyebrow">Worked example</p>
+      <h3>切割位址 0x12345678</h3>
+      <p>使用上圖 cache 組態，求 offset、set index 與 tag。</p>
+      <ol><li>Offset = address &amp; 0x3F = 0x38 = 56。</li><li>Set index = (address &gt;&gt; 6) &amp; 0x3F = 25。</li><li>Tag = address &gt;&gt; 12 = 0x12345。</li><li>檢查：20+6+6=32 bits。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>此 block 只能放入 set 25，但可放在該 set 的任一個 4 ways。</p>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>程式與計算例題</h3>
+      <h4>4-way set associative</h4>
+      <pre><code>Cache = 16KB, block = 32B, 4-way, address = 32 bits
+Blocks/lines = 16KB / 32B = 512
+Sets = 512 / 4 = 128 =&gt; index = 7 bits
+offset = 5 bits
+tag = 32 - 7 - 5 = 20 bits</code></pre>
+      <p>每個 index 對應一個 set，set 內 4 個 ways 都要進行 tag 比對。</p>
+    </section>
+    <section class="misconception-panel chapter-topic-misconceptions">
+      <h3>常見誤解</h3>
+      <ul><li>用 cache lines 數直接當 sets 數，漏除 associativity。</li><li>認為 way number 來自 address bits。</li><li>把 cache data capacity 與含 metadata 的總儲存量混用。</li></ul>
+    </section>
+    <section class="self-check chapter-topic-check">
+      <h3>自我檢核</h3>
+      <details><summary>1. 同容量與 block size 下，4-way 相較 direct-mapped 的 index bits 如何變化？</summary><p>Sets 減為四分之一，所以 index bits 少 2；相應地 tag bits 多 2。</p></details><details><summary>2. 64-byte block 需要幾個 offset bits？</summary><p>log2(64)=6 bits。</p></details>
+    </section>
+  </section><section class="chapter-topic" id="topic-4">
+    <header class="chapter-topic-head">
+      <p class="eyebrow">Core topic 04</p>
+      <h2>Cache Replacement Policy 與效能分析</h2>
+      <p>Replacement policy 只在一個 set 有多個 valid 候選且需要騰出空間時生效。多層 cache 分析則要分清 local miss rate 與 global miss rate，才能正確組合平均成本。</p>
+    </header>
+    <figure class="learning-figure">
+    <h4>兩層 Cache 的條件成本</h4>
+    <div class="hierarchy-diagram"><div style="--level:0"><strong>L1 access</strong><span>每次 memory access 都支付</span></div><div style="--level:1"><strong>L2 access</strong><span>只在 L1 miss 時支付</span></div><div style="--level:2"><strong>Main memory</strong><span>只在 L1 與 L2 都 miss 時支付</span></div></div>
+    <figcaption>越往下的成本要乘上抵達該層的機率；L2 local miss rate 以 L1 misses 為條件。</figcaption>
+  </figure>
+    <section class="chapter-topic-block">
+      <h3>學習成果</h3>
+      <ul><li>理解 replacement policy。</li><li>能模擬 LRU/FIFO。</li><li>以 AMAT 評估 cache 參數變化。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>核心概念</h3>
+      <ul class="concept-list"><li><strong>Replacement policy：</strong>當 set 已滿且發生 miss 時，必須決定替換哪一個 way。Direct-mapped 不需要選擇；associative cache 才需要 policy。</li><li><strong>LRU：</strong>Least Recently Used 替換最久沒被使用的 block，試圖利用 temporal locality。完全精確 LRU 在高 associativity 下成本較高。</li><li><strong>FIFO / Random：</strong>FIFO 替換最早進入的 block，實作簡單但不一定符合近期使用情形；random 成本低，在某些工作負載下表現可接受。</li><li><strong>效能分析：</strong>Cache 調整要同時看 hit time、miss rate、miss penalty。降低 miss rate 若讓 hit time 變長，整體未必更快。</li></ul>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>LRU、FIFO、Random 與近似策略</h4><p>True LRU 選最久未使用的 line，對 temporal locality 直觀有效，但 ways 增加時需要更多排序狀態與更新邏輯。實際硬體常採 pseudo-LRU 或 random，在成本與命中率間折衷。</p><p>FIFO 追蹤進入順序，不等於最近使用順序。某 line 即使剛被 hit，FIFO 仍可能最先替換它。手算時必須明確維護 policy 所需的 metadata。</p></section><section class="deep-dive"><h4>Local 與 Global Miss Rate</h4><p>L1 local miss rate 以所有 L1 accesses 為分母；L2 local miss rate 只以送到 L2 的 accesses 為分母。L2 global miss rate 等於 L1 miss rate × L2 local miss rate。</p><p>兩層 AMAT 可寫成 L1 hit time + L1 miss rate × (L2 hit time + L2 local miss rate × memory penalty)。括號內是發生 L1 miss 後的條件平均成本。</p></section></div>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>補充說明</h3>
+      <p>考題常給位址序列與 cache 組態，要求模擬 replacement。請維護每個 set 的內容、valid、tag、最近使用順序或進入順序。</p><p>Multi-level cache 的 AMAT 可展開：AMAT = L1 hit time + L1 miss rate × (L2 hit time + L2 miss rate × memory penalty)。</p><p>Write-back cache 在替換 dirty block 時會增加額外寫回成本；分析 miss penalty 時不要漏掉。</p>
+    </section>
+    <section class="worked-example chapter-topic-worked">
+      <p class="eyebrow">Worked example</p>
+      <h3>兩層 Cache AMAT</h3>
+      <p>L1 hit=1 cycle、L1 miss rate=4%；L2 hit=10 cycles、L2 local miss rate=20%；memory penalty=100 cycles。</p>
+      <ol><li>發生 L1 miss 後的平均成本 = 10 + 0.20×100 = 30 cycles。</li><li>平均 L1 miss 貢獻 = 0.04×30 = 1.2 cycles。</li><li>AMAT = 1+1.2 = 2.2 cycles。</li><li>L2 global miss rate = 0.04×0.20 = 0.008 = 0.8%。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>Memory penalty 只由同時 miss L1 與 L2 的 0.8% accesses 支付。</p>
+    </section>
+    <section class="chapter-topic-block">
+      <h3>程式與計算例題</h3>
+      <h4>兩層 Cache AMAT</h4>
+      <pre><code>L1 hit = 1 cycle, L1 miss rate = 4%
+L2 hit = 10 cycles, L2 miss rate = 20%
+Memory penalty = 100 cycles
+AMAT = 1 + 0.04 × (10 + 0.20 × 100) = 2.2 cycles</code></pre>
+      <p>L2 降低了每次 L1 miss 直接去 memory 的平均成本。</p>
+    </section>
+    <section class="misconception-panel chapter-topic-misconceptions">
+      <h3>常見誤解</h3>
+      <ul><li>Direct-mapped cache 也套用 replacement policy。</li><li>把 FIFO 命中後的 line 移到最新位置。</li><li>將 L2 local miss rate 直接當成所有 accesses 的 miss rate。</li></ul>
+    </section>
+    <section class="self-check chapter-topic-check">
+      <h3>自我檢核</h3>
+      <details><summary>1. 為何 true LRU 在高 associativity 時成本高？</summary><p>需要追蹤與更新同一 set 各 ways 的相對使用順序，狀態與邏輯隨 ways 增加。</p></details><details><summary>2. 若 L1 miss 10%、L2 local miss 5%，L2 global miss 是多少？</summary><p>0.10×0.05=0.005，也就是所有 accesses 的 0.5%。</p></details>
+    </section>
+  </section></div>
       <nav class="chapter-adjacent" aria-label="相鄰章節">
         <a href="chapter-05.html"><span>第 5 章</span><strong>深入指令集架構</strong></a><a href="chapter-07.html"><span>第 7 章</span><strong>輸出入與儲存系統</strong></a>
       </nav>
