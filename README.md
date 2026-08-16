@@ -6,12 +6,14 @@
 
 - `index.html`：課程首頁與 18 週索引
 - `fourth-edition-map.html`：第 4 版 13 章、18 週節次與 MARIE–MIPS 對照
+- `chapters/chapter-01.html`：逐章建置的完整自學教材，目前已完成第 1 章
 - `weeks/week-01.html` 到 `weeks/week-18.html`：每週獨立講義頁面
 - `styles.css`：全站樣式與列印樣式
 - `site.js`：明暗模式、列印與搜尋週次
 - `app.js`：目前的課程內容資料來源
 - `content/supplements.js`：18 週專屬自學導讀、圖表、推導例題與自我檢核
 - `content/fourth-edition.js`：第 4 版書目、章節摘要、週次對照與 MARIE 資料
+- `content/chapters.js`：完整章節教材、圖表、例題、練習詳解、術語與研究來源
 - `tools/build-pages.js`：從內容資料產生首頁與各週 HTML
 - `tools/validate-content.js`：檢查圖表欄位、例題計算、頁面結構與內部連結
 
@@ -27,7 +29,7 @@ python3 -m http.server 8000
 
 ## 更新教材內容
 
-1. 編輯 `app.js`、`content/supplements.js` 或 `content/fourth-edition.js` 中的資料。
+1. 編輯 `app.js`、`content/supplements.js`、`content/fourth-edition.js` 或 `content/chapters.js` 中的資料。
 2. 執行：
 
 ```bash

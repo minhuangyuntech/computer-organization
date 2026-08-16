@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第 1 章 從抽象層次到可執行的計算機 | 計算機組織完整自學教材</title>
+  <meta name="description" content="計算機組織第 1 章完整自學教材：從抽象層次到可執行的計算機，包含推導、圖表、例題、練習與詳解。">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23006d77'/%3E%3Cpath d='M14 18h36v28H14z' fill='%23f6bd60' stroke='%2320231f' stroke-width='4'/%3E%3Cpath d='M22 28h20M22 36h14' stroke='%2320231f' stroke-width='4'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#content">跳到主要內容</a>
+  <header class="topbar">
+    <a class="brand brand-link" href="../index.html">
+      <span class="brand-mark" aria-hidden="true">CO</span>
+      <div>
+        <p>YunTech 115-1 / EL3021</p>
+        <h1>計算機組織線上講義</h1>
+      </div>
+    </a>
+    <nav class="top-actions" aria-label="工具列">
+      <button id="toggleTheme" type="button" title="切換明暗色調">◐</button>
+      <button id="printPage" type="button" title="列印目前內容">⎙</button>
+    </nav>
+  </header>
+  <main class="layout">
+    <aside class="sidebar" aria-label="週次導覽">
+      <section class="course-card">
+        <p class="eyebrow">Computer Organization</p>
+        <h2>何敏煌老師</h2>
+        <dl>
+          <div><dt>班級</dt><dd>四電子三</dd></div>
+          <div><dt>時間</dt><dd>週一 BCD / ES004</dd></div>
+          <div><dt>教室</dt><dd>ES004</dd></div>
+          <div><dt>學分</dt><dd>3-0-3</dd></div>
+          <div><dt>評量</dt><dd>平時 30%、期中 30%、期末專題 40%</dd></div>
+        </dl>
+      </section>
+      <label class="search-box">
+        <span>搜尋週次</span>
+        <input id="searchInput" type="search" placeholder="例如：CPI、hazard、cache">
+      </label>
+      <div class="week-list" id="weekList">
+
+        <a class="week-button week-link active" href="../weeks/week-01.html" data-search="計算機系統的抽象層次與課程介紹 introduction to computer systems and levels of abstraction abstraction isa hardware/software interface 說明應用程式、系統軟體、指令集架構、微架構與電路之間的分工。 理解計算機組織關心的是「指令如何被硬體執行」。 建立本課程的學習地圖：效能、mips、算術、datapath、pipeline、memory hierarchy。 本課程的核心問題是：一段程式如何變成可以在 cpu 上執行的二進位指令？cpu 又如何在有限硬體資源下快速且正確地完成這些指令？ 學習計算機組織時，請同時保留兩種視角。第一種是程式設計者視角：指令、暫存器、記憶體位址、效能。第二種是硬體設計者視角：資料路徑、控制訊號、pipeline stage、cache hit/miss。 本學期前半段會建立 isa 與算術基礎；後半段把指令放入處理器資料路徑，進一步分析 pipeline 與 cache 對效能的影響。">
+          <strong>01</strong>
+          <span>計算機系統的抽象層次與課程介紹<small>Introduction to Computer Systems and Levels of Abstraction</small></span>
+        </a>
+        <a class="week-button week-link " href="../weeks/week-02.html" data-search="計算機效能評估 computer performance evaluation: cpu time, clock rate, and cpi cpu time cpi amdahl&#039;s law 能計算 cpu execution time。 能區分 response time 與 throughput。 能用 amdahl&#039;s law 判斷最佳化上限。 不要只看 clock rate。較高頻率若伴隨較高 cpi 或更多指令數，不一定更快。效能比較必須指定工作負載，並同時考慮 instruction count、cpi 與 clock rate。 response time 是單一任務完成時間，使用者通常直接感受到它；throughput 是單位時間完成多少工作，伺服器與批次系統常關心它。 最佳化前應先量測。若記憶體等待佔 40%，alu 變快 10 倍也不會讓整體快 10 倍。">
+          <strong>02</strong>
+          <span>計算機效能評估<small>Computer Performance Evaluation: CPU Time, Clock Rate, and CPI</small></span>
+        </a>
+        <a class="week-button week-link " href="../weeks/week-03.html" data-search="數值表示法與資料儲存 data representation and information storage in computers binary two&#039;s complement endianness 熟悉二進位、十六進位與位元運算。 能用 two&#039;s complement 表示有號整數。 理解 byte addressing 與 endianness。 二進位與十六進位轉換是後續看 instruction encoding、cache address breakdown 的基本功。十六進位每一位剛好對應 4 bits，適合表達 32-bit 指令與位址。 overflow 只對固定寬度的有號運算有意義。兩個正數相加得到負數、或兩個負數相加得到正數，就是 two&#039;s complement overflow 的典型跡象。 資料對齊（alignment）會影響硬體存取效率。mips word 通常要求 4-byte alignment，位址最低兩個 bit 應為 00。">
+          <strong>03</strong>
+          <span>數值表示法與資料儲存<small>Data Representation and Information Storage in Computers</small></span>
+        </a>
+        <a class="week-button week-link " href="../weeks/week-04.html" data-search="mips 組合語言與暫存器架構 introduction to mips assembly language and register organization mips registers assembly 認識 mips register convention。 理解 load-store architecture。 能讀懂基本 arithmetic 指令。 組合語言的價值不是取代 c，而是讓我們看見編譯器和硬體中間的指令層。理解 mips 後，學習 risc-v、arm 或其他 risc isa 會容易很多。 暫存器數量有限，所以編譯器需要做 register allocation。當暫存器不夠時，資料會 spill 到 memory，效能通常下降。 良好的組合語言閱讀習慣：先標出變數放在哪些暫存器，再追蹤每行指令改變了哪些狀態。">
+          <strong>04</strong>
+          <span>MIPS 組合語言與暫存器架構<small>Introduction to MIPS Assembly Language and Register Organization</small></span>
+        </a>
+        <a class="week-button week-link " href="../weeks/week-05.html" data-search="mips 基本指令與記憶體存取 mips instructions and memory access operations lw sw branch addressing 熟悉 lw/sw base+offset addressing。 能撰寫 if/else 與 loop。 理解 branch target 與 pc 更新。 mips memory 是 byte-addressed，但 `lw` 一次讀 4 bytes。若處理 int 陣列，index 要乘以 4；若處理 char 陣列，index 不需乘以 4。 組合語言沒有高階語言的區塊結構，只有 label 與 branch/jump。閱讀 loop 時，先找 label、條件跳出點與回跳指令。 pseudo-instructions 如 `move`、`li`、`blt` 方便書寫，但硬體真正執行的是 assembler 展開後的基本指令。">
+          <strong>05</strong>
+          <span>MIPS 基本指令與記憶體存取<small>MIPS Instructions and Memory Access Operations</small></span>
+        </a>
+        <a class="week-button week-link " href="../weeks/week-06.html" data-search="mips 程式設計與指令執行流程 mips programming and instruction execution process procedure stack calling convention 理解函式呼叫與 stack frame。 能追蹤 jal/jr 與 $ra。 能將小型 c 函式翻成 mips。 函式呼叫是最能串起軟硬體的例子：高階語言看起來是一個 function call，isa 層面是 `jal`、參數暫存器與 stack 操作，硬體層面則是 pc 改變與暫存器寫入。 遞迴函式必須特別注意 `$ra` 與參數保存，否則下一次呼叫會覆蓋上一層返回位置。 追蹤 stack 時畫表格最清楚：列出位址、內容、何時 push、何時 pop。">
+          <strong>06</strong>
+          <span>MIPS 程式設計與指令執行流程<small>MIPS Programming and Instruction Execution Process</small></span>
+        </a>
+        <a class="week-button week-link " href="../weeks/week-07.html" data-search="整數算術運算與浮點數表示法 integer arithmetic and floating-point representation alu overflow ieee 754 理解加減乘除的硬體概念。 能判斷 signed overflow。 理解 ieee 754 floating-point 的 sign/exponent/fraction。 整數 overflow 是位元寬度有限造成的結果。硬體可以用 operand sign 與 result sign 判斷加法 overflow。 浮點數用科學記號的想法換取範圍，但犧牲精確度。越大的數，相鄰可表示數之間的間距也越大。 學會辨認 special values：zero、subnormal、infinity、nan。這些設計讓浮點運算能處理 underflow、overflow 與未定義結果。">
+          <strong>07</strong>
+          <span>整數算術運算與浮點數表示法<small>Integer Arithmetic and Floating-Point Representation</small></span>
+        </a>
+        <a class="week-button week-link " href="../weeks/week-08.html" data-search="指令編碼與 cpu 執行指令的基本流程 instruction encoding and cpu instruction execution cycle instruction encoding r/i/j format control 能辨識 mips r/i/j format。 理解 opcode、rs、rt、rd、shamt、funct。 銜接指令格式到 datapath 控制訊號。 指令編碼不是單純背欄位，而是理解硬體如何從 bit pattern 產生控制訊號。opcode 進入 control unit 後，決定 regwrite、memread、memwrite、alusrc、branch 等訊號。 branch offset 通常以 word 為單位並相對於 pc+4，這讓短距離迴圈可用較少 bits 表示。 期中考前請能手算：給一行 mips 指令，指出格式與主要欄位；給欄位，判斷它大致會啟動哪些資料路徑。">
+          <strong>08</strong>
+          <span>指令編碼與 CPU 執行指令的基本流程<small>Instruction Encoding and CPU Instruction Execution Cycle</small></span>
+        </a>
+        <a class="week-button week-link " href="../weeks/week-09.html" data-search="期中考試週 midterm examination review exam 整合第 1-8 週觀念。 熟練效能公式、mips 指令、數值表示與指令格式。 能用文字解釋而非只代公式。 準備期中考時，不要只看答案。請把每題的假設寫清楚，例如單位是 ghz 還是 ns、offset 是 byte 還是 word、數值被解讀為 signed 還是 unsigned。 組合語言題目可逐行加註解，尤其是 branch 的條件與跳躍方向。畫出暫存器內容變化表，錯誤會少很多。 考前最後一輪複習可用三張紙：效能公式表、mips 指令表、數值表示規則表。">
+          <strong>09</strong>
+          <span>期中考試週<small>Midterm Examination</small></span>
+        </a>
+        <a class="week-button week-link " href="../weeks/week-10.html" data-search="cpu 資料路徑與單週期處理器架構 cpu datapath and single-cycle processor architecture datapath single-cycle control signals 能追蹤單週期 datapath。 理解 control signals 的角色。 分析單週期設計的 clock period 限制。 分析 datapath 最重要的是問三個問題：資料從哪裡來？經過哪些元件？最後寫到哪裡？控制訊號如何讓這條路成立？ `lw` 會使用 instruction memory、register file、alu、data memory、write back mux。`add` 不用 data memory。`beq` 會使用 alu 做比較並可能改變 pc。 單週期處理器不是高效設計，但它把每個指令需要的硬體路徑攤在一張圖上，因此很適合作為處理器資料路徑的入門模型。">
+          <strong>10</strong>
+          <span>CPU 資料路徑與單週期處理器架構<small>CPU Datapath and Single-Cycle Processor Architecture</small></span>
+        </a>
+        <a class="week-button week-link " href="../weeks/week-11.html" data-search="pipeline 處理器的概念與效能分析 pipelined processor concepts and performance analysis pipeline if id ex mem wb speedup 理解五階段 pipeline。 能分辨 latency 與 throughput。 估算 pipeline speedup 與限制。 pipeline 不會讓單一指令的 latency 變短；它讓多個指令像生產線一樣重疊，因此完成一批指令的平均時間降低。 pipeline clock period 由最慢 stage 加上 pipeline register overhead 決定。若各 stage 延遲差距很大，切更多階段不一定划算。 分析 pipeline 題目時，畫 cycle-by-cycle table 是最穩的方式。列是指令，欄是 cycle，填 if/id/ex/mem/wb。">
+          <strong>11</strong>
+          <span>Pipeline 處理器的概念與效能分析<small>Pipelined Processor Concepts and Performance Analysis</small></span>
+        </a>
+        <a class="week-button week-link " href="../weeks/week-12.html" data-search="pipeline hazard 的種類與基本解決方法 pipeline hazards and basic resolution techniques data hazard control hazard forwarding stall 辨識 structural、data、control hazards。 理解 forwarding 與 stall。 能處理 load-use hazard 與 branch penalty。 data hazard 的核心是 producer-consumer distance。alu 結果通常 ex 後可 forward；load 的資料要到 mem 後才可用，因此緊接使用通常需要一個 stall。 forwarding 不等於不用 hazard detection。硬體仍需比較 pipeline registers 中的 rs/rt/rd，判斷是否改 alu input mux。 branch 越頻繁、prediction 越差，pipeline 效益越容易被 penalty 吃掉。">
+          <strong>12</strong>
+          <span>Pipeline Hazard 的種類與基本解決方法<small>Pipeline Hazards and Basic Resolution Techniques</small></span>
+        </a>
+        <a class="week-button week-link " href="../weeks/week-13.html" data-search="記憶體階層架構與區域性原理 memory hierarchy and the principle of locality memory hierarchy locality amat 理解 memory hierarchy 的成本/速度/容量折衷。 能說明 temporal 與 spatial locality。 能計算 average memory access time。 memory wall 是處理器速度提升遠快於主記憶體延遲改善造成的落差。cache 是緩解 memory wall 的核心技術。 區域性不是硬體保證，而是程式行為。資料結構與迴圈順序會大幅影響 cache 表現。 amat 題目要小心單位。hit time 可能是 cycles，miss penalty 也可能是 ns；計算前先統一。">
+          <strong>13</strong>
+          <span>記憶體階層架構與區域性原理<small>Memory Hierarchy and the Principle of Locality</small></span>
+        </a>
+        <a class="week-button week-link " href="../weeks/week-14.html" data-search="cache memory 的基本運作原理 fundamentals of cache memory operation cache tag valid bit write policy 理解 cache block、tag、index、offset。 能判斷 hit/miss。 理解 write-through 與 write-back。 判斷 hit/miss 的標準流程：用 index 找 line/set，檢查 valid，拿 tag 比對。若 tag match 且 valid=1 才是 hit。 cache 設計沒有單一最佳答案。block size、capacity、associativity、replacement、write policy 都會影響 hit time、miss rate、miss penalty 與硬體成本。 direct-mapped cache 簡單快速，但容易發生 conflict miss。associative cache 較彈性，但 tag comparison 和 replacement 較複雜。">
+          <strong>14</strong>
+          <span>Cache Memory 的基本運作原理<small>Fundamentals of Cache Memory Operation</small></span>
+        </a>
+        <a class="week-button week-link " href="../weeks/week-15.html" data-search="cache mapping 方法介紹 cache mapping techniques: direct-mapped, set-associative, and fully associative direct mapped set associative fully associative 能比較三種 mapping。 能計算 set、way、index、tag bits。 理解 conflict miss 與 associativity 的關係。 n-way set associative cache 的 sets = cache size / (block size × n)。index bits = log2(sets)，offset bits = log2(block size)。 associativity 提高通常可降低 conflict miss，但也可能增加 hit time 與能耗。真實設計常以實驗工作負載評估。 手算題請先寫出 cache size、block size、ways，再推 lines、sets、offset/index/tag，不要跳步。">
+          <strong>15</strong>
+          <span>Cache Mapping 方法介紹<small>Cache Mapping Techniques: Direct-Mapped, Set-Associative, and Fully Associative</small></span>
+        </a>
+        <a class="week-button week-link " href="../weeks/week-16.html" data-search="cache replacement policy 與效能分析 cache replacement policies and performance analysis lru fifo random cache performance 理解 replacement policy。 能模擬 lru/fifo。 以 amat 評估 cache 參數變化。 考題常給位址序列與 cache 組態，要求模擬 replacement。請維護每個 set 的內容、valid、tag、最近使用順序或進入順序。 multi-level cache 的 amat 可展開：amat = l1 hit time + l1 miss rate × (l2 hit time + l2 miss rate × memory penalty)。 write-back cache 在替換 dirty block 時會增加額外寫回成本；分析 miss penalty 時不要漏掉。">
+          <strong>16</strong>
+          <span>Cache Replacement Policy 與效能分析<small>Cache Replacement Policies and Performance Analysis</small></span>
+        </a>
+        <a class="week-button week-link " href="../weeks/week-17.html" data-search="計算機組織整體架構總整理與應用案例 computer organization overview and practical applications integration case study optimization 整合 isa、datapath、pipeline、cache。 能用完整路徑解釋程式效能瓶頸。 準備期末專題報告。 期末專題可選擇一段程式或一個硬體主題，分析它與本課程概念的連結。好的專題不是堆名詞，而是能清楚展示問題、假設、方法、結果與限制。 真實系統中效能分析常用 profiling。先知道時間花在哪裡，再選擇從演算法、編譯、isa 或記憶體行為下手。 本週可把所有公式與圖整合成一頁總表：cpu time、pipeline speedup、amat、address breakdown、hazard 類型。">
+          <strong>17</strong>
+          <span>計算機組織整體架構總整理與應用案例<small>Computer Organization Overview and Practical Applications</small></span>
+        </a>
+        <a class="week-button week-link " href="../weeks/week-18.html" data-search="期末測驗 final examination final project review 完成全學期整合複習。 展示期末專題或完成期末測驗。 能從硬體/軟體介面角度解釋系統行為。 期末題目通常要求跨章節整合。例如一段 loop 的效能可能同時牽涉指令數、branch、load-use hazard 與 cache miss。 請避免只寫結論。每一步推導、每個控制訊號、每個 cache 位址切割都要有理由，這比背答案更可靠。 完成本課程後，應能用精確但不神秘的語言說明：程式為什麼快或慢，cpu 為什麼需要 pipeline，記憶體階層為什麼不可或缺。">
+          <strong>18</strong>
+          <span>期末測驗<small>Final Examination</small></span>
+        </a>
+      </div>
+    </aside>
+    <section id="content" class="content" tabindex="-1">
+      <article class="chapter-page">
+        <nav class="breadcrumb" aria-label="麵包屑"><a href="../index.html">課程首頁</a><a href="../fourth-edition-map.html">第 4 版對照</a><span>第 1 章</span></nav>
+        <header class="chapter-hero">
+          <p class="eyebrow">Detailed self-study chapter · Revised 2026-08-16</p>
+          <h2>第 1 章<br>從抽象層次到可執行的計算機</h2>
+          <p class="chapter-english">From Abstraction Layers to an Executing Computer</p>
+          <p>一部計算機不是單一元件，而是一組彼此遵守介面的層次。程式設計者看見變數、函式與執行緒；ISA 看見指令、暫存器與記憶體；處理器內部則用資料路徑、控制訊號、pipeline 與 cache 實作這些承諾。本章建立一套可反覆使用的追蹤方法：先指出目前觀察的層次，再列出該層可見的狀態，最後說明一次操作如何讓狀態由 S(t) 轉為 S(t+1)。後續學習 MIPS、datapath、pipeline 與 cache 時，都會回到這個方法。</p>
+          <dl class="chapter-meta"><div><dt>教材對照</dt><dd>第 1 章 Introduction</dd></div><div><dt>預估時間</dt><dd>約 90–120 分鐘</dd></div><div><dt>更新日期</dt><dd>2026-08-16</dd></div></dl>
+        </header>
+        <section class="chapter-outcomes">
+          <h3>完成本章後應能做到</h3>
+          <ol><li>能由應用程式一路說明到 transistor 的抽象層次，並指出相鄰層之間的 interface。</li><li>能區分 instruction set architecture 與 microarchitecture，不再把 ISA 名稱當成某一顆 CPU 的內部結構。</li><li>能用 PC、registers、memory 與 device state 描述 stored-program computer 的狀態。</li><li>能逐步追蹤 fetch–decode–execute，辨認每一步讀取與更新的狀態。</li><li>能區分 pipeline、SIMD/SIMT、multicore 與 distributed computing 所利用的平行層次。</li><li>能以 correctness、latency、throughput 與 energy 等不同觀察指標評估實作。</li></ol>
+        </section>
+        <nav class="chapter-toc" aria-label="本章目錄"><h3>本章路徑</h3><a href="#section-1">1. 抽象不是忽略細節，而是固定介面</a><a href="#section-2">2. Architecture 與 Organization 的真正分界</a><a href="#section-3">3. 把計算機視為狀態轉移系統</a><a href="#section-4">4. Stored-program 與 von Neumann 模型</a><a href="#section-5">5. CPU、Memory、I/O 與 Interconnect 如何合作</a><a href="#section-6">6. ISA 這份合約到底包含什麼</a><a href="#section-7">7. 一行程式如何穿過所有層次</a><a href="#section-8">8. Parallelism 不是單一技術</a><a href="#section-9">9. Correctness 與 Performance 必須分開證明</a><a href="#worked-examples">逐步例題</a><a href="#exercises">分級練習與詳解</a><a href="#glossary">術語表</a></nav>
+        <div class="chapter-reading"><section class="chapter-section" id="section-1">
+      <h3>1. 抽象不是忽略細節，而是固定介面</h3>
+      <p>面對複雜系統時，我們不可能同時追蹤每一個 transistor、每一條控制線與每一個程式變數。抽象的做法是先選定一個觀察邊界：邊界上方只依賴一組明確承諾，邊界下方可以自由改變實作，只要仍然履行承諾。例如高階語言規定運算式與函式呼叫的語意，compiler 負責把語意翻成特定 ISA；程式通常不需要知道 add 指令在 CPU 內部用了 ripple-carry adder、carry-lookahead adder 或其他電路。</p><p>一個穩定 interface 至少要回答三件事：可以提出哪些 operation、operation 讀寫哪些 state、完成後可觀察到什麼結果。檔案 API 的 read() 是 interface；SSD 或網路檔案系統是 implementation。相同地，MIPS 的 register 名稱、instruction encoding、addressing rule 與 exception behavior 屬於 ISA interface；單週期、多週期或 pipeline datapath 屬於 implementation。</p><p>抽象並不保證下層細節永遠不重要。正確性通常只需要遵守 interface，但效能、功耗與安全性常會受到隱藏細節影響。程式逐列掃描陣列與逐欄掃描陣列可能產生相同答案，卻因 cache locality 不同而有巨大時間差。學習計算機組織的核心，就是知道什麼時候可以依賴抽象、什麼時候必須向下追蹤。</p>
+      <figure class="learning-figure">
+    <h4>計算系統的抽象堆疊</h4>
+    <div class="hierarchy-diagram"><div style="--level:0"><strong>Application / Algorithm</strong><span>問題、資料結構、函式與並行工作</span></div><div style="--level:1"><strong>High-level Language</strong><span>型別、控制結構與語言語意</span></div><div style="--level:2"><strong>Compiler / Assembler</strong><span>翻譯、最佳化、符號與 machine code</span></div><div style="--level:3"><strong>ISA</strong><span>指令、暫存器、位址、例外與 memory model</span></div><div style="--level:4"><strong>Microarchitecture</strong><span>datapath、control、pipeline、cache</span></div><div style="--level:5"><strong>Digital Logic</strong><span>gate、mux、adder、register、state machine</span></div><div style="--level:6"><strong>Circuit / Device</strong><span>transistor、wire、timing、voltage</span></div></div>
+    <figcaption>每一層都以較穩定的 interface 隔開上下層。越往下越接近物理限制，越往上越接近問題語意。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S1">S1</a>、<a href="#source-S2">S2</a></p>
+    </section><section class="chapter-section" id="section-2">
+      <h3>2. Architecture 與 Organization 的真正分界</h3>
+      <p>Computer architecture 在不同教材中有廣義與狹義用法。為了能精確分析，本講義把 software-visible contract 稱為 ISA，把完成這份 contract 的內部安排稱為 microarchitecture 或 organization。ISA 會規定可用指令、instruction format、programmer-visible registers、資料型別、addressing mode、控制轉移、exception 與 memory interaction。</p><p>Microarchitecture 決定同一份指令如何被執行：一條 add 是否在一個長 clock 內完成，或切成多個 stage；是否能同時 issue 多條指令；branch predictor 有多大；L1 cache 使用幾路 set-associative；ALU 是一份還是多份。這些選擇會改變 clock period、CPI、功耗與晶片面積，卻不應改變符合 ISA 的程式結果。</p><p>因此，ISA compatibility 與 performance 是兩個不同問題。兩顆 CPU 能執行相同 binary，表示它們實作相容 ISA；其中一顆更快，則要從 dynamic instruction count、CPI、clock period、memory behavior 等 organization 證據解釋。只說『都是 MIPS』或『clock 比較高』都不足以完成效能推論。</p><p>RISC-V 官方規格刻意盡量不綁定 cache、in-order、out-of-order 或特定製程，就是 interface 與 implementation 分離的現代例子。基礎 ISA 可以由教學用小核心、低功耗微控制器或高效能 superscalar CPU 實作；只要 observable behavior 符合規格，內部結構可以完全不同。</p>
+      <figure class="learning-figure">
+    <h4>ISA 與 Microarchitecture 比較</h4>
+    <div class="diagram-table-wrap"><table class="diagram-table"><thead><tr><th>問題</th><th>ISA / Architecture</th><th>Microarchitecture / Organization</th></tr></thead><tbody><tr><td>程式看見什麼？</td><td>instructions、registers、addresses</td><td>pipeline stages、ports、queues、cache banks</td></tr><tr><td>主要約束</td><td>binary compatibility 與 observable behavior</td><td>timing、area、energy、throughput</td></tr><tr><td>例子</td><td>MIPS32、RV32I、x86-64</td><td>single-cycle、5-stage、out-of-order</td></tr><tr><td>改變後是否重編譯？</td><td>通常需要，或至少需要相容 translation</td><td>相同 ISA 通常不需要</td></tr><tr><td>驗證重點</td><td>每條指令結果與例外是否正確</td><td>是否在所有 hazard 與 timing 下仍履行 ISA</td></tr></tbody></table></div>
+    <figcaption>ISA 是軟體可觀察的合約；microarchitecture 是合約的硬體實現。相容不等於等速。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S2">S2</a>、<a href="#source-S3">S3</a></p>
+    </section><section class="chapter-section" id="section-3">
+      <h3>3. 把計算機視為狀態轉移系統</h3>
+      <p>要追蹤一段程式，最可靠的方法不是背硬體方塊，而是先列出 state。最小化的 architectural state 可以寫成 S = {PC, R, M, D}：PC 是下一個或目前指令的位置；R 是 programmer-visible registers；M 是可定址 memory；D 是會影響程式的 device 或 I/O state。不同 ISA 對 PC 定義與例外狀態略有不同，但分析方式相同。</p><p>執行一條 instruction 可以寫成 transition function：S(t+1) = Execute(S(t), instruction)。add 可能只更新一個 register 與 PC；store 會更新 memory 與 PC；branch 依比較結果選擇新的 PC；I/O instruction 或 memory-mapped I/O 可能同時改變 device state。沒有被指令指定的 architectural state 必須保持可觀察的一致性。</p><p>Microarchitecture 內部還有大量暫時 state，例如 pipeline registers、cache tags、branch predictor counters、reorder buffer entries。它們會影響何時完成與效能，但正常情況下不應讓程式看見違反 ISA 的中間結果。發生 branch misprediction 時，錯誤路徑上的暫時工作必須被取消；程式最後看見的 architectural state 應如同指令依規定順序執行。</p><p>這個 state transition 觀點也提供除錯順序：先找第一個與預期不同的 state，再問是哪個 transition 寫錯。若 register 已錯，往前查產生它的 instruction；若 memory 錯，查 address、write enable 與 store data；若控制流錯，查 PC update 與 branch condition。</p>
+      <figure class="learning-figure">
+    <h4>一條指令的狀態證據鏈</h4>
+    <div class="flow-diagram"><span class="flow-node">S(t): PC / R / M</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Fetch instruction</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Decode operation</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Read operands</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Compute / access memory</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Commit S(t+1)</span></div>
+    <figcaption>分析時每一箭頭都要回答：讀了哪個 state、經過什麼規則、最後寫回哪個 state。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S2">S2</a>、<a href="#source-S3">S3</a></p>
+    </section><section class="chapter-section" id="section-4">
+      <h3>4. Stored-program 與 von Neumann 模型</h3>
+      <p>Stored-program 的關鍵不是 CPU、memory、I/O 三個方塊本身，而是 instruction 也被編碼成 bit pattern 放在可定址 memory 中。CPU 不必為每個新演算法重新接線，只要改變 memory 中的 instruction sequence，就能讓同一套 datapath 執行不同工作。程式因此成為可以載入、複製、儲存與產生的資料。</p><p>概念上的 von Neumann 模型讓 instruction 與 data 共享 memory 與傳輸路徑。現代處理器常在 L1 使用分離的 instruction cache 與 data cache，再於較低層匯合，這通常稱為 modified Harvard organization。它改善同時 fetch instruction 與存取 data 的 bandwidth，但 architectural address space 仍可呈現統一模型。不能因為看見兩個 L1 cache 就直接斷言 ISA 是 Harvard architecture。</p><p>共享傳輸資源帶來 von Neumann bottleneck：CPU 的運算能力可能大於 memory system 提供 instruction/data 的速度。現代系統用 cache、prefetch、wider buses、multiple channels、out-of-order execution 與 parallelism 隱藏或提高資料供應能力，但不能消除資料移動成本。後續 memory hierarchy 章會把這個現象量化為 hit time、miss rate 與 miss penalty。</p><p>程式與資料同為 bits 也帶來保護問題。若系統錯誤地把可寫資料當作指令執行，可能形成 code injection。現代作業系統與 ISA 透過 page permission、privilege mode 與不可執行頁面等機制限制哪些 memory region 能被 fetch。這些保護不改變 stored-program 的核心概念，卻讓介面更完整。</p>
+      <figure class="learning-figure">
+    <h4>Stored-program 的循環</h4>
+    <div class="flow-diagram"><span class="flow-node">PC 提供位址</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Memory 回傳 instruction bits</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Control 解讀欄位</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Datapath 執行</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">更新 register / memory</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">選出 next PC</span></div>
+    <figcaption>instruction 與 data 都是 memory 中的 bits；當下的取用方式決定它被視為操作還是資料。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S2">S2</a>、<a href="#source-S4">S4</a></p>
+    </section><section class="chapter-section" id="section-5">
+      <h3>5. CPU、Memory、I/O 與 Interconnect 如何合作</h3>
+      <p>CPU 內部至少包含保存 state 的 registers、執行算術邏輯的 datapath，以及依 instruction 產生控制訊號的 control unit。Memory 可以抽象成由 address 選取的 word/byte 集合；I/O device 則與外界交換資料。真正讓它們合作的是 interconnect：它傳遞 address、data 與 transaction type，並處理 ready、valid、response 或 error 等狀態。</p><p>一次 memory read 不是『CPU 直接拿到值』這麼簡單。CPU 先提出 read request 與 address；cache 或 memory hierarchy 判斷是否命中；資料可能在本 cycle、數個 cycles 或更久之後回應。若 datapath 必須等待，control 就要 stall；若允許其他工作先執行，則需要追蹤 outstanding operation 與 dependency。介面的 latency 與 concurrency 會塑造整個 microarchitecture。</p><p>I/O 常透過 memory-mapped I/O 呈現：某些 address 不對應 DRAM，而對應 device register。CPU 使用一般 load/store 發出 request，interconnect 依 address 導向裝置。表面上都是 memory operation，但 device register 可能具有讀取即清除、寫 1 清除或異步更新等 side effect，因此不能任意 cache 或重排。</p><p>Bus 是共享 interconnect 的一種，不是所有系統連線的總稱。簡單 bus 成本低，但多個 master 同時請求時需要 arbitration，且總 bandwidth 被共享。較大型 SoC 常使用階層式 crossbar 或 network-on-chip，讓多筆 transaction 並行。第 4 版以 bus 建立基礎模型，現代實作則把相同 request/response 概念擴展到更複雜互連。</p>
+      <figure class="learning-figure">
+    <h4>一次 transaction 需要的資訊</h4>
+    <div class="diagram-table-wrap"><table class="diagram-table"><thead><tr><th>訊息</th><th>作用</th><th>錯誤時的現象</th></tr></thead><tbody><tr><td>Address</td><td>選擇 memory location 或 device register</td><td>讀錯資料、alignment fault</td></tr><tr><td>Command</td><td>read、write、atomic 或 I/O operation</td><td>方向或 side effect 錯誤</td></tr><tr><td>Write data / byte enable</td><td>指定寫入內容與哪些 bytes 有效</td><td>鄰近 bytes 被破壞</td></tr><tr><td>Response data</td><td>回傳 load 或 device 結果</td><td>register 得到過期或錯誤值</td></tr><tr><td>Handshake / status</td><td>表示 request 接受、完成或失敗</td><td>遺失 transaction、重複執行或永久等待</td></tr></tbody></table></div>
+    <figcaption>方塊圖只顯示連線；transaction 表才能說明資料何時有效、由誰接收以及失敗如何呈現。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S2">S2</a>、<a href="#source-S5">S5</a></p>
+    </section><section class="chapter-section" id="section-6">
+      <h3>6. ISA 這份合約到底包含什麼</h3>
+      <p>初學時常把 ISA 縮成 instruction list，但完整 ISA 還要定義 programmer-visible state 與每個 operation 的 precise effect。典型內容包括 integer/floating-point registers、PC、instruction encoding、資料寬度、address space、load/store 規則、alignment、endianness、control flow、atomic operation、exception、privilege interface 與 memory ordering。</p><p>RISC-V 是很清楚的現代例子：base integer ISA 提供形成 compiler target 所需的整數計算、load/store 與 control flow，再以 M、A、F、D、C、V 等 extensions 增加乘除、atomic、floating point、compressed encoding 與 vector operation。extension 名稱描述 software-visible capability，而不是 CPU 內部有幾級 pipeline。</p><p>ISA 規格通常允許多個合法結果或 implementation choice。例如 misaligned access 可由硬體處理或觸發 exception，memory ordering 也可能需要 fence 才能約束。程式若依賴規格沒有保證的 timing 或內部排列，就可能在另一顆相容 CPU 上失敗。因此閱讀 ISA 時要區分 required behavior、reserved encoding、implementation-defined behavior 與 performance hint。</p><p>本課以 MIPS 說明固定 32-bit encoding、register file 與 load-store datapath，並使用 MARIE 看見更小的累加器模型。兩者不是誰『比較正確』，而是 interface 設計取捨不同：MARIE 隱含 AC，MIPS 明確指定多個 registers。比較 ISA 時應問 state 是否顯式、instruction 如何編碼、memory 如何定址，而不是只數 instruction 數量。</p>
+      <figure class="learning-figure">
+    <h4>ISA 合約的五個層面</h4>
+    <div class="hierarchy-diagram"><div style="--level:0"><strong>Visible State</strong><span>registers、PC、status、address space</span></div><div style="--level:1"><strong>Operations</strong><span>arithmetic、logic、load/store、control flow</span></div><div style="--level:2"><strong>Encoding</strong><span>instruction length、opcode、operand fields</span></div><div style="--level:3"><strong>Exceptional Behavior</strong><span>fault、trap、privilege、interrupt interface</span></div><div style="--level:4"><strong>Ordering</strong><span>memory visibility、atomicity、fence</span></div></div>
+    <figcaption>只有 operation name 不足以形成 ISA；state、encoding、exception 與 ordering 都會影響 binary 的可攜性。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S1">S1</a>、<a href="#source-S3">S3</a></p>
+    </section><section class="chapter-section" id="section-7">
+      <h3>7. 一行程式如何穿過所有層次</h3>
+      <p>考慮 C 敘述 A[i] = B[i] + 1。語言層關心 array element 與 integer addition；compiler 要選 registers、計算 byte offset、產生 load、add 與 store；assembler 把 register name、immediate 與 opcode 編成 bits；CPU fetch 這些 bits 並產生 datapath control；cache 根據 effective address 判斷 hit/miss；DRAM 或更低層只看 address 與 data transaction。</p><p>同一個語意可能產生不同 instruction sequence。compiler 可以把 i 保留在 register、把 4*i 改成 shift，也可能把 loop 展開或 vectorize。只要 observable result 與語言規則一致，翻譯就合法。這也表示 static source line 數不能直接推出 dynamic instruction count，更不能直接推出執行時間。</p><p>跨層追蹤時，先建立名稱對照：A base 在哪個 register、i 的數值與寬度、element size、effective address、load destination、ALU result、store address。接著逐 instruction 更新 state。最後才分析 cache line、pipeline hazard 與 cycles。跳過 state 直接猜效能，通常會把 address 錯誤與 cache miss 混在一起。</p><p>這條路徑也說明為何效能是跨層現象。演算法決定工作量，compiler 決定 instruction mix，ISA 決定可表達的 operation，microarchitecture 決定 CPI 與 clock，memory hierarchy 決定 stall。任何一層都可能是瓶頸，不能只靠 CPU 型號解釋。</p>
+      <figure class="learning-figure">
+    <h4>A[i] = B[i] + 1 的跨層證據</h4>
+    <div class="flow-diagram"><span class="flow-node">Array semantics</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Compiler chooses registers</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">ISA load / add / store</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Datapath control</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Cache lookup</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Memory transaction</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Architectural result</span></div>
+    <figcaption>每一層都保留上一層需要的語意，但以更接近硬體的 state 與 operation 表達。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S1">S1</a>、<a href="#source-S3">S3</a></p>
+    </section><section class="chapter-section" id="section-8">
+      <h3>8. Parallelism 不是單一技術</h3>
+      <p>Parallelism 的共同目標是讓多個工作片段在時間上重疊，但不同層次的『工作片段』並不相同。Pipeline 重疊多條 instruction 的不同 stages；superscalar 同 cycle issue 多條 independent instructions；SIMD 對多個 data lanes 套用同一 operation；SIMT 讓一群 threads 執行相同 kernel 並保有各自 state；multicore 同時執行多個 software threads；distributed system 則讓多台機器合作。</p><p>Pipeline 主要提高 throughput，不保證單一 instruction latency 等比例下降。SIMD/SIMT 需要 data-level parallelism，若各 lane/thread 在 branch 走不同路徑，部分執行資源會閒置。Multicore 需要工作可分割，還要支付 synchronization、communication 與 load imbalance 成本。使用更多 processing elements 不會自動得到線性 speedup。</p><p>NVIDIA 的 SIMT model 以 warp 組織 threads。thread 保有自己的 register state 與 control flow，但同一 warp 的 threads 共同推進 instruction；若 branch divergence，硬體要分別處理不同路徑並遮罩不參與的 threads。這是 architecture/programming model 與實際 hardware scheduling 交界的例子。</p><p>判斷平行類型時，問四個問題：同時進行的是 instructions、data elements、threads 還是 machines？它們共享哪些 state？需要如何同步？瓶頸是 compute、memory bandwidth 還是 communication？這四問比背 Flynn taxonomy 更能預測效能。</p>
+      <figure class="learning-figure">
+    <h4>常見平行層次</h4>
+    <div class="diagram-table-wrap"><table class="diagram-table"><thead><tr><th>層次</th><th>同時處理的單位</th><th>主要限制</th><th>例子</th></tr></thead><tbody><tr><td>Pipeline</td><td>不同 instructions 的 stages</td><td>hazard、stage balance</td><td>IF/ID/EX/MEM/WB</td></tr><tr><td>Superscalar / ILP</td><td>同一 thread 的多條 instructions</td><td>dependency、issue width</td><td>多 ALU、out-of-order</td></tr><tr><td>SIMD / Vector</td><td>多個 data elements</td><td>vector length、mask、bandwidth</td><td>vector add</td></tr><tr><td>SIMT</td><td>同 kernel 的多個 threads</td><td>divergence、occupancy、memory access</td><td>GPU warp</td></tr><tr><td>Multicore</td><td>software threads / tasks</td><td>synchronization、coherence</td><td>多核心 CPU</td></tr><tr><td>Distributed</td><td>processes / machines</td><td>network latency、failure</td><td>cluster、cloud service</td></tr></tbody></table></div>
+    <figcaption>不同平行層次可以同時存在，例如 GPU kernel 既有 SIMT，也有 pipeline、memory hierarchy 與多個 processing clusters。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S5">S5</a>、<a href="#source-S6">S6</a></p>
+    </section><section class="chapter-section" id="section-9">
+      <h3>9. Correctness 與 Performance 必須分開證明</h3>
+      <p>Correctness 問的是結果是否符合 interface；performance 問的是完成結果需要多少時間、資源或能量。同一份 machine code 在 single-cycle 與 pipeline processor 上應得到相同 architectural state，但 cycle 數與 clock period 不同。若結果不同，首先是 correctness bug，而不是『效能比較』。</p><p>Latency 是一個工作從開始到完成的時間；throughput 是單位時間完成多少工作。Pipeline 常讓穩態 throughput 提升，但單一 instruction 仍要經過所有 stages。GPU 可提供很高 throughput，卻不一定讓單一短 request 的 latency 最小。評估前必須先指定 workload 與 metric。</p><p>clock rate、CPI、instruction count 都不是單獨的答案。CPU Time = Instruction Count × CPI × Clock Period。某設計提高 clock rate，若同時增加 pipeline depth 與 branch penalty，CPI 可能上升；某 ISA 用較少 instructions，若每條工作更複雜，也不一定更快。正確比較要把所有因子放回同一時間單位。</p><p>本章的結束標準不是能背出四大元件，而是能提出一條可驗證說明：指出 interface、列出 state、描述 transition、區分 architectural 與 temporary state，最後選擇合適 metric。這條推理鏈會貫穿本課所有章節。</p>
+      <figure class="learning-figure">
+    <h4>從程式到 CPU Time 的三個乘數</h4>
+    <div class="factor-diagram"><div><strong>Instruction Count</strong><span>algorithm、compiler、ISA</span></div><span class="factor-op" aria-hidden="true">×</span><div><strong>Average CPI</strong><span>pipeline、hazard、cache miss</span></div><span class="factor-op" aria-hidden="true">×</span><div><strong>Clock Period</strong><span>critical path、technology</span></div></div>
+    <figcaption>比較效能時三個乘數必須屬於同一 workload；只比較其中一項可能得到相反結論。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S1">S1</a>、<a href="#source-S2">S2</a></p>
+    </section></div>
+        <section class="chapter-worked-list" id="worked-examples"><h2>逐步例題</h2><section class="worked-example chapter-worked">
+      <p class="eyebrow">Worked example 1</p>
+      <h3>例題一：相同 ISA，為何執行時間不同？</h3>
+      <p><strong>題目：</strong>處理器 P 與 Q 都執行同一份 MIPS binary，共 8×10^8 條 dynamic instructions。P 的 clock=2.5 GHz、CPI=1.4；Q 的 clock=2.0 GHz、CPI=1.0。判斷 compatibility 與 performance。</p>
+      <ol><li>兩者能執行相同 binary，表示在題目範圍內具備相容的 ISA；clock 與 CPI 屬於 microarchitecture/performance 資訊。</li><li>P 的 cycles = 8×10^8 × 1.4 = 1.12×10^9 cycles。</li><li>P 的 time = 1.12×10^9 / 2.5×10^9 = 0.448 s。</li><li>Q 的 cycles = 8×10^8 × 1.0 = 8×10^8 cycles。</li><li>Q 的 time = 8×10^8 / 2.0×10^9 = 0.400 s。</li><li>Speedup(Q over P) = 0.448 / 0.400 = 1.12，因此 Q 對此 workload 快 12%。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>相同 ISA 只保證程式可執行與結果相容，不保證效能相同。P 的 clock 較高，但 CPI 劣勢更大。</p>
+    </section><section class="worked-example chapter-worked">
+      <p class="eyebrow">Worked example 2</p>
+      <h3>例題二：追蹤一條 add 的 architectural state</h3>
+      <p><strong>題目：</strong>執行 add $t0,$t1,$t2 前，PC=0x00400020、$t1=7、$t2=−3、$t0=99。假設無例外且 MIPS 指令固定 4 bytes。列出 S(t)→S(t+1)。</p>
+      <ol><li>Fetch 使用 PC=0x00400020 取得 instruction bits；fetch 本身不應改變 general-purpose registers。</li><li>Decode 得知來源為 $t1、$t2，目的為 $t0，operation 為 signed/bitwise-equivalent 32-bit addition。</li><li>Read operands 得到 7 與 −3；ALU 計算 7+(−3)=4。</li><li>Write-back 將 $t0 由 99 更新為 4。</li><li>Sequential next PC = 0x00400020+4 = 0x00400024。</li><li>此指令不存取 data memory，因此 M 保持不變；其他 registers 保持不變。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>S(t+1) 與 S(t) 的 architectural 差異只有 $t0=4 與 PC=0x00400024。pipeline 內部可能同時改變許多 temporary registers，但不屬於此 ISA-level 答案。</p>
+    </section><section class="worked-example chapter-worked">
+      <p class="eyebrow">Worked example 3</p>
+      <h3>例題三：由 C array operation 建立跨層追蹤</h3>
+      <p><strong>題目：</strong>A 與 B 是 32-bit integer arrays，$s0=A base、$s1=B base、$t0=i=3。追蹤 A[i]=B[i]+1 的 address 與主要 state。</p>
+      <ol><li>每個 element 為 4 bytes，因此 byte offset = i×4 = 3×4 = 12。</li><li>可用 sll $t1,$t0,2 取得 offset 12；這是乘 2^2 的位移。</li><li>B[i] address = $s1+12。load 將 M[$s1+12 ... $s1+15] 組成 32-bit value 放入暫存器。</li><li>addi 將 loaded value 加 1。若只分析 correctness，要確認 32-bit overflow 語意與使用的 instruction。</li><li>A[i] address = $s0+12。store 把結果的四個 bytes 寫入該位置。</li><li>若 B[i] 與 A[i] 所在 block 已在 cache，memory hierarchy 可能完全不存取 DRAM；architectural result 仍相同。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>source-level 的一個 array assignment 展開成 offset、兩個 effective addresses、load、ALU update 與 store。cache hit/miss 是下一層效能證據。</p>
+    </section><section class="worked-example chapter-worked">
+      <p class="eyebrow">Worked example 4</p>
+      <h3>例題四：辨認平行層次與限制</h3>
+      <p><strong>題目：</strong>某 GPU kernel 對 1,000,000 個元素各做相同公式，但公式內含依資料決定的 if/else。系統把 threads 以 32 個一組執行。這是哪種平行方式，主要風險是什麼？</p>
+      <ol><li>每個 element 可由一個 thread 處理，因此問題有 data parallelism。</li><li>threads 以群組共同推進 instruction，符合 SIMT programming/execution model。</li><li>每個 thread 保有自己的 register state 與 element index，因此不是單一 scalar state。</li><li>若同一組 32 threads 對 if/else 做出不同選擇，就產生 branch divergence。</li><li>硬體必須對不同路徑分別執行並遮罩未參與 threads；correctness 不變，但有效利用率下降。</li><li>改善前還要檢查 memory access 是否連續，因為 bandwidth 可能比 divergence 更主要。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>此例主要是 SIMT/data parallelism；限制包括 divergence 與 memory behavior。不能只因 thread 數很多就假設 speedup 線性。</p>
+    </section></section>
+        <section class="chapter-misconceptions misconception-panel"><h2>常見誤解與修正</h2><div><article><h4>Architecture 就是 CPU 方塊圖。</h4><p>方塊圖多半呈現 organization；ISA 才是 software-visible architecture contract。廣義用語可能涵蓋兩者，分析時仍要明確命名。</p></article><article><h4>clock rate 高的 CPU 一定比較快。</h4><p>CPU Time 同時受 instruction count、CPI 與 clock period 影響；workload 與 memory stall 也必須相同才能比較。</p></article><article><h4>von Neumann machine 只能有一條實體 bus。</h4><p>核心是 stored-program 與 instruction/data 的概念模型。現代 CPU 可有分離 L1、multiple buses 與 network-on-chip。</p></article><article><h4>Pipeline 同時做五條指令，所以單一指令快五倍。</h4><p>Pipeline 主要改善 throughput；單一 instruction latency 仍包含所有 stages 與 pipeline-register overhead。</p></article><article><h4>ISA 相同代表 cache、pipeline 與核心數相同。</h4><p>這些多半是 microarchitecture 選擇。同一 ISA 可有非常小或非常高效能的不同 implementations。</p></article><article><h4>程式與資料都是 bits，所以任何資料都能安全執行。</h4><p>stored-program 允許 bits 被解讀為 instruction，但 privilege、page permission、alignment 與 valid encoding 仍限制合法 execution。</p></article></div></section>
+        <section class="chapter-exercises self-check" id="exercises"><h2>分級練習與完整解答</h2><p>先完成 state、公式或推理，再展開答案核對。每題解答都列出判斷依據。</p><details>
+      <summary><span>基礎</span>1. 將 compiler、ISA、register file、adder、transistor、C function 依抽象層次由高到低排序。</summary>
+      <div><h4>完整解答</h4><ol><li>C function → compiler → ISA → register file → adder → transistor。</li><li>compiler 是翻譯系統而非執行硬體，但在這條路徑中位於語言與 ISA 之間；register file 與 adder 屬於 microarchitecture/digital logic。</li></ol></div>
+    </details><details>
+      <summary><span>基礎</span>2. 下列哪些通常屬於 ISA：L1 cache 大小、register 數量、instruction encoding、pipeline stage 數、exception behavior？</summary>
+      <div><h4>完整解答</h4><ol><li>通常屬於 ISA：programmer-visible register 數量、instruction encoding、exception behavior。</li><li>L1 cache 大小與 pipeline stage 數通常屬於 microarchitecture。</li></ol></div>
+    </details><details>
+      <summary><span>基礎</span>3. 為何 instruction 與 integer 在 memory 中都只是 bits，CPU 卻能區分它們？</summary>
+      <div><h4>完整解答</h4><ol><li>bits 本身沒有型別；當 CPU 以 PC 作為位址進行 fetch，回傳 bits 會依 instruction encoding 解碼。</li><li>當 load 把相同 bits 讀入 register，後續 instruction 可把它解讀為 signed、unsigned、address 或其他資料。context 與 operation 決定意義。</li></ol></div>
+    </details><details>
+      <summary><span>基礎</span>4. 某 fixed-length 32-bit ISA 使用 byte addressing。若目前 PC=0x1000 且沒有 branch，下一個 PC 是多少？</summary>
+      <div><h4>完整解答</h4><ol><li>32 bits = 4 bytes，因此 next PC = 0x1000 + 4 = 0x1004。</li><li>不能寫成 +1；+1 只前進一個 byte。</li></ol></div>
+    </details><details>
+      <summary><span>理解</span>5. 兩顆處理器都能執行同一份 RV32I binary，但一顆是 3-stage pipeline，另一顆是 8-stage pipeline。這是否矛盾？</summary>
+      <div><h4>完整解答</h4><ol><li>不矛盾。RV32I 定義 software-visible ISA；pipeline depth 是 microarchitecture。</li><li>只要兩者對每條 instruction、exception 與 memory behavior 產生規格允許的 observable result，就能相容。</li></ol></div>
+    </details><details>
+      <summary><span>理解</span>6. 為何分離 instruction cache 與 data cache 不一定表示程式看見兩個 address spaces？</summary>
+      <div><h4>完整解答</h4><ol><li>cache 是 microarchitecture 中的暫存層。instruction/data L1 可分離以提高 bandwidth，再於較低 memory hierarchy 匯合。</li><li>ISA 仍可提供統一的 architectural address space；因此要區分 programmer-visible address model 與內部 cache organization。</li></ol></div>
+    </details><details>
+      <summary><span>理解</span>7. 對 register-register add，列出至少四個可能改變的 microarchitectural state，以及真正必須改變的 architectural state。</summary>
+      <div><h4>完整解答</h4><ol><li>microarchitectural state 可能包括 IF/ID、ID/EX、EX/MEM、MEM/WB pipeline registers、scoreboard、reorder buffer 或 predictor metadata。</li><li>architectural state 至少更新 destination register 與 PC；其他 programmer-visible state 依 ISA 規定保持不變。</li></ol></div>
+    </details><details>
+      <summary><span>計算</span>8. CPU A 執行 2×10^9 instructions，CPI=1.2，clock=3 GHz。CPU B 執行同工作需 1.5×10^9 instructions，CPI=1.8，clock=3.6 GHz。誰較快？</summary>
+      <div><h4>完整解答</h4><ol><li>A time = 2×10^9×1.2 / 3×10^9 = 0.8 s。</li><li>B time = 1.5×10^9×1.8 / 3.6×10^9 = 0.75 s。</li><li>B 較快，speedup = 0.8/0.75 ≈ 1.067，約快 6.7%。</li></ol></div>
+    </details><details>
+      <summary><span>應用</span>9. 一個 device status register 讀取後會自動清除。為何 CPU 不應把它當成一般 DRAM 任意重讀或 cache？</summary>
+      <div><h4>完整解答</h4><ol><li>每次 read 都有 side effect；重讀會改變 device state，cache 回傳舊值也可能隱藏新事件。</li><li>因此 device mapping 通常需要特定 memory type、ordering 與不可 cache 規則，compiler/CPU 也不能任意移動 access。</li></ol></div>
+    </details><details>
+      <summary><span>應用</span>10. 矩陣加法每個 element 完全獨立，適合哪些平行層次？若每個 element 都有不同長度的迴圈，哪個限制會變嚴重？</summary>
+      <div><h4>完整解答</h4><ol><li>可用 SIMD/vector、SIMT/GPU threads，也可把區塊分給 multicore tasks。</li><li>若同一 SIMD/SIMT group 內工作長度不同，會產生 lane underutilization 或 divergence/load imbalance；最慢工作可能決定群組完成時間。</li></ol></div>
+    </details><details>
+      <summary><span>整合</span>11. 一段程式換新 CPU 後答案相同但慢了 20%。請列出由上到下至少五項應蒐集的證據。</summary>
+      <div><h4>完整解答</h4><ol><li>確認 workload/input 與 compiler options 相同。</li><li>比較 dynamic instruction count 與 instruction mix。</li><li>比較 average CPI，分解 branch、dependency 與 cache/memory stalls。</li><li>比較 clock period/rate。</li><li>比較 cache miss、memory bandwidth、page fault 與 I/O wait。</li><li>最後以 CPU Time 或 wall-clock time 的同一 metric 整合，不先假設單一原因。</li></ol></div>
+    </details><details>
+      <summary><span>整合</span>12. 用 S={PC,R,M,D} 描述 store instruction 正常完成後哪些 state 可能改變；再說明 page fault 時有何不同。</summary>
+      <div><h4>完整解答</h4><ol><li>正常 store 會更新指定 memory bytes M，並讓 PC 前進或依 ISA 決定 next PC；source registers 通常不變。device-mapped address 可能改變 D。</li><li>page fault 時 store 可能尚未成為 architectural effect；control 轉入 exception handler，exception/privileged state 與 PC 保存方式依 ISA 規定更新。恢復後要確保 instruction 可被精確重試，不可重複產生已完成的 side effect。</li></ol></div>
+    </details></section>
+        <section class="chapter-glossary" id="glossary"><h2>本章術語表</h2><div class="diagram-table-wrap"><table><tbody><tr><th>Abstraction</th><td>以穩定 interface 隱藏實作細節，讓上層只依賴規定的 operation 與 behavior。</td></tr><tr><th>Interface</th><td>兩層之間可使用的 operation、可見 state 與結果規則。</td></tr><tr><th>ISA</th><td>Instruction Set Architecture；software-visible 的指令、state、encoding、exception 與 memory interaction 合約。</td></tr><tr><th>Microarchitecture</th><td>實作 ISA 的內部 datapath、control、pipeline、cache、queue 與 predictor 安排。</td></tr><tr><th>Architectural state</th><td>依 ISA 可由程式觀察或影響的 state，例如 PC、registers 與 memory。</td></tr><tr><th>Microarchitectural state</th><td>用於執行與最佳化、通常不直接暴露給程式的內部 state。</td></tr><tr><th>Stored-program</th><td>把 instruction 以資料形式存入可定址 memory，CPU 依 PC fetch 並解讀。</td></tr><tr><th>Datapath</th><td>保存、搬移與運算資料的硬體路徑，包含 register、ALU、mux 等。</td></tr><tr><th>Control unit</th><td>解讀 instruction 與目前狀態，產生 datapath、memory 與 next-PC 控制訊號。</td></tr><tr><th>Latency</th><td>單一工作從開始到完成所需時間。</td></tr><tr><th>Throughput</th><td>單位時間內完成的工作數量。</td></tr><tr><th>SIMT</th><td>Single Instruction, Multiple Threads；多個 threads 執行相同 kernel 並保有各自 state 的模型。</td></tr><tr><th>Branch divergence</th><td>同一 SIMT group 中 threads 選擇不同 control paths，造成部分 lanes 暫時無法有效工作。</td></tr><tr><th>Interconnect</th><td>在 CPU、memory、I/O 或 cores 間傳遞 request、address、data 與 response 的連接結構。</td></tr></tbody></table></div></section>
+        <section class="chapter-sources"><h2>研究來源與查閱日期</h2><p>以下來源只用來核對技術事實與當前規格；本站文字、例題與圖表均為原創整理。</p><ol><li id="source-S1"><a href="https://notes.cs61c.org/content/rv-intro/" rel="noreferrer">S1 · UC Berkeley CS 61C Course Notes: Great Idea of Abstraction and RISC-V Introduction</a><p>抽象層次、ISA 作為 software/hardware interface，以及 RISC 教學脈絡。（查閱：2026-08-16）</p></li><li id="source-S2"><a href="https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/pages/c9/" rel="noreferrer">S2 · MIT OpenCourseWare 6.004: Designing an Instruction Set</a><p>stored-program、von Neumann model、datapath/control 與 instruction cycle。（查閱：2026-08-16）</p></li><li id="source-S3"><a href="https://docs.riscv.org/reference/isa/unpriv/unpriv-index.html" rel="noreferrer">S3 · RISC-V Instruction Set Manual, Volume I, Official Release 20260120</a><p>ISA 與 microarchitecture 分離、base ISA、extensions 與 programmer-visible state。（查閱：2026-08-16）</p></li><li id="source-S4"><a href="https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/pages/c9/c9s1/" rel="noreferrer">S4 · MIT OpenCourseWare 6.004: The von Neumann Model</a><p>instruction/data stored as bits、PC fetch 與 control/datapath 分工。（查閱：2026-08-16）</p></li><li id="source-S5"><a href="https://docs.nvidia.com/cuda/cuda-programming-guide/01-introduction/programming-model.html" rel="noreferrer">S5 · NVIDIA CUDA Programming Guide: Programming Model</a><p>現代 SIMT、thread state、warp execution 與 branch divergence。（查閱：2026-08-16）</p></li><li id="source-S6"><a href="https://docs.nvidia.com/cuda/" rel="noreferrer">S6 · NVIDIA CUDA Toolkit Documentation</a><p>目前 CUDA programming model 與工具鏈版本脈絡。（查閱：2026-08-16）</p></li></ol></section>
+      </article>
+    </section>
+  </main>
+  <footer class="footer">
+    <p>計算機組織線上講義 · 多頁式靜態網站 · 適用 GitHub Pages</p>
+  </footer>
+  <script src="../site.js"></script>
+</body>
+</html>

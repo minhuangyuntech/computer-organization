@@ -390,9 +390,15 @@ dd { margin: 0; }
 
 .edition-alignment a {
   display: inline-block;
-  margin-top: 8px;
   color: var(--accent);
   font-weight: 800;
+}
+
+.edition-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-top: 10px;
 }
 
 .edition-page {
@@ -497,6 +503,292 @@ dd { margin: 0; }
 .chapter-course {
   padding-top: 10px;
   border-top: 1px solid var(--line);
+}
+
+.chapter-detail-link,
+.chapter-pending {
+  display: inline-block;
+  margin-top: 8px;
+  font-weight: 800;
+}
+
+.chapter-detail-link {
+  color: var(--accent);
+}
+
+.chapter-pending {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.chapter-page {
+  min-width: 0;
+}
+
+.chapter-page p,
+.chapter-page li,
+.chapter-page summary {
+  overflow-wrap: anywhere;
+}
+
+.chapter-hero {
+  margin-bottom: 24px;
+  padding: clamp(28px, 5vw, 58px);
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.chapter-hero h2 {
+  max-width: 980px;
+  margin: 10px 0 12px;
+  font-size: clamp(38px, 6vw, 72px);
+  line-height: 1.04;
+}
+
+.chapter-hero > p:not(.eyebrow, .chapter-english) {
+  max-width: 980px;
+  color: color-mix(in srgb, var(--bg) 88%, transparent);
+  font-size: 18px;
+}
+
+.chapter-english {
+  margin: 0 0 24px;
+  color: var(--accent-3);
+  font: 700 16px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.chapter-meta {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 28px;
+  padding-top: 18px;
+  border-top: 1px solid color-mix(in srgb, var(--bg) 30%, transparent);
+}
+
+.chapter-meta div {
+  display: block;
+}
+
+.chapter-meta dt {
+  margin-bottom: 4px;
+  color: color-mix(in srgb, var(--bg) 68%, transparent);
+}
+
+.chapter-outcomes,
+.chapter-toc,
+.chapter-reading,
+.chapter-worked-list,
+.chapter-misconceptions,
+.chapter-exercises,
+.chapter-glossary,
+.chapter-sources {
+  margin-bottom: 24px;
+  padding: clamp(22px, 4vw, 40px);
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.chapter-outcomes h3,
+.chapter-toc h3 {
+  margin-top: 0;
+}
+
+.chapter-outcomes ol {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 24px;
+  margin: 0;
+  padding-left: 24px;
+}
+
+.chapter-toc {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  border-top: 8px solid var(--accent-3);
+}
+
+.chapter-toc h3 {
+  grid-column: 1 / -1;
+}
+
+.chapter-toc a {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  text-decoration: none;
+  font-weight: 800;
+  line-height: 1.55;
+}
+
+.chapter-toc a:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.chapter-reading {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.chapter-section {
+  padding: clamp(28px, 5vw, 54px) 0;
+  border-bottom: 2px solid var(--ink);
+}
+
+.chapter-section:last-child {
+  border-bottom: 0;
+}
+
+.chapter-section h3 {
+  max-width: 900px;
+  margin-bottom: 20px;
+  font-size: clamp(26px, 3vw, 38px);
+  line-height: 1.25;
+}
+
+.chapter-section > p:not(.source-ref) {
+  max-width: 920px;
+  font-size: 17px;
+  line-height: 2;
+}
+
+.chapter-section .learning-figure {
+  margin-top: 28px;
+}
+
+.source-ref {
+  margin: 20px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.source-ref a {
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.chapter-worked-list > h2,
+.chapter-misconceptions > h2,
+.chapter-exercises > h2,
+.chapter-glossary > h2,
+.chapter-sources > h2 {
+  margin: 0 0 22px;
+  font-size: clamp(28px, 4vw, 44px);
+}
+
+.chapter-worked {
+  margin: 0 0 28px;
+}
+
+.chapter-worked:last-child {
+  margin-bottom: 0;
+}
+
+.chapter-misconceptions {
+  border-left-width: 10px;
+}
+
+.chapter-misconceptions > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 24px;
+}
+
+.chapter-misconceptions article {
+  padding: 18px 0;
+  border-top: 1px solid var(--line);
+}
+
+.chapter-misconceptions h4 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.chapter-misconceptions p {
+  margin: 0;
+}
+
+.chapter-exercises details {
+  border: 1px solid var(--line);
+  border-bottom: 0;
+}
+
+.chapter-exercises details:last-child {
+  border-bottom: 1px solid var(--line);
+}
+
+.chapter-exercises summary {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 12px;
+  padding: 16px;
+}
+
+.chapter-exercises summary span {
+  align-self: start;
+  padding: 5px 7px;
+  background: var(--ink);
+  color: var(--bg);
+  text-align: center;
+  font: 800 12px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.chapter-exercises details > div {
+  margin: 0 16px 18px;
+  padding: 16px 20px;
+  border-left: 5px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 7%, var(--panel));
+}
+
+.chapter-exercises details h4 {
+  margin: 0 0 8px;
+}
+
+.chapter-exercises details ol {
+  margin-bottom: 0;
+}
+
+.chapter-glossary table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+}
+
+.chapter-glossary th,
+.chapter-glossary td {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+  line-height: 1.7;
+}
+
+.chapter-glossary th {
+  width: 190px;
+  background: color-mix(in srgb, var(--accent-3) 24%, var(--panel));
+}
+
+.chapter-sources ol {
+  display: grid;
+  gap: 14px;
+  padding-left: 26px;
+}
+
+.chapter-sources li {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.chapter-sources a {
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.chapter-sources li p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 14px;
 }
 
 .marie-section > .learning-figure {
@@ -1174,6 +1466,15 @@ code {
   .code-compare {
     grid-template-columns: 1fr;
   }
+
+  .chapter-outcomes ol,
+  .chapter-misconceptions > div {
+    grid-template-columns: 1fr;
+  }
+
+  .chapter-toc {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 620px) {
@@ -1243,6 +1544,51 @@ code {
     padding: 26px 20px;
   }
 
+  .chapter-hero,
+  .chapter-outcomes,
+  .chapter-toc,
+  .chapter-reading,
+  .chapter-worked-list,
+  .chapter-misconceptions,
+  .chapter-exercises,
+  .chapter-glossary,
+  .chapter-sources {
+    padding: 20px 18px;
+  }
+
+  .chapter-meta,
+  .chapter-toc {
+    grid-template-columns: 1fr;
+  }
+
+  .chapter-toc h3 {
+    grid-column: auto;
+  }
+
+  .chapter-section > p:not(.source-ref) {
+    font-size: 16px;
+  }
+
+  .chapter-page .hierarchy-diagram {
+    min-width: 0;
+  }
+
+  .chapter-page .hierarchy-diagram > div {
+    grid-template-columns: 1fr;
+    gap: 5px;
+    width: 100%;
+  }
+
+  .chapter-exercises summary {
+    grid-template-columns: 54px minmax(0, 1fr);
+    padding: 14px 10px;
+  }
+
+  .chapter-exercises details > div {
+    margin: 0 10px 14px;
+    padding: 14px;
+  }
+
   .learning-figure,
   .worked-example,
   .misconception-panel {
@@ -1279,7 +1625,9 @@ code {
   .learning-figure,
   .worked-example,
   .misconception-panel,
-  .study-lead {
+  .study-lead,
+  .chapter-section,
+  .chapter-outcomes {
     break-inside: avoid;
     box-shadow: none;
   }

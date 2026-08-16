@@ -20,6 +20,7 @@ function assert(condition, message) {
 const lectures = extractConst(path.join(root, "app.js"), "lectures");
 const supplements = extractConst(path.join(root, "content", "supplements.js"), "supplements");
 const fourthEdition = extractConst(path.join(root, "content", "fourth-edition.js"), "fourthEdition");
+const chapterDetails = extractConst(path.join(root, "content", "chapters.js"), "chapterDetails");
 
 assert(lectures.length === 18, "Expected 18 lectures");
 assert(supplements.length === 18, "Expected 18 supplements");
@@ -32,6 +33,30 @@ assert(fourthEdition.chapters.length === 13, "Fourth edition must contain 13 map
 assert(new Set(fourthEdition.chapters.map((item) => item.chapter)).size === 13, "Fourth edition chapter numbers must be unique");
 assert(fourthEdition.weekMap.length === 18, "Every course week needs a fourth edition mapping");
 assert(new Set(fourthEdition.weekMap.map((item) => item.week)).size === 18, "Fourth edition week mappings must be unique");
+assert(chapterDetails.length >= 1, "At least one detailed self-study chapter is required");
+assert(new Set(chapterDetails.map((item) => item.chapter)).size === chapterDetails.length, "Detailed chapter numbers must be unique");
+
+for (const chapter of chapterDetails) {
+  assert(fourthEdition.chapters.some((item) => item.chapter === chapter.chapter), `Detailed chapter ${chapter.chapter} is not in the fourth edition map`);
+  assert(chapter.intro.length >= 180, `Chapter ${chapter.chapter} introduction is too short`);
+  assert(chapter.outcomes.length >= 5, `Chapter ${chapter.chapter} needs at least five outcomes`);
+  assert(chapter.sections.length >= 8, `Chapter ${chapter.chapter} needs at least eight full sections`);
+  assert(chapter.sections.filter((item) => item.figure).length >= 3, `Chapter ${chapter.chapter} needs at least three diagrams`);
+  assert(chapter.sections.every((item) => item.paragraphs.length >= 3), `Chapter ${chapter.chapter} sections need at least three paragraphs`);
+  assert(chapter.workedExamples.length >= 4, `Chapter ${chapter.chapter} needs at least four worked examples`);
+  assert(chapter.workedExamples.every((item) => item.steps.length >= 5), `Chapter ${chapter.chapter} worked examples need at least five steps`);
+  assert(chapter.misconceptions.length >= 5, `Chapter ${chapter.chapter} needs at least five misconception corrections`);
+  assert(chapter.exercises.length >= 10, `Chapter ${chapter.chapter} needs at least ten exercises with solutions`);
+  assert(chapter.exercises.every((item) => item.solution.length >= 2), `Chapter ${chapter.chapter} exercise solutions are incomplete`);
+  assert(chapter.glossary.length >= 12, `Chapter ${chapter.chapter} glossary is too short`);
+  assert(chapter.sources.length >= 4, `Chapter ${chapter.chapter} needs at least four authoritative sources`);
+  const sourceKeys = new Set(chapter.sources.map((source) => source.key));
+  assert(sourceKeys.size === chapter.sources.length, `Chapter ${chapter.chapter} source keys must be unique`);
+  assert(chapter.sources.every((source) => /^https:\/\//.test(source.url)), `Chapter ${chapter.chapter} source URLs must use HTTPS`);
+  for (const section of chapter.sections) {
+    assert(section.sourceRefs.every((key) => sourceKeys.has(key)), `Chapter ${chapter.chapter} section references an unknown source`);
+  }
+}
 
 for (const mapping of fourthEdition.weekMap) {
   assert(mapping.chapters.length >= 1, `Week ${mapping.week} needs at least one fourth edition chapter`);
@@ -92,11 +117,16 @@ assert((address >>> 12) === 0x12345, "Cache tag check failed");
 assert(5 + 5 - 1 === 9, "Ideal pipeline cycle check failed");
 assert(Math.abs((1 + 0.04 * (10 + 0.20 * 100)) - 2.2) < 1e-12, "Two-level AMAT check failed");
 assert(Math.abs((1 + 0.15 * 0.08 * 3 + 0.30 * 0.04 * 50) - 1.636) < 1e-12, "Integrated CPI check failed");
+assert(Math.abs((8e8 * 1.4 / 2.5e9) - 0.448) < 1e-12, "Chapter 1 processor P time check failed");
+assert(Math.abs((8e8 * 1.0 / 2.0e9) - 0.4) < 1e-12, "Chapter 1 processor Q time check failed");
+assert(Math.abs((2e9 * 1.2 / 3e9) - 0.8) < 1e-12, "Chapter 1 exercise CPU A time check failed");
+assert(Math.abs((1.5e9 * 1.8 / 3.6e9) - 0.75) < 1e-12, "Chapter 1 exercise CPU B time check failed");
 
 const homepage = path.join(root, "index.html");
 const editionPage = path.join(root, "fourth-edition-map.html");
 const weekFiles = Array.from({ length: 18 }, (_, index) => path.join(root, "weeks", `week-${String(index + 1).padStart(2, "0")}.html`));
-const htmlFiles = [homepage, editionPage, ...weekFiles];
+const chapterFiles = chapterDetails.map((chapter) => path.join(root, "chapters", `chapter-${String(chapter.chapter).padStart(2, "0")}.html`));
+const htmlFiles = [homepage, editionPage, ...weekFiles, ...chapterFiles];
 const prohibited = /教學建議|授課|請學生|讓學生|給學生|要求學生/;
 
 for (const file of htmlFiles) {
@@ -106,6 +136,11 @@ for (const file of htmlFiles) {
     assert(html.includes("class=\"learning-figure\""), `Missing learning figure in ${path.relative(root, file)}`);
     assert((html.match(/<details>/g) || []).length >= 2, `Missing self-check answers in ${path.relative(root, file)}`);
     assert(html.includes("class=\"edition-alignment\""), `Missing fourth edition alignment in ${path.relative(root, file)}`);
+  }
+  if (chapterFiles.includes(file)) {
+    assert(html.includes("class=\"chapter-page\""), `Missing detailed chapter layout in ${path.relative(root, file)}`);
+    assert((html.match(/class=\"chapter-section\"/g) || []).length >= 8, `Detailed chapter sections are incomplete in ${path.relative(root, file)}`);
+    assert((html.match(/<details>/g) || []).length >= 10, `Detailed chapter exercises are incomplete in ${path.relative(root, file)}`);
   }
 
   for (const match of html.matchAll(/(?:href|src)="([^"]+)"/g)) {
@@ -125,4 +160,4 @@ assert(editionHtml.includes("MAR ← PC"), "Fourth edition page is missing the M
 assert((editionHtml.match(/class=\"chapter-card\"/g) || []).length === 13, "Fourth edition page must show 13 chapter cards");
 assert((editionHtml.match(/<details>/g) || []).length === 3, "Fourth edition page must show three MARIE self-checks");
 
-console.log("Validated 18 supplements, fourth edition mapping, MARIE invariants, worked calculations, and 20 generated pages.");
+console.log(`Validated 18 supplements, ${chapterDetails.length} detailed chapter, fourth edition mapping, worked calculations, and ${htmlFiles.length} generated pages.`);

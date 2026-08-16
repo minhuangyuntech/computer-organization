@@ -6,6 +6,7 @@ const root = path.resolve(__dirname, "..");
 const appSource = fs.readFileSync(path.join(root, "app.js"), "utf8");
 const supplementSource = fs.readFileSync(path.join(root, "content", "supplements.js"), "utf8");
 const fourthEditionSource = fs.readFileSync(path.join(root, "content", "fourth-edition.js"), "utf8");
+const chapterSource = fs.readFileSync(path.join(root, "content", "chapters.js"), "utf8");
 
 function extractConst(source, name) {
   const start = source.indexOf(`const ${name} = `);
@@ -20,6 +21,7 @@ const formulas = extractConst(appSource, "formulas");
 const registers = extractConst(appSource, "registers");
 const supplements = extractConst(supplementSource, "supplements");
 const fourthEdition = extractConst(fourthEditionSource, "fourthEdition");
+const chapterDetails = extractConst(chapterSource, "chapterDetails");
 
 const favicon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23006d77'/%3E%3Cpath d='M14 18h36v28H14z' fill='%23f6bd60' stroke='%2320231f' stroke-width='4'/%3E%3Cpath d='M22 28h20M22 36h14' stroke='%2320231f' stroke-width='4'/%3E%3C/svg%3E";
 
@@ -94,8 +96,8 @@ function courseCard() {
       </section>`;
 }
 
-function weekNav(activeWeek, depth = 0) {
-  const prefix = depth ? "" : "weeks/";
+function weekNav(activeWeek, depth = 0, weekPrefix) {
+  const prefix = weekPrefix ?? (depth ? "" : "weeks/");
   return `<label class="search-box">
         <span>搜尋週次</span>
         <input id="searchInput" type="search" placeholder="例如：CPI、hazard、cache">
@@ -202,16 +204,17 @@ function editionAlignment(lecture) {
     const item = fourthEdition.chapters.find((entry) => entry.chapter === chapter);
     return `第 ${chapter} 章 ${item.zh}`;
   }).join("、");
+  const detailLinks = mapping.chapters.map((chapter) => chapterDetails.find((item) => item.chapter === chapter)).filter(Boolean).map((detail) => `<a href="../chapters/chapter-${String(detail.chapter).padStart(2, "0")}.html">閱讀第 ${detail.chapter} 章完整自學教材</a>`).join("");
   return `<section class="edition-alignment">
       <p class="eyebrow">Textbook map · Fourth edition</p>
       <h3>第 4 版對照：${esc(chapters)}</h3>
       <p><strong>節次：</strong>${esc(mapping.sections)}</p>
       <p>${esc(mapping.focus)}</p>
-      <a href="../fourth-edition-map.html#week-map">查看完整章節對照與 MARIE–MIPS 概念橋接</a>
+      <div class="edition-links"><a href="../fourth-edition-map.html#week-map">查看完整章節對照與 MARIE–MIPS 概念橋接</a>${detailLinks}</div>
     </section>`;
 }
 
-function pageShell({ title, description, body, activeWeek = 0, depth = 0 }) {
+function pageShell({ title, description, body, activeWeek = 0, depth = 0, weekPrefix }) {
   const prefix = depth ? "../" : "";
   return `${head(title, description, depth)}
 <body>
@@ -219,7 +222,7 @@ function pageShell({ title, description, body, activeWeek = 0, depth = 0 }) {
   <main class="layout">
     <aside class="sidebar" aria-label="週次導覽">
       ${courseCard()}
-      ${weekNav(activeWeek, depth)}
+      ${weekNav(activeWeek, depth, weekPrefix)}
     </aside>
     <section id="content" class="content" tabindex="-1">
       ${body}
@@ -273,7 +276,7 @@ function indexPage() {
         <p class="eyebrow">Independent study edition</p>
         <h2>內容範圍與編寫原則</h2>
         <p>本站依課程大綱撰寫，並對照 Linda Null 與 Julia Lobur《The Essentials of Computer Organization and Architecture》第 4 版（2015，ISBN 9781284033144）的章節架構。所有中文敘述、例題、推導與圖表均為本站獨立編寫，不重製書中文字或原圖。</p>
-        <div class="reference-actions"><a href="fourth-edition-map.html">第 4 版章節與週次對照</a><a href="${fourthEdition.sources.chapters}" rel="noreferrer">出版社章節對照資料</a></div>
+        <div class="reference-actions"><a href="fourth-edition-map.html">第 4 版章節與週次對照</a><a href="chapters/chapter-01.html">閱讀第 1 章完整自學教材</a><a href="${fourthEdition.sources.chapters}" rel="noreferrer">出版社章節對照資料</a></div>
       </section>
       <section class="lecture-view">
         <h2>18 週講義索引</h2>
@@ -353,13 +356,17 @@ function weekPage(lecture) {
 }
 
 function fourthEditionPage() {
-  const chapterCards = fourthEdition.chapters.map((chapter) => `<article class="chapter-card" id="chapter-${chapter.chapter}">
+  const chapterCards = fourthEdition.chapters.map((chapter) => {
+    const detail = chapterDetails.find((item) => item.chapter === chapter.chapter);
+    return `<article class="chapter-card" id="chapter-${chapter.chapter}">
       <p class="eyebrow">Chapter ${chapter.chapter}</p>
       <h3>${esc(chapter.zh)}</h3>
       <p class="chapter-title">${esc(chapter.title)}</p>
       <p>${esc(chapter.summary)}</p>
       <p class="chapter-course"><strong>本站對應：</strong>${esc(chapter.courseUse)}</p>
-    </article>`).join("");
+      ${detail ? `<a class="chapter-detail-link" href="chapters/chapter-${String(chapter.chapter).padStart(2, "0")}.html">閱讀完整自學章節</a>` : `<span class="chapter-pending">詳細章節逐步建置中</span>`}
+    </article>`;
+  }).join("");
 
   const weekRows = fourthEdition.weekMap.map((mapping) => {
     const lecture = lectures.find((item) => item.week === mapping.week);
@@ -442,7 +449,62 @@ function fourthEditionPage() {
   });
 }
 
+function chapterPage(chapter) {
+  const bookChapter = fourthEdition.chapters.find((item) => item.chapter === chapter.chapter);
+  const sectionNav = chapter.sections.map((section, index) => `<a href="#section-${index + 1}">${esc(section.title)}</a>`).join("");
+  const sections = chapter.sections.map((section, index) => `<section class="chapter-section" id="section-${index + 1}">
+      <h3>${esc(section.title)}</h3>
+      ${section.paragraphs.map((paragraph) => `<p>${esc(paragraph)}</p>`).join("")}
+      ${section.figure ? diagram(section.figure) : ""}
+      <p class="source-ref">資料基礎：${section.sourceRefs.map((ref) => `<a href="#source-${esc(ref)}">${esc(ref)}</a>`).join("、")}</p>
+    </section>`).join("");
+  const worked = chapter.workedExamples.map((example, index) => `<section class="worked-example chapter-worked">
+      <p class="eyebrow">Worked example ${index + 1}</p>
+      <h3>${esc(example.title)}</h3>
+      <p><strong>題目：</strong>${esc(example.prompt)}</p>
+      <ol>${example.steps.map((step) => `<li>${esc(step)}</li>`).join("")}</ol>
+      <p class="worked-result"><strong>結論：</strong>${esc(example.result)}</p>
+    </section>`).join("");
+  const misconceptions = chapter.misconceptions.map(([claim, correction]) => `<article><h4>${esc(claim)}</h4><p>${esc(correction)}</p></article>`).join("");
+  const exercises = chapter.exercises.map((exercise, index) => `<details>
+      <summary><span>${esc(exercise.level)}</span>${index + 1}. ${esc(exercise.question)}</summary>
+      <div><h4>完整解答</h4><ol>${exercise.solution.map((step) => `<li>${esc(step)}</li>`).join("")}</ol></div>
+    </details>`).join("");
+  const glossary = chapter.glossary.map(([term, definition]) => `<tr><th>${esc(term)}</th><td>${esc(definition)}</td></tr>`).join("");
+  const sources = chapter.sources.map((source) => `<li id="source-${esc(source.key)}"><a href="${esc(source.url)}" rel="noreferrer">${esc(source.key)} · ${esc(source.title)}</a><p>${esc(source.use)}（查閱：${esc(source.accessed)}）</p></li>`).join("");
+
+  return pageShell({
+    title: `第 ${chapter.chapter} 章 ${chapter.title} | 計算機組織完整自學教材`,
+    description: `計算機組織第 ${chapter.chapter} 章完整自學教材：${chapter.title}，包含推導、圖表、例題、練習與詳解。`,
+    body: `<article class="chapter-page">
+        <nav class="breadcrumb" aria-label="麵包屑"><a href="../index.html">課程首頁</a><a href="../fourth-edition-map.html">第 4 版對照</a><span>第 ${chapter.chapter} 章</span></nav>
+        <header class="chapter-hero">
+          <p class="eyebrow">Detailed self-study chapter · Revised ${esc(chapter.revised)}</p>
+          <h2>第 ${chapter.chapter} 章<br>${esc(chapter.title)}</h2>
+          <p class="chapter-english">${esc(chapter.english)}</p>
+          <p>${esc(chapter.intro)}</p>
+          <dl class="chapter-meta"><div><dt>教材對照</dt><dd>第 ${chapter.chapter} 章 ${esc(bookChapter.title)}</dd></div><div><dt>預估時間</dt><dd>${esc(chapter.readingTime)}</dd></div><div><dt>更新日期</dt><dd>${esc(chapter.revised)}</dd></div></dl>
+        </header>
+        <section class="chapter-outcomes">
+          <h3>完成本章後應能做到</h3>
+          <ol>${chapter.outcomes.map((outcome) => `<li>${esc(outcome)}</li>`).join("")}</ol>
+        </section>
+        <nav class="chapter-toc" aria-label="本章目錄"><h3>本章路徑</h3>${sectionNav}<a href="#worked-examples">逐步例題</a><a href="#exercises">分級練習與詳解</a><a href="#glossary">術語表</a></nav>
+        <div class="chapter-reading">${sections}</div>
+        <section class="chapter-worked-list" id="worked-examples"><h2>逐步例題</h2>${worked}</section>
+        <section class="chapter-misconceptions misconception-panel"><h2>常見誤解與修正</h2><div>${misconceptions}</div></section>
+        <section class="chapter-exercises self-check" id="exercises"><h2>分級練習與完整解答</h2><p>先完成 state、公式或推理，再展開答案核對。每題解答都列出判斷依據。</p>${exercises}</section>
+        <section class="chapter-glossary" id="glossary"><h2>本章術語表</h2><div class="diagram-table-wrap"><table><tbody>${glossary}</tbody></table></div></section>
+        <section class="chapter-sources"><h2>研究來源與查閱日期</h2><p>以下來源只用來核對技術事實與當前規格；本站文字、例題與圖表均為原創整理。</p><ol>${sources}</ol></section>
+      </article>`,
+    activeWeek: chapter.chapter === 1 ? 1 : 0,
+    depth: 1,
+    weekPrefix: "../weeks/"
+  });
+}
+
 fs.mkdirSync(path.join(root, "weeks"), { recursive: true });
+fs.mkdirSync(path.join(root, "chapters"), { recursive: true });
 const cleanHtml = (html) => html.replace(/[ \t]+$/gm, "");
 
 fs.writeFileSync(path.join(root, "index.html"), cleanHtml(indexPage()));
@@ -450,5 +512,8 @@ fs.writeFileSync(path.join(root, "fourth-edition-map.html"), cleanHtml(fourthEdi
 for (const lecture of lectures) {
   fs.writeFileSync(path.join(root, "weeks", slug(lecture.week)), cleanHtml(weekPage(lecture)));
 }
+for (const chapter of chapterDetails) {
+  fs.writeFileSync(path.join(root, "chapters", `chapter-${String(chapter.chapter).padStart(2, "0")}.html`), cleanHtml(chapterPage(chapter)));
+}
 
-console.log(`Generated ${lectures.length + 2} pages.`);
+console.log(`Generated ${lectures.length + chapterDetails.length + 2} pages.`);
