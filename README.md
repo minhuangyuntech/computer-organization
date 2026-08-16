@@ -43,4 +43,4 @@ Repository 根目錄就是這個 `lectures/` 資料夾。GitHub Pages 目前從 
 
 ## 參考範圍
 
-內容參考 Linda Null 與 Julia Lobur《The Essentials of Computer Organization and Architecture》第六版公開目錄中的主題架構。網站的中文敘述、例題、推導與圖表均為獨立編寫。
+內容參考 Linda Null《The Essentials of Computer Organization and Architecture》第六版公開目錄中的主題架構。網站的中文敘述、例題、推導與圖表均為獨立編寫。
