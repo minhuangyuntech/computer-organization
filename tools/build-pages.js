@@ -87,21 +87,21 @@ function topbar(depth = 0) {
   </header>`;
 }
 
-function chapterNav(activeChapter = 0, depth = 0) {
+function chapterNav(activeChapter = 0, depth = 0, activeView = "") {
   const prefix = depth ? "../" : "";
   const chapterLinks = fourthEdition.chapters.map((chapter, index) => {
     const href = `${prefix}chapters/chapter-${String(chapter.chapter).padStart(2, "0")}.html`;
     const current = chapter.chapter === activeChapter;
     return `<a class="chapter-nav-link${current ? " active" : ""}" href="${href}"${current ? " aria-current=\"page\"" : ""} title="第 ${chapter.chapter} 章 ${esc(chapter.zh)}">
-        <strong>${String(chapter.chapter).padStart(2, "0")}</strong><span>${esc(chapterNavLabels[index])}</span>
+        <strong>CH ${String(chapter.chapter).padStart(2, "0")}</strong><span>${esc(chapterNavLabels[index])}</span>
       </a>`;
   }).join("");
 
   return `<nav class="chapter-nav" aria-label="課程章節導覽">
     <div class="chapter-nav-inner">
-      <a class="chapter-nav-home${activeChapter === 0 ? " active" : ""}" href="${prefix}index.html"${activeChapter === 0 ? " aria-current=\"page\"" : ""}>首頁</a>
+      <a class="chapter-nav-home${activeView === "home" ? " active" : ""}" href="${prefix}index.html"${activeView === "home" ? " aria-current=\"page\"" : ""}>首頁</a>
       ${chapterLinks}
-      <a class="chapter-nav-weeks" href="${prefix}index.html#weeks">18 週</a>
+      <a class="chapter-nav-weeks${activeView === "weeks" ? " active" : ""}" href="${prefix}index.html#weeks"${activeView === "weeks" ? " aria-current=\"page\"" : ""}>週次進度</a>
     </div>
   </nav>`;
 }
@@ -209,12 +209,12 @@ function editionAlignment(lecture) {
     </section>`;
 }
 
-function pageShell({ title, description, body, activeChapter = 0, depth = 0 }) {
+function pageShell({ title, description, body, activeChapter = 0, activeView = "", depth = 0 }) {
   const prefix = depth ? "../" : "";
   return `${head(title, description, depth)}
 <body>
   ${topbar(depth)}
-  ${chapterNav(activeChapter, depth)}
+  ${chapterNav(activeChapter, depth, activeView)}
   <main class="page-main">
     <section id="content" class="content" tabindex="-1">
       ${body}
@@ -244,6 +244,14 @@ function indexPage() {
       <p>${esc(unit.text)}</p>
       <p class="note">週次：${unit.weeks.map((w) => `第 ${w} 週`).join("、")}</p>
     </article>`).join("");
+
+  const homeChapterCards = fourthEdition.chapters.map((chapter) => `
+    <a class="home-chapter-card" href="chapters/chapter-${String(chapter.chapter).padStart(2, "0")}.html">
+      <span>Chapter ${String(chapter.chapter).padStart(2, "0")}</span>
+      <h3>${esc(chapter.zh)}</h3>
+      <p>${esc(chapter.summary)}</p>
+      <small>${esc(chapter.title)}</small>
+    </a>`).join("");
 
   return pageShell({
     title: "計算機組織線上講義 | 115-1 YunTech",
@@ -315,19 +323,28 @@ function indexPage() {
         <div><span>學分</span><strong>3-0-3</strong></div>
         <div><span>評量</span><strong>平時 30% · 期中 30% · 期末專題 40%</strong></div>
       </section>
+      <section class="chapter-index" id="chapters">
+        <header class="index-heading">
+          <div><p class="eyebrow">Chapter-based materials</p><h2>13 章教材</h2></div>
+          <p>章次依《The Essentials of Computer Organization and Architecture》第 4 版編排；此處與頂部 CH 01–13 導覽前往完全相同的章節頁。</p>
+        </header>
+        <div class="home-chapter-grid">${homeChapterCards}</div>
+      </section>
       <section class="overview-grid">${unitCards}</section>
       <section class="reference-note">
         <p class="eyebrow">Independent study edition</p>
         <h2>內容範圍與編寫原則</h2>
         <p>本站依課程大綱撰寫，並對照 Linda Null 與 Julia Lobur《The Essentials of Computer Organization and Architecture》第 4 版（2015，ISBN 9781284033144）的章節架構。所有中文敘述、例題、推導與圖表均為本站獨立編寫，不重製書中文字或原圖。</p>
-        <div class="reference-actions"><a href="fourth-edition-map.html">第 4 版章節與週次對照</a><a href="chapters/chapter-01.html">閱讀第 1 章完整自學教材</a><a href="${fourthEdition.sources.chapters}" rel="noreferrer">出版社章節對照資料</a></div>
+        <div class="reference-actions"><a href="#chapters">前往 13 章教材</a><a href="fourth-edition-map.html">第 4 版章節與週次對照</a><a href="${fourthEdition.sources.chapters}" rel="noreferrer">出版社章節對照資料</a></div>
       </section>
       <section class="lecture-view" id="weeks">
-        <h2>18 週講義索引</h2>
-        <p>每週頁面都包含學習目標、自學導讀、原創圖表、概念推導、逐步例題、常見誤解、自我檢核、練習任務與公式速查。</p>
+        <p class="eyebrow">Week-based course schedule</p>
+        <h2>18 週課程進度</h2>
+        <p><strong>週次不等於章次。</strong>一個課程週次可能整合多個章節，同一章也可能分散在不同週次。每週頁面包含學習目標、自學導讀、原創圖表、概念推導、逐步例題、自我檢核與公式速查。</p>
         <div class="week-card-grid">${cards}</div>
       </section>`,
     activeChapter: 0,
+    activeView: "home",
     depth: 0
   });
 }
@@ -391,12 +408,12 @@ function weekPage(lecture) {
             </nav>
         </div>
       </article>`;
-  const mapping = fourthEdition.weekMap.find((item) => item.week === lecture.week);
   return pageShell({
     title: `第 ${lecture.week} 週 ${lecture.title} | 計算機組織`,
     description: `計算機組織第 ${lecture.week} 週講義：${lecture.title}。`,
     body,
-    activeChapter: mapping.chapters[0],
+    activeChapter: 0,
+    activeView: "weeks",
     depth: 1
   });
 }
@@ -490,6 +507,7 @@ function fourthEditionPage() {
         </section>
       </article>`,
     activeChapter: 0,
+    activeView: "map",
     depth: 0
   });
 }

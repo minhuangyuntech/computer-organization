@@ -142,13 +142,17 @@ for (const file of htmlFiles) {
     assert(html.includes("class=\"learning-figure\""), `Missing learning figure in ${path.relative(root, file)}`);
     assert((html.match(/<details>/g) || []).length >= 2, `Missing self-check answers in ${path.relative(root, file)}`);
     assert(html.includes("class=\"edition-alignment\""), `Missing fourth edition alignment in ${path.relative(root, file)}`);
+    assert(html.includes("class=\"chapter-nav-weeks active\""), `Week navigation is not active in ${path.relative(root, file)}`);
+    assert(!html.includes("class=\"chapter-nav-link active\""), `A week page incorrectly identifies itself as a chapter in ${path.relative(root, file)}`);
   }
   if (detailedChapterFiles.includes(file)) {
     assert(html.includes("class=\"chapter-page\""), `Missing detailed chapter layout in ${path.relative(root, file)}`);
+    assert((html.match(/class=\"chapter-nav-link active\"/g) || []).length === 1, `Detailed chapter must activate exactly one chapter navigation item in ${path.relative(root, file)}`);
     assert((html.match(/class=\"chapter-section\"/g) || []).length >= 8, `Detailed chapter sections are incomplete in ${path.relative(root, file)}`);
     assert((html.match(/<details>/g) || []).length >= 10, `Detailed chapter exercises are incomplete in ${path.relative(root, file)}`);
   } else if (chapterFiles.includes(file)) {
     assert(html.includes("class=\"chapter-overview-page\""), `Missing independent chapter overview in ${path.relative(root, file)}`);
+    assert((html.match(/class=\"chapter-nav-link active\"/g) || []).length === 1, `Chapter overview must activate exactly one chapter navigation item in ${path.relative(root, file)}`);
     assert(html.includes("class=\"chapter-week-card\"") || html.includes("class=\"chapter-extension\""), `Missing chapter learning path in ${path.relative(root, file)}`);
   }
 
@@ -166,6 +170,13 @@ assert(homepageHtml.includes("第 4 版（2015，ISBN 9781284033144）"), "Homep
 assert(!homepageHtml.includes("第六版"), "Homepage still references the sixth edition");
 assert(homepageHtml.includes("class=\"modern-cpu-diagram\""), "Homepage modern CPU diagram is missing");
 assert(!homepageHtml.includes("class=\"chip-visual\""), "Homepage still contains the legacy CPU image");
+assert(homepageHtml.includes("週次不等於章次"), "Homepage does not distinguish course weeks from textbook chapters");
+assert((homepageHtml.match(/class=\"home-chapter-card\"/g) || []).length === 13, "Homepage must show 13 chapter entry cards");
+const navChapterHrefs = [...homepageHtml.matchAll(/<a class=\"chapter-nav-link[^\"]*\" href=\"([^\"]+)\"/g)].map((match) => match[1]);
+const homeChapterHrefs = [...homepageHtml.matchAll(/<a class=\"home-chapter-card\" href=\"([^\"]+)\"/g)].map((match) => match[1]);
+assert(JSON.stringify(navChapterHrefs) === JSON.stringify(homeChapterHrefs), "Homepage chapter cards and top chapter navigation must target identical pages");
+assert(navChapterHrefs.every((href, index) => href.endsWith(`chapter-${String(index + 1).padStart(2, "0")}.html`)), "Chapter navigation order or destination is incorrect");
+assert((homepageHtml.match(/<strong>CH \d{2}<\/strong>/g) || []).length === 13, "Chapter navigation labels must identify chapter numbers explicitly");
 for (const label of ["Branch predictor", "L1 I-cache", "Fetch", "Decode", "Register rename", "Reorder buffer", "Integer ALUs", "FP / Vector", "Load / Store", "L1 D-cache", "Private L2", "Shared LLC", "Memory controller", "DRAM"]) {
   assert(homepageHtml.includes(label), `Homepage CPU diagram is missing ${label}`);
 }

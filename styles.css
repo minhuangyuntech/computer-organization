@@ -484,6 +484,90 @@ dd { margin: 0; }
   line-height: 1.45;
 }
 
+.chapter-index {
+  margin: 34px 0;
+}
+
+.index-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 32px;
+  align-items: end;
+  margin-bottom: 18px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--ink);
+}
+
+.index-heading h2 {
+  margin: 4px 0 0;
+  font-size: clamp(30px, 4vw, 48px);
+}
+
+.index-heading > p {
+  max-width: 680px;
+  margin: 0;
+  color: var(--muted);
+}
+
+.home-chapter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.home-chapter-card {
+  display: grid;
+  gap: 8px;
+  min-height: 230px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-top: 6px solid var(--accent);
+  background: var(--panel);
+  color: var(--ink);
+  text-decoration: none;
+  box-shadow: var(--shadow);
+}
+
+.home-chapter-card:nth-child(3n+2) {
+  border-top-color: var(--accent-2);
+}
+
+.home-chapter-card:nth-child(3n) {
+  border-top-color: var(--accent-3);
+}
+
+.home-chapter-card:hover {
+  border-color: var(--accent-2);
+  transform: translateY(-2px);
+}
+
+.home-chapter-card > span {
+  color: var(--accent-2);
+  font: 800 12px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-transform: uppercase;
+}
+
+.home-chapter-card h3,
+.home-chapter-card p {
+  margin: 0;
+}
+
+.home-chapter-card h3 {
+  font-size: 23px;
+}
+
+.home-chapter-card p {
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.home-chapter-card small {
+  align-self: end;
+  margin-top: auto;
+  color: var(--accent);
+  font: 700 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
 .overview-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1738,6 +1822,10 @@ code {
     grid-template-columns: 1fr;
   }
 
+  .home-chapter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .deep-dive-grid {
     grid-template-columns: 1fr;
   }
@@ -1825,6 +1913,15 @@ code {
   .diagram-heading {
     display: grid;
     gap: 8px;
+  }
+
+  .index-heading {
+    display: grid;
+    gap: 8px;
+  }
+
+  .home-chapter-grid {
+    grid-template-columns: 1fr;
   }
 
   .diagram-heading p {
