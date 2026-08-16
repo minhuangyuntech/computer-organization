@@ -142,28 +142,38 @@
               <h3>核心概念</h3>
               <ul class="concept-list"><li><strong>抽象層次：</strong>計算機系統不是單一黑盒子，而是從高階語言、編譯器、作業系統、指令集架構（ISA）、處理器資料路徑、控制單元、記憶體系統一路堆疊而成。每一層向上一層提供較簡單的介面，同時隱藏下層大量細節。</li><li><strong>ISA 與微架構：</strong>ISA 定義程式能看見的指令、暫存器、記憶體位址模式與例外行為；微架構則是硬體如何實作 ISA。相同 ISA 可以有不同微架構，例如單週期、多週期、pipeline 或 superscalar。</li><li><strong>硬體/軟體介面：</strong>組合語言是理解硬體行為的低階入口。高階程式的一個敘述可能變成多個機器指令，而每個機器指令會驅動 ALU、暫存器檔、記憶體與控制訊號。</li></ul>
             </section>
+            <section class="section study-entry">
+      <h3>本週自學導讀</h3>
+      <p class="study-lead">本週先建立一條不會迷路的主線：程式所看見的是 ISA，處理器內部實作的是微架構，而微架構最終由暫存器、組合邏輯與時脈電路構成。後續所有公式與圖都可以放回這條主線定位。</p>
+      <figure class="learning-figure">
+    <h4>從程式語意到電路狀態</h4>
+    <div class="flow-diagram"><span class="flow-node">高階程式</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">編譯器與組譯器</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">ISA 機器指令</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">微架構資料路徑</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">數位邏輯與電路</span></div>
+    <figcaption>向右是逐步降低抽象層次；向左則是下層為上層提供穩定介面。</figcaption>
+  </figure>
+    </section>
+    <section class="section">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>Architecture 與 Organization 的分界</h4><p>Architecture 描述程式設計者可觀察的規格，例如指令、暫存器、資料型態、位址空間與例外。Organization 描述這些規格如何由資料路徑、控制器、pipeline 與記憶體階層實現。兩顆處理器可以執行相同機器碼，卻有不同的 pipeline 深度與 cache 大小。</p><p>判斷一項特徵屬於哪一層時，可問：既有機器碼是否必須知道它？若答案是肯定的，通常屬於 ISA；若只影響速度、功耗或面積，而不改變程式結果，通常屬於微架構。</p></section><section class="deep-dive"><h4>von Neumann 模型與指令週期</h4><p>典型儲存程式電腦把指令與資料放在可定址的記憶體中。CPU 以 PC 指向下一個指令位址，取出指令後解碼，讀取運算元，執行運算，必要時存取資料記憶體，最後更新架構狀態。</p><p>這個模型的重要性不在於每顆現代處理器都只有一條匯流排，而在於它提供了可追蹤的狀態轉移：每完成一個指令，PC、暫存器或記憶體中的某些值被更新。Pipeline 只是讓多個指令的不同階段重疊，不能破壞 ISA 所要求的結果。</p></section></div>
+    </section>
+    <section class="section worked-example">
+      <p class="eyebrow">Worked example</p>
+      <h3>追蹤 x = x + A[i]</h3>
+      <p>假設 x、i 與陣列基底位址已在暫存器中，辨認這個敘述需要的硬體動作。</p>
+      <ol><li>用 i × 元素大小計算位移，再與 A 的基底位址相加。</li><li>由資料記憶體讀出 A[i]，暫時放入暫存器。</li><li>ALU 將 x 與 A[i] 相加，結果寫回保存 x 的暫存器。</li><li>每一條機器指令本身也必須先由 PC 指定的位置取出並解碼。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>一行高階敘述至少跨越位址計算、記憶體讀取與算術運算；這正是 ISA 連接程式與硬體的作用。</p>
+    </section>
+    <section class="section misconception-panel">
+      <h3>常見誤解</h3>
+      <ul><li>把 ISA 當成特定處理器內部電路圖。</li><li>以為 pipeline 會改變程式可觀察到的指令順序與結果。</li><li>只記元件名稱，卻沒有追蹤哪些架構狀態被更新。</li></ul>
+    </section>
+    <section class="section self-check">
+      <h3>自我檢核</h3>
+      <p>先在紙上作答，再展開核對。能說明理由，才算真正掌握。</p>
+      <details><summary>1. 同一份 MIPS 機器碼能在單週期與 pipeline 處理器執行嗎？</summary><p>可以，只要兩者都正確實作相同 MIPS ISA。它們的執行時間與內部時序可以不同。</p></details><details><summary>2. PC 屬於程式可觀察的架構狀態嗎？</summary><p>PC 決定下一個指令位址，控制流程與例外行為會依賴它，因此在概念上屬於架構狀態。</p></details>
+    </section>
             <section class="section">
               <h3>講義筆記</h3>
               <p>本課程的核心問題是：一段程式如何變成可以在 CPU 上執行的二進位指令？CPU 又如何在有限硬體資源下快速且正確地完成這些指令？</p><p>學習計算機組織時，請同時保留兩種視角。第一種是程式設計者視角：指令、暫存器、記憶體位址、效能。第二種是硬體設計者視角：資料路徑、控制訊號、pipeline stage、cache hit/miss。</p><p>本學期前半段會建立 ISA 與算術基礎；後半段把指令放入處理器資料路徑，進一步分析 pipeline 與 cache 對效能的影響。</p>
-            </section>
-            <section class="section">
-              <h3>深入說明</h3>
-
-    <section class="detail-block">
-      <h4>抽象層次的重點說明</h4>
-      <p>計算機系統不是單一黑盒子，而是從高階語言、編譯器、作業系統、指令集架構（ISA）、處理器資料路徑、控制單元、記憶體系統一路堆疊而成。每一層向上一層提供較簡單的介面，同時隱藏下層大量細節。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>ISA 與微架構的重點說明</h4>
-      <p>ISA 定義程式能看見的指令、暫存器、記憶體位址模式與例外行為；微架構則是硬體如何實作 ISA。相同 ISA 可以有不同微架構，例如單週期、多週期、pipeline 或 superscalar。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>硬體/軟體介面的重點說明</h4>
-      <p>組合語言是理解硬體行為的低階入口。高階程式的一個敘述可能變成多個機器指令，而每個機器指令會驅動 ALU、暫存器檔、記憶體與控制訊號。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
             </section>
             <section class="section">
               <h3>學習路徑</h3>

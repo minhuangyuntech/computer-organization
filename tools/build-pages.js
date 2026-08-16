@@ -4,18 +4,20 @@ const vm = require("vm");
 
 const root = path.resolve(__dirname, "..");
 const appSource = fs.readFileSync(path.join(root, "app.js"), "utf8");
+const supplementSource = fs.readFileSync(path.join(root, "content", "supplements.js"), "utf8");
 
-function extractConst(name) {
-  const start = appSource.indexOf(`const ${name} = `);
+function extractConst(source, name) {
+  const start = source.indexOf(`const ${name} = `);
   if (start === -1) throw new Error(`Cannot find ${name}`);
-  const afterEquals = appSource.indexOf("=", start) + 1;
-  const end = appSource.indexOf(";\n", afterEquals);
-  return vm.runInNewContext(`(${appSource.slice(afterEquals, end).trim()})`);
+  const afterEquals = source.indexOf("=", start) + 1;
+  const end = source.indexOf(";\n", afterEquals);
+  return vm.runInNewContext(`(${source.slice(afterEquals, end).trim()})`);
 }
 
-const lectures = extractConst("lectures");
-const formulas = extractConst("formulas");
-const registers = extractConst("registers");
+const lectures = extractConst(appSource, "lectures");
+const formulas = extractConst(appSource, "formulas");
+const registers = extractConst(appSource, "registers");
+const supplements = extractConst(supplementSource, "supplements");
 
 const favicon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23006d77'/%3E%3Cpath d='M14 18h36v28H14z' fill='%23f6bd60' stroke='%2320231f' stroke-width='4'/%3E%3Cpath d='M22 28h20M22 36h14' stroke='%2320231f' stroke-width='4'/%3E%3C/svg%3E";
 
@@ -137,13 +139,59 @@ function learningPath(lecture) {
   </ol>`;
 }
 
-function expandedDiscussion(lecture) {
-  return lecture.concepts.map(([term, text]) => `
-    <section class="detail-block">
-      <h4>${esc(term)}的重點說明</h4>
-      <p>${esc(text)}</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>`).join("");
+function diagram(figure) {
+  if (!figure) return "";
+  let content = "";
+
+  if (figure.type === "flow") {
+    content = `<div class="flow-diagram">${figure.items.map((item, index) => `${index ? `<span class="flow-arrow" aria-hidden="true">→</span>` : ""}<span class="flow-node">${esc(item)}</span>`).join("")}</div>`;
+  } else if (figure.type === "factor") {
+    content = `<div class="factor-diagram">${figure.items.map((item, index) => `${index ? `<span class="factor-op" aria-hidden="true">×</span>` : ""}<div><strong>${esc(item.label)}</strong><span>${esc(item.detail)}</span></div>`).join("")}</div>`;
+  } else if (figure.type === "bits") {
+    content = `<div class="bit-diagram" style="--total-bits:${figure.totalBits}">${figure.items.map((item) => `<div class="bit-field" style="--field-bits:${item.bits}"><strong>${esc(item.label)}</strong><span>${esc(item.bits)} bit${item.bits > 1 ? "s" : ""}</span><small>${esc(item.detail)}</small></div>`).join("")}</div>`;
+  } else if (figure.type === "hierarchy") {
+    content = `<div class="hierarchy-diagram">${figure.items.map((item, index) => `<div style="--level:${index}"><strong>${esc(item.label)}</strong><span>${esc(item.detail)}</span></div>`).join("")}</div>`;
+  } else if (figure.type === "matrix") {
+    content = `<div class="diagram-table-wrap"><table class="diagram-table"><thead><tr>${figure.columns.map((column) => `<th>${esc(column)}</th>`).join("")}</tr></thead><tbody>${figure.rows.map((row) => `<tr>${row.map((cell) => `<td>${esc(cell)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+  } else if (figure.type === "timeline") {
+    content = `<div class="diagram-table-wrap"><table class="timeline-table"><thead><tr><th>Instruction</th>${figure.columns.map((column) => `<th>Cycle ${esc(column)}</th>`).join("")}</tr></thead><tbody>${figure.rows.map((row) => `<tr><th>${esc(row.label)}</th>${row.cells.map((cell) => `<td class="stage-${esc(cell || "empty").toLowerCase()}">${esc(cell)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+  }
+
+  return `<figure class="learning-figure">
+    <h4>${esc(figure.title)}</h4>
+    ${content}
+    <figcaption>${esc(figure.caption)}</figcaption>
+  </figure>`;
+}
+
+function supplementSections(lecture) {
+  const supplement = supplements.find((item) => item.week === lecture.week);
+  if (!supplement) return "";
+  return `<section class="section study-entry">
+      <h3>本週自學導讀</h3>
+      <p class="study-lead">${esc(supplement.bridge)}</p>
+      ${diagram(supplement.diagram)}
+    </section>
+    <section class="section">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid">${supplement.sections.map((section) => `<section class="deep-dive"><h4>${esc(section.title)}</h4>${section.paragraphs.map((paragraph) => `<p>${esc(paragraph)}</p>`).join("")}</section>`).join("")}</div>
+    </section>
+    <section class="section worked-example">
+      <p class="eyebrow">Worked example</p>
+      <h3>${esc(supplement.worked.title)}</h3>
+      <p>${esc(supplement.worked.prompt)}</p>
+      <ol>${supplement.worked.steps.map((step) => `<li>${esc(step)}</li>`).join("")}</ol>
+      <p class="worked-result"><strong>結論：</strong>${esc(supplement.worked.result)}</p>
+    </section>
+    <section class="section misconception-panel">
+      <h3>常見誤解</h3>
+      <ul>${supplement.pitfalls.map((pitfall) => `<li>${esc(pitfall)}</li>`).join("")}</ul>
+    </section>
+    <section class="section self-check">
+      <h3>自我檢核</h3>
+      <p>先在紙上作答，再展開核對。能說明理由，才算真正掌握。</p>
+      ${supplement.selfTest.map((item, index) => `<details><summary>${index + 1}. ${esc(item.q)}</summary><p>${esc(item.a)}</p></details>`).join("")}
+    </section>`;
 }
 
 function pageShell({ title, description, body, activeWeek = 0, depth = 0 }) {
@@ -192,7 +240,7 @@ function indexPage() {
         <div class="hero-copy">
           <p class="eyebrow">從程式到硬體的可追蹤路徑</p>
           <h2>看懂一行指令如何穿過暫存器、ALU、Pipeline 與 Cache</h2>
-          <p>本講義依據課綱 18 週進度展開。新版採多頁式架構，每週有獨立 URL，方便課前派讀、課中投影、課後複習、列印成 PDF 與後續增補。</p>
+          <p>本講義依據課綱 18 週進度展開。每週都有獨立 URL，可依序自學、反覆推導、完成練習、課後複習，並可列印成 PDF 離線閱讀。</p>
         </div>
         <div class="chip-visual" aria-label="處理器與記憶體階層示意圖" role="img">
           <div class="chip-core">CPU</div>
@@ -204,9 +252,15 @@ function indexPage() {
         </div>
       </section>
       <section class="overview-grid">${unitCards}</section>
+      <section class="reference-note">
+        <p class="eyebrow">Independent study edition</p>
+        <h2>內容範圍與編寫原則</h2>
+        <p>本站依課程大綱撰寫，並參考 Linda Null 與 Julia Lobur《The Essentials of Computer Organization and Architecture》第六版公開目錄所呈現的核心主題架構。所有中文敘述、例題、推導與圖表均為本站獨立編寫，不重製書中文字或原圖。</p>
+        <a href="https://samples.jblearning.com/9781284259438/9781284261202_FM_MKT_Secured.pdf" rel="noreferrer">查看出版社公開的版本與目錄資料</a>
+      </section>
       <section class="lecture-view">
         <h2>18 週講義索引</h2>
-        <p>每週頁面都包含學習目標、核心概念、深入說明、學習路徑、例題、練習任務、課後檢核與公式速查。</p>
+        <p>每週頁面都包含學習目標、自學導讀、原創圖表、概念推導、逐步例題、常見誤解、自我檢核、練習任務與公式速查。</p>
         <div class="week-card-grid">${cards}</div>
       </section>`,
     activeWeek: 0,
@@ -239,13 +293,10 @@ function weekPage(lecture) {
               <h3>核心概念</h3>
               <ul class="concept-list">${lecture.concepts.map(([term, text]) => `<li><strong>${esc(term)}：</strong>${esc(text)}</li>`).join("")}</ul>
             </section>
+            ${supplementSections(lecture)}
             <section class="section">
               <h3>講義筆記</h3>
               ${lecture.notes.map((note) => `<p>${esc(note)}</p>`).join("")}
-            </section>
-            <section class="section">
-              <h3>深入說明</h3>
-              ${expandedDiscussion(lecture)}
             </section>
             <section class="section">
               <h3>學習路徑</h3>

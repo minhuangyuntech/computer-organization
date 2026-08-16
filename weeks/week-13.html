@@ -142,33 +142,38 @@
               <h3>核心概念</h3>
               <ul class="concept-list"><li><strong>階層：</strong>Register 最快最小，cache 次之，main memory 更大更慢，storage 最大也最慢。階層設計利用 locality 讓常用資料留在快的位置。</li><li><strong>Temporal locality：</strong>最近用過的資料很可能很快再被使用，例如迴圈中的變數與指令。</li><li><strong>Spatial locality：</strong>若某位址被使用，鄰近位址也可能很快被使用，例如 sequential instruction fetch 與陣列走訪。</li><li><strong>AMAT：</strong>Average Memory Access Time = Hit Time + Miss Rate × Miss Penalty。降低 miss rate、miss penalty 或 hit time 都能改善。</li></ul>
             </section>
+            <section class="section study-entry">
+      <h3>本週自學導讀</h3>
+      <p class="study-lead">Memory hierarchy 利用 locality，讓少量快速儲存體保存近期最可能使用的 blocks。它不是讓所有存取都變快，而是讓常見路徑很快、少數 miss 承擔較大代價。</p>
+      <figure class="learning-figure">
+    <h4>Memory Hierarchy 的相對關係</h4>
+    <div class="hierarchy-diagram"><div style="--level:0"><strong>Registers</strong><span>最小、最快、由指令直接指定</span></div><div style="--level:1"><strong>L1 / L2 Cache</strong><span>以 block 自動搬移</span></div><div style="--level:2"><strong>Main Memory</strong><span>容量較大、miss penalty 明顯</span></div><div style="--level:3"><strong>SSD / Storage</strong><span>持久保存、延遲最高</span></div></div>
+    <figcaption>由上而下容量增加、每 bit 成本降低、延遲上升；圖示為概念相對關係，不代表固定硬體數值。</figcaption>
+  </figure>
+    </section>
+    <section class="section">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>Temporal 與 Spatial Locality</h4><p>Temporal locality 表示最近使用的資料可能再次使用，例如 loop counter；spatial locality 表示鄰近位址可能很快被使用，例如循序掃描陣列。Cache 以 block 為傳輸單位，同時利用兩者。</p><p>Locality 是程式行為，不是 cache 自動保證。隨機追蹤大型 linked structure 可能缺乏 spatial locality；working set 大於 cache 時，temporal reuse 也可能在重用前被替換。</p></section><section class="deep-dive"><h4>AMAT 與 Miss 分類</h4><p>AMAT = hit time + miss rate × miss penalty。Hit time 每次存取都支付；miss penalty 只在 miss 時支付，通常指超出 hit time 的額外延遲。</p><p>Compulsory miss 是 block 第一次出現；capacity miss 是工作集合超過 cache 容量；conflict miss 是 mapping 限制讓仍有總空間的 cache 發生碰撞。增加 associativity 主要降低 conflict misses。</p></section></div>
+    </section>
+    <section class="section worked-example">
+      <p class="eyebrow">Worked example</p>
+      <h3>AMAT 與單位檢查</h3>
+      <p>Cache hit time=1 ns、miss rate=5%、miss penalty=40 ns。</p>
+      <ol><li>將 5% 寫成 0.05。</li><li>平均 miss 額外成本 = 0.05×40 ns = 2 ns。</li><li>AMAT = 1+2 = 3 ns。</li><li>結果應介於 1 ns 與 41 ns 之間，3 ns 的量級合理。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>若把 5 直接代入會得到 201 ns，量級檢查能立即發現百分比錯誤。</p>
+    </section>
+    <section class="section misconception-panel">
+      <h3>常見誤解</h3>
+      <ul><li>把 miss rate 的百分比直接當整數代入。</li><li>以為 block 越大一定越好。</li><li>把 conflict miss 誤認為 cache 總容量不足。</li></ul>
+    </section>
+    <section class="section self-check">
+      <h3>自我檢核</h3>
+      <p>先在紙上作答，再展開核對。能說明理由，才算真正掌握。</p>
+      <details><summary>1. 循序讀取大型陣列主要利用哪種 locality？</summary><p>Spatial locality，因為連續元素位址相鄰。</p></details><details><summary>2. 提高 associativity 最直接減少哪類 miss？</summary><p>Conflict miss。Compulsory miss 通常不因此消失。</p></details>
+    </section>
             <section class="section">
               <h3>講義筆記</h3>
               <p>Memory wall 是處理器速度提升遠快於主記憶體延遲改善造成的落差。Cache 是緩解 memory wall 的核心技術。</p><p>區域性不是硬體保證，而是程式行為。資料結構與迴圈順序會大幅影響 cache 表現。</p><p>AMAT 題目要小心單位。Hit time 可能是 cycles，miss penalty 也可能是 ns；計算前先統一。</p>
-            </section>
-            <section class="section">
-              <h3>深入說明</h3>
-
-    <section class="detail-block">
-      <h4>階層的重點說明</h4>
-      <p>Register 最快最小，cache 次之，main memory 更大更慢，storage 最大也最慢。階層設計利用 locality 讓常用資料留在快的位置。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>Temporal locality的重點說明</h4>
-      <p>最近用過的資料很可能很快再被使用，例如迴圈中的變數與指令。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>Spatial locality的重點說明</h4>
-      <p>若某位址被使用，鄰近位址也可能很快被使用，例如 sequential instruction fetch 與陣列走訪。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>AMAT的重點說明</h4>
-      <p>Average Memory Access Time = Hit Time + Miss Rate × Miss Penalty。降低 miss rate、miss penalty 或 hit time 都能改善。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
             </section>
             <section class="section">
               <h3>學習路徑</h3>

@@ -142,33 +142,38 @@
               <h3>核心概念</h3>
               <ul class="concept-list"><li><strong>Block：</strong>Cache 與 memory 之間以 block 為單位搬移資料。Block size 越大可利用 spatial locality，但過大可能增加 miss penalty 與 pollution。</li><li><strong>Tag / index / offset：</strong>位址切成 tag、index、block offset。Index 選 cache set/line，tag 比對是否為想要的 memory block，offset 選 block 內 byte/word。</li><li><strong>Valid bit：</strong>表示 cache line 內容是否有效。剛開機或被清除後，即使 tag 相同也不能視為 hit。</li><li><strong>Write policy：</strong>Write-through 每次寫 cache 同步寫 memory；write-back 只在 block 被替換時寫回，需要 dirty bit。Write allocate/no-write allocate 決定 write miss 時是否載入 block。</li></ul>
             </section>
+            <section class="section study-entry">
+      <h3>本週自學導讀</h3>
+      <p class="study-lead">Cache line 不只有 data。Tag 說明它代表哪個 memory block，valid 說明內容是否可用，dirty 說明 write-back line 是否比 memory 新。寫入策略必須同時回答 hit 與 miss 兩種情況。</p>
+      <figure class="learning-figure">
+    <h4>Cache 寫入策略比較</h4>
+    <div class="diagram-table-wrap"><table class="diagram-table"><thead><tr><th>策略</th><th>Write hit</th><th>主要代價</th></tr></thead><tbody><tr><td>Write-through</td><td>Cache 與下一層都更新</td><td>寫入流量較高</td></tr><tr><td>Write-back</td><td>只更新 cache，設 dirty</td><td>替換 dirty line 時寫回</td></tr><tr><td>Write-allocate</td><td>Miss 時先取 block</td><td>多一次 line fill</td></tr><tr><td>No-write-allocate</td><td>Miss 時繞過 cache</td><td>可能失去後續 locality</td></tr></tbody></table></div>
+    <figcaption>Through/back 回答 hit 如何更新；allocate/no-allocate 回答 miss 是否把 block 帶入 cache。</figcaption>
+  </figure>
+    </section>
+    <section class="section">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>Read Hit、Read Miss 與 Line Fill</h4><p>Read hit 先以 index 找 set，再比較 valid line 的 tag，命中後由 block offset 選出 byte/word。Read miss 則選 victim，必要時先寫回 dirty victim，再從下一層取整個 block 並更新 tag、valid 與 data。</p><p>Block size 增加可利用 spatial locality，但會提高 fill 時間、減少 line 數，並可能帶入未使用資料。最佳大小取決於程式存取模式與 memory burst 行為。</p></section><section class="deep-dive"><h4>Write Policy 必須成對描述</h4><p>Write-through 在 hit 時同時更新下一層，流量較大但一致性簡單；write-back 只更新 cache 並設 dirty，等替換時才寫回。</p><p>Write miss 還要選 write-allocate 或 no-write-allocate。常見搭配是 write-back + write-allocate，以及 write-through + no-write-allocate，但硬體也可依需求採其他組合。</p></section></div>
+    </section>
+    <section class="section worked-example">
+      <p class="eyebrow">Worked example</p>
+      <h3>Write-back Line 的狀態變化</h3>
+      <p>某 line 起初 invalid；先 read miss 載入 block，接著 write hit，最後被替換。</p>
+      <ol><li>Read miss 完成後：valid=1、dirty=0、tag 設為新 block tag。</li><li>Write hit 更新 cache data：valid=1、dirty=1。</li><li>替換前發現 dirty=1，先把整個 line 寫回下一層。</li><li>載入新 block 後更新 tag，dirty 回到 0。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>Dirty bit 只表示 cache 內容是否比下一層新，不表示 line 是否命中；命中仍需 valid 與 tag。</p>
+    </section>
+    <section class="section misconception-panel">
+      <h3>常見誤解</h3>
+      <ul><li>用 dirty bit 取代 valid bit。</li><li>只寫 write-back，卻未說明 write miss 是否 allocate。</li><li>替換 dirty victim 時漏算 write-back cost。</li></ul>
+    </section>
+    <section class="section self-check">
+      <h3>自我檢核</h3>
+      <p>先在紙上作答，再展開核對。能說明理由，才算真正掌握。</p>
+      <details><summary>1. Cold cache 中 tag 剛好相等就算 hit 嗎？</summary><p>不算，還必須 valid=1。</p></details><details><summary>2. Write-through cache 是否需要 dirty bit？</summary><p>一般不需要，因為下一層在每次 write hit 時同步更新。</p></details>
+    </section>
             <section class="section">
               <h3>講義筆記</h3>
               <p>判斷 hit/miss 的標準流程：用 index 找 line/set，檢查 valid，拿 tag 比對。若 tag match 且 valid=1 才是 hit。</p><p>Cache 設計沒有單一最佳答案。Block size、capacity、associativity、replacement、write policy 都會影響 hit time、miss rate、miss penalty 與硬體成本。</p><p>Direct-mapped cache 簡單快速，但容易發生 conflict miss。Associative cache 較彈性，但 tag comparison 和 replacement 較複雜。</p>
-            </section>
-            <section class="section">
-              <h3>深入說明</h3>
-
-    <section class="detail-block">
-      <h4>Block的重點說明</h4>
-      <p>Cache 與 memory 之間以 block 為單位搬移資料。Block size 越大可利用 spatial locality，但過大可能增加 miss penalty 與 pollution。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>Tag / index / offset的重點說明</h4>
-      <p>位址切成 tag、index、block offset。Index 選 cache set/line，tag 比對是否為想要的 memory block，offset 選 block 內 byte/word。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>Valid bit的重點說明</h4>
-      <p>表示 cache line 內容是否有效。剛開機或被清除後，即使 tag 相同也不能視為 hit。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>Write policy的重點說明</h4>
-      <p>Write-through 每次寫 cache 同步寫 memory；write-back 只在 block 被替換時寫回，需要 dirty bit。Write allocate/no-write allocate 決定 write miss 時是否載入 block。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
             </section>
             <section class="section">
               <h3>學習路徑</h3>

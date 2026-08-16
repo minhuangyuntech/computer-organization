@@ -142,33 +142,38 @@
               <h3>核心概念</h3>
               <ul class="concept-list"><li><strong>加減法器：</strong>Two&#039;s complement 讓加法與減法可用同一加法器完成。減法 A - B 可轉成 A + (~B + 1)。</li><li><strong>乘除法：</strong>硬體乘法可視為 shift-and-add；除法可視為 shift-and-subtract。速度與面積常需折衷，因此高效處理器會使用更複雜的乘法器。</li><li><strong>IEEE 754：</strong>Single precision 由 1-bit sign、8-bit exponent、23-bit fraction 組成。Exponent 使用 bias 表示，能同時表示極大與極小數。</li><li><strong>浮點誤差：</strong>浮點數不是實數；許多十進位小數無法用有限二進位精確表示。運算順序可能改變 rounding error。</li></ul>
             </section>
+            <section class="section study-entry">
+      <h3>本週自學導讀</h3>
+      <p class="study-lead">固定寬度整數追求精確但範圍有限；浮點數以有限有效位數換取極大動態範圍。理解兩者的錯誤條件，才能知道硬體旗標與程式數值何時可信。</p>
+      <figure class="learning-figure">
+    <h4>IEEE 754 single precision</h4>
+    <div class="bit-diagram" style="--total-bits:32"><div class="bit-field" style="--field-bits:1"><strong>Sign</strong><span>1 bit</span><small>正負</small></div><div class="bit-field" style="--field-bits:8"><strong>Exponent</strong><span>8 bits</span><small>bias 127</small></div><div class="bit-field" style="--field-bits:23"><strong>Fraction</strong><span>23 bits</span><small>有效位數</small></div></div>
+    <figcaption>Normalized value = (-1)^sign × 1.fraction × 2^(exponent-127)。</figcaption>
+  </figure>
+    </section>
+    <section class="section">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>Adder、Carry 與 Overflow</h4><p>A-B 可由 A+(~B)+1 完成，因此加法器只需用控制訊號決定是否反相 B 並設定初始 carry-in。Unsigned overflow 看最高位 carry out；signed overflow 看同號 operands 是否產生異號結果。</p><p>乘法的完整結果可能需要兩倍位元寬度。若只保留低 n bits，程式必須知道高位是否被捨棄；除法則同時產生 quotient 與 remainder。</p></section><section class="deep-dive"><h4>IEEE 754 的範圍與精度</h4><p>Normalized single precision 的值為 (-1)^s × 1.f × 2^(E-127)。隱藏的 leading 1 不佔 fraction 欄位，因此 23-bit fraction 提供 24 bits 的有效精度。</p><p>Exponent 全 0 用於 zero 與 subnormal；全 1 用於 infinity 與 NaN。浮點加法前必須對齊 exponent，較小數的 significand 右移後可能失去低位，這是吸收與 rounding error 的來源。</p></section></div>
+    </section>
+    <section class="section worked-example">
+      <p class="eyebrow">Worked example</p>
+      <h3>解讀 0xC1200000</h3>
+      <p>將 IEEE 754 single pattern 0xC1200000 轉為十進位。</p>
+      <ol><li>最高位 sign=1，所以結果為負。</li><li>Exponent bits 對應 130，因此實際 exponent = 130-127 = 3。</li><li>Fraction 形成 significand 1.25。</li><li>值 = -1.25×2^3 = -10.0。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>欄位拆解順序應固定為 sign、biased exponent、significand，最後才合成數值。</p>
+    </section>
+    <section class="section misconception-panel">
+      <h3>常見誤解</h3>
+      <ul><li>把 carry out 當 signed overflow。</li><li>忘記 normalized number 的 hidden 1。</li><li>假設浮點加法符合實數的結合律。</li></ul>
+    </section>
+    <section class="section self-check">
+      <h3>自我檢核</h3>
+      <p>先在紙上作答，再展開核對。能說明理由，才算真正掌握。</p>
+      <details><summary>1. 兩個正的 8-bit signed 數相加得到負數，發生什麼事？</summary><p>發生 signed overflow；真實數學結果超過 127。</p></details><details><summary>2. Exponent 全 1 且 fraction 非 0 代表什麼？</summary><p>代表 NaN；若 fraction 為 0 則是正或負 infinity。</p></details>
+    </section>
             <section class="section">
               <h3>講義筆記</h3>
               <p>整數 overflow 是位元寬度有限造成的結果。硬體可以用 operand sign 與 result sign 判斷加法 overflow。</p><p>浮點數用科學記號的想法換取範圍，但犧牲精確度。越大的數，相鄰可表示數之間的間距也越大。</p><p>學會辨認 special values：zero、subnormal、infinity、NaN。這些設計讓浮點運算能處理 underflow、overflow 與未定義結果。</p>
-            </section>
-            <section class="section">
-              <h3>深入說明</h3>
-
-    <section class="detail-block">
-      <h4>加減法器的重點說明</h4>
-      <p>Two&#039;s complement 讓加法與減法可用同一加法器完成。減法 A - B 可轉成 A + (~B + 1)。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>乘除法的重點說明</h4>
-      <p>硬體乘法可視為 shift-and-add；除法可視為 shift-and-subtract。速度與面積常需折衷，因此高效處理器會使用更複雜的乘法器。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>IEEE 754的重點說明</h4>
-      <p>Single precision 由 1-bit sign、8-bit exponent、23-bit fraction 組成。Exponent 使用 bias 表示，能同時表示極大與極小數。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>浮點誤差的重點說明</h4>
-      <p>浮點數不是實數；許多十進位小數無法用有限二進位精確表示。運算順序可能改變 rounding error。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
             </section>
             <section class="section">
               <h3>學習路徑</h3>

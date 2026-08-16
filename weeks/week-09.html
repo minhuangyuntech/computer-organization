@@ -142,33 +142,38 @@
               <h3>核心概念</h3>
               <ul class="concept-list"><li><strong>複習主軸一：效能：</strong>題目常要求比較兩台機器或兩種編譯結果。務必先寫出 CPU Time 公式，再代入 instruction count、CPI、clock rate。</li><li><strong>複習主軸二：MIPS：</strong>能把陣列、迴圈、if/else、函式呼叫翻成 MIPS，也要能從 MIPS 還原程式意圖。</li><li><strong>複習主軸三：資料表示：</strong>Two&#039;s complement、overflow、sign extension、IEEE 754 是常見觀念題。</li><li><strong>複習主軸四：指令編碼：</strong>R/I/J format 與控制訊號是下半學期 datapath 的入口。</li></ul>
             </section>
+            <section class="section study-entry">
+      <h3>本週自學導讀</h3>
+      <p class="study-lead">期中整合的核心不是多做相同題型，而是建立固定解題流程：先辨認模型，再列出已知量與單位，逐步更新狀態，最後用另一種觀點檢查答案。</p>
+      <figure class="learning-figure">
+    <h4>期中題型與可驗證證據</h4>
+    <div class="diagram-table-wrap"><table class="diagram-table"><thead><tr><th>題型</th><th>第一步</th><th>最後檢查</th></tr></thead><tbody><tr><td>效能</td><td>寫 CPU Time</td><td>單位與 speedup</td></tr><tr><td>資料表示</td><td>標位元寬度</td><td>範圍與符號</td></tr><tr><td>MIPS</td><td>標暫存器用途</td><td>逐行狀態</td></tr><tr><td>指令編碼</td><td>畫欄位</td><td>總和 32 bits</td></tr></tbody></table></div>
+    <figcaption>每類題目都要留下可回查的中間證據，而不是只寫最後數字。</figcaption>
+  </figure>
+    </section>
+    <section class="section">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>四類題目的共同策略</h4><p>效能題先寫 CPU Time 公式；資料表示題先寫位元寬度與 signedness；MIPS 題先建立變數到暫存器的對照；編碼題先畫欄位邊界。把假設寫在答案上，能避免大多數單位與解讀錯誤。</p><p>完成計算後要做量級檢查：GHz 的 cycle time 應在 ns 等級，32-bit 指令應恰好 8 個 hex digits，aligned word address 最低兩 bits 應為 00。</p></section><section class="deep-dive"><h4>從結果反推合理性</h4><p>若 clock 更快但程式反而更慢，檢查 instruction count 或 CPI 是否增加；若負數 sign extension 後變正，檢查最高位是否複製；若 loop 永不結束，檢查 branch 條件與 index 更新。</p><p>自學時先遮住答案完整做一次，再用答案只定位第一個分歧步驟。直接閱讀完整解答容易產生熟悉感，卻無法驗證自己是否能獨立建立模型。</p></section></div>
+    </section>
+    <section class="section worked-example">
+      <p class="eyebrow">Worked example</p>
+      <h3>整合比較兩個編譯結果</h3>
+      <p>A：1.2×10^9 instructions、CPI 2、4 GHz；B：1.0×10^9 instructions、CPI 1.8、3 GHz。</p>
+      <ol><li>A cycles = 1.2×10^9×2 = 2.4×10^9，時間 = 0.6 秒。</li><li>B cycles = 1.0×10^9×1.8 = 1.8×10^9，時間 = 0.6 秒。</li><li>A clock rate 較高，但 instruction count 與 CPI 的乘積也較高。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>兩者同快。任何只引用 clock rate、instruction count 或 CPI 單一數值的結論都不完整。</p>
+    </section>
+    <section class="section misconception-panel">
+      <h3>常見誤解</h3>
+      <ul><li>跳過公式直接代數字。</li><li>把 register 名稱與 register number 混用。</li><li>看到熟悉題目便略過位元寬度或單位。</li></ul>
+    </section>
+    <section class="section self-check">
+      <h3>自我檢核</h3>
+      <p>先在紙上作答，再展開核對。能說明理由，才算真正掌握。</p>
+      <details><summary>1. 3 GHz 的 clock cycle time 是多少？</summary><p>1/(3×10^9) 秒，約 0.333 ns。</p></details><details><summary>2. 32-bit 指令完整寫成十六進位需要幾位？</summary><p>8 位，因為每個 hex digit 代表 4 bits。</p></details>
+    </section>
             <section class="section">
               <h3>講義筆記</h3>
               <p>準備期中考時，不要只看答案。請把每題的假設寫清楚，例如單位是 GHz 還是 ns、offset 是 byte 還是 word、數值被解讀為 signed 還是 unsigned。</p><p>組合語言題目可逐行加註解，尤其是 branch 的條件與跳躍方向。畫出暫存器內容變化表，錯誤會少很多。</p><p>考前最後一輪複習可用三張紙：效能公式表、MIPS 指令表、數值表示規則表。</p>
-            </section>
-            <section class="section">
-              <h3>深入說明</h3>
-
-    <section class="detail-block">
-      <h4>複習主軸一：效能的重點說明</h4>
-      <p>題目常要求比較兩台機器或兩種編譯結果。務必先寫出 CPU Time 公式，再代入 instruction count、CPI、clock rate。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>複習主軸二：MIPS的重點說明</h4>
-      <p>能把陣列、迴圈、if/else、函式呼叫翻成 MIPS，也要能從 MIPS 還原程式意圖。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>複習主軸三：資料表示的重點說明</h4>
-      <p>Two&#039;s complement、overflow、sign extension、IEEE 754 是常見觀念題。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>複習主軸四：指令編碼的重點說明</h4>
-      <p>R/I/J format 與控制訊號是下半學期 datapath 的入口。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
             </section>
             <section class="section">
               <h3>學習路徑</h3>

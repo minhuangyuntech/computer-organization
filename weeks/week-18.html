@@ -142,28 +142,38 @@
               <h3>核心概念</h3>
               <ul class="concept-list"><li><strong>總複習範圍：</strong>第 10-17 週重點包含單週期 datapath、控制訊號、pipeline 效能、hazard、memory hierarchy、cache mapping、replacement 與 AMAT。</li><li><strong>解題策略：</strong>Datapath 題先畫資料流；pipeline 題先畫 cycle table；cache 題先算 tag/index/offset；效能題先寫公式與單位。</li><li><strong>專題評量：</strong>專題應呈現問題動機、系統背景、使用方法、核心分析、實驗或推導結果，以及與課程概念的明確連結。</li></ul>
             </section>
+            <section class="section study-entry">
+      <h3>本週自學導讀</h3>
+      <p class="study-lead">期末整合時，先把所有額外成本換成 cycles per instruction，再與 base CPI 相加；最後乘 instruction count 與 cycle time。這能把 branch、data hazard 與 cache miss 放進同一個可驗證模型。</p>
+      <figure class="learning-figure">
+    <h4>期末整合解題順序</h4>
+    <div class="flow-diagram"><span class="flow-node">辨認 workload</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">計算動態指令</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">加入 pipeline penalties</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">加入 cache penalties</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">得到 CPI</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">換算 CPU Time</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">檢查單位與狀態</span></div>
+    <figcaption>先把各類事件轉為平均 cycles/instruction，再合併成同一時間模型。</figcaption>
+  </figure>
+    </section>
+    <section class="section">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>建立整合 CPI</h4><p>CPI_total = CPI_base + data-stall CPI + control-stall CPI + memory-stall CPI。每一項都應由事件頻率乘每次事件 penalty 得到，例如 branch frequency × misprediction rate × penalty。</p><p>若 instruction 與 data cache 都可能 miss，需分別依 instruction fetch frequency 與 load/store frequency 計算。所有指令都有一次 instruction fetch，但只有部分指令存取 data cache。</p></section><section class="deep-dive"><h4>答案的三層檢查</h4><p>結構檢查：bit fields 是否加總正確、pipeline 是否維持程式相依、cache set 是否由 index 唯一決定。數學檢查：機率是否介於 0 與 1、時間單位是否一致。語意檢查：最終 register 與 memory 結果是否符合原程式。</p><p>自學完成的標準不是能認出圖，而是能從空白紙重建：畫出必要元件、標出資料方向、寫出控制條件，再用一個具體指令或位址走完整條路。</p></section></div>
+    </section>
+    <section class="section worked-example">
+      <p class="eyebrow">Worked example</p>
+      <h3>整合 Branch 與 Cache Stall</h3>
+      <p>10^9 instructions、2 GHz、base CPI=1；branch 15%、mispredict 8%、penalty 3；load/store 30%、L1 miss 4%、penalty 50。</p>
+      <ol><li>Branch stall CPI = 0.15×0.08×3 = 0.036。</li><li>Memory stall CPI = 0.30×0.04×50 = 0.60。</li><li>Total CPI = 1+0.036+0.60 = 1.636。</li><li>CPU Time = 10^9×1.636/(2×10^9) = 0.818 秒。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>此例 memory stalls 遠大於 branch stalls，因此優先降低 cache miss 或 miss penalty 較有潛力。</p>
+    </section>
+    <section class="section misconception-panel">
+      <h3>常見誤解</h3>
+      <ul><li>把 penalty 直接加到 CPI，沒有乘事件頻率。</li><li>對所有指令套用 data-cache miss rate，漏掉 load/store frequency。</li><li>算出時間後沒有回查最終架構狀態是否正確。</li></ul>
+    </section>
+    <section class="section self-check">
+      <h3>自我檢核</h3>
+      <p>先在紙上作答，再展開核對。能說明理由，才算真正掌握。</p>
+      <details><summary>1. 為何 instruction-cache miss 不需再乘 load/store frequency？</summary><p>每條執行中的指令都需要 instruction fetch，因此其基準頻率是每 instruction 一次。</p></details><details><summary>2. 本例應先改善 branch 還是 memory？</summary><p>在其他成本相近時，memory stall CPI=0.60，遠大於 branch stall CPI=0.036，優先改善 memory 較可能得到較大整體收益。</p></details>
+    </section>
             <section class="section">
               <h3>講義筆記</h3>
               <p>期末題目通常要求跨章節整合。例如一段 loop 的效能可能同時牽涉指令數、branch、load-use hazard 與 cache miss。</p><p>請避免只寫結論。每一步推導、每個控制訊號、每個 cache 位址切割都要有理由，這比背答案更可靠。</p><p>完成本課程後，應能用精確但不神秘的語言說明：程式為什麼快或慢，CPU 為什麼需要 pipeline，記憶體階層為什麼不可或缺。</p>
-            </section>
-            <section class="section">
-              <h3>深入說明</h3>
-
-    <section class="detail-block">
-      <h4>總複習範圍的重點說明</h4>
-      <p>第 10-17 週重點包含單週期 datapath、控制訊號、pipeline 效能、hazard、memory hierarchy、cache mapping、replacement 與 AMAT。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>解題策略的重點說明</h4>
-      <p>Datapath 題先畫資料流；pipeline 題先畫 cycle table；cache 題先算 tag/index/offset；效能題先寫公式與單位。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>專題評量的重點說明</h4>
-      <p>專題應呈現問題動機、系統背景、使用方法、核心分析、實驗或推導結果，以及與課程概念的明確連結。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
             </section>
             <section class="section">
               <h3>學習路徑</h3>

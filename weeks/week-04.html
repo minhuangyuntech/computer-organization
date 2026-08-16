@@ -142,28 +142,38 @@
               <h3>核心概念</h3>
               <ul class="concept-list"><li><strong>Load-store 架構：</strong>MIPS 算術邏輯指令只操作暫存器，記憶體資料必須先用 lw 載入暫存器，計算後再用 sw 存回記憶體。這讓資料路徑較規則，便於 pipeline。</li><li><strong>暫存器：</strong>MIPS 有 32 個 general-purpose registers。$zero 永遠為 0；$t0-$t9 常作暫時值；$s0-$s7 常保存跨函式呼叫仍需保留的值；$a0-$a3 用於參數；$v0-$v1 用於回傳。</li><li><strong>R-format 指令：</strong>如 add、sub、and、or、slt，多數有三個 register operands：目的暫存器 rd、來源暫存器 rs 與 rt。</li></ul>
             </section>
+            <section class="section study-entry">
+      <h3>本週自學導讀</h3>
+      <p class="study-lead">MIPS 將複雜程式拆成少數規則一致的基本操作。學習重點不是背語法，而是每行指令讀了哪些暫存器、寫了哪個暫存器，以及何時必須經過記憶體。</p>
+      <figure class="learning-figure">
+    <h4>Load-store 資料流</h4>
+    <div class="flow-diagram"><span class="flow-node">Memory 中的變數</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">lw 載入</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Register operands</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">ALU 運算</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Register result</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">sw 儲存</span></div>
+    <figcaption>ALU 不直接讀寫主記憶體；資料先進暫存器，計算後才由 store 寫回。</figcaption>
+  </figure>
+    </section>
+    <section class="section">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>Register file 與三運算元指令</h4><p>典型 MIPS register file 可同時讀兩個來源暫存器並寫一個目的暫存器，正好支援 add rd, rs, rt。目的與來源分離，可保留原始 operand，也讓編譯器更容易安排中間值。</p><p>$zero 的讀值固定為 0，寫入會被忽略。它讓 move、清零、比較與無條件分支可由既有指令組合完成，減少特殊硬體路徑。</p></section><section class="deep-dive"><h4>Load-store 的規則性</h4><p>算術指令只讀寫暫存器；只有 load/store 在暫存器與記憶體之間搬移資料。這使 ALU 指令具有一致的 operand 位置與執行流程，也降低 pipeline 控制複雜度。</p><p>代價是高階語言的一個運算可能需要額外的 load 與 store。效能取決於編譯器是否能把常用值留在暫存器，以及 memory hierarchy 是否能快速提供資料。</p></section></div>
+    </section>
+    <section class="section worked-example">
+      <p class="eyebrow">Worked example</p>
+      <h3>將 f = (g + h) - i 翻成 MIPS</h3>
+      <p>令 f、g、h、i 分別位於 $s0、$s1、$s2、$s3。</p>
+      <ol><li>先計算 g+h：add $t0, $s1, $s2。</li><li>再減去 i：sub $s0, $t0, $s3。</li><li>$t0 是短暫中間值；最後結果才寫入保存 f 的 $s0。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>兩條 R-format 指令足以完成，且每條都只有 register operands。</p>
+    </section>
+    <section class="section misconception-panel">
+      <h3>常見誤解</h3>
+      <ul><li>把目的暫存器放在指令最後。</li><li>以為 $t 與 $s 是硬體功能不同的暫存器；差異主要是 calling convention。</li><li>讓 add 直接使用 memory address 當 operand。</li></ul>
+    </section>
+    <section class="section self-check">
+      <h3>自我檢核</h3>
+      <p>先在紙上作答，再展開核對。能說明理由，才算真正掌握。</p>
+      <details><summary>1. 為何 move $t0,$t1 可由 add $t0,$t1,$zero 表示？</summary><p>$zero 的值固定為 0，所以加零不改變 $t1，結果寫入 $t0。</p></details><details><summary>2. Register allocation 失敗而 spill 時，會增加哪些指令？</summary><p>需要額外的 load/store 在暫存器與 stack memory 之間搬移值。</p></details>
+    </section>
             <section class="section">
               <h3>講義筆記</h3>
               <p>組合語言的價值不是取代 C，而是讓我們看見編譯器和硬體中間的指令層。理解 MIPS 後，學習 RISC-V、ARM 或其他 RISC ISA 會容易很多。</p><p>暫存器數量有限，所以編譯器需要做 register allocation。當暫存器不夠時，資料會 spill 到 memory，效能通常下降。</p><p>良好的組合語言閱讀習慣：先標出變數放在哪些暫存器，再追蹤每行指令改變了哪些狀態。</p>
-            </section>
-            <section class="section">
-              <h3>深入說明</h3>
-
-    <section class="detail-block">
-      <h4>Load-store 架構的重點說明</h4>
-      <p>MIPS 算術邏輯指令只操作暫存器，記憶體資料必須先用 lw 載入暫存器，計算後再用 sw 存回記憶體。這讓資料路徑較規則，便於 pipeline。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>暫存器的重點說明</h4>
-      <p>MIPS 有 32 個 general-purpose registers。$zero 永遠為 0；$t0-$t9 常作暫時值；$s0-$s7 常保存跨函式呼叫仍需保留的值；$a0-$a3 用於參數；$v0-$v1 用於回傳。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>R-format 指令的重點說明</h4>
-      <p>如 add、sub、and、or、slt，多數有三個 register operands：目的暫存器 rd、來源暫存器 rs 與 rt。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
             </section>
             <section class="section">
               <h3>學習路徑</h3>

@@ -142,33 +142,38 @@
               <h3>核心概念</h3>
               <ul class="concept-list"><li><strong>Fixed-length encoding：</strong>MIPS 指令固定 32 bits，讓 fetch 與 decode 較規則。硬體每次 PC + 4 取得下一個 sequential instruction。</li><li><strong>R-format：</strong>用 opcode=0 搭配 funct 決定 ALU 操作，適合 register-register arithmetic/logical instructions。</li><li><strong>I-format：</strong>包含 16-bit immediate，適合 load/store、branch 與 addi。Immediate 可能需要 sign extension 或 zero extension。</li><li><strong>J-format：</strong>包含 26-bit target field，配合 PC 高位形成 jump target。</li></ul>
             </section>
+            <section class="section study-entry">
+      <h3>本週自學導讀</h3>
+      <p class="study-lead">指令格式是控制器讀取的契約。每個欄位不只代表一個數字，也決定 register file 讀寫埠、immediate 延伸方式、ALU 功能與下一個 PC 的來源。</p>
+      <figure class="learning-figure">
+    <h4>MIPS R-format 欄位</h4>
+    <div class="bit-diagram" style="--total-bits:32"><div class="bit-field" style="--field-bits:6"><strong>opcode</strong><span>6 bits</span><small>大類</small></div><div class="bit-field" style="--field-bits:5"><strong>rs</strong><span>5 bits</span><small>來源 1</small></div><div class="bit-field" style="--field-bits:5"><strong>rt</strong><span>5 bits</span><small>來源 2</small></div><div class="bit-field" style="--field-bits:5"><strong>rd</strong><span>5 bits</span><small>目的</small></div><div class="bit-field" style="--field-bits:5"><strong>shamt</strong><span>5 bits</span><small>位移量</small></div><div class="bit-field" style="--field-bits:6"><strong>funct</strong><span>6 bits</span><small>ALU 功能</small></div></div>
+    <figcaption>6+5+5+5+5+6=32 bits；每個 5-bit register field 可指定 32 個暫存器。</figcaption>
+  </figure>
+    </section>
+    <section class="section">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>固定長度與欄位折衷</h4><p>固定 32-bit 讓 PC 通常每次加 4，也讓 instruction memory 與 decode 邊界規則一致。代價是 opcode、register 與 immediate 必須共享固定空間，immediate 範圍受到限制。</p><p>R-format 以 funct 擴充 opcode=0 的 ALU 操作；I-format 犧牲一個 register 欄位換取 16-bit immediate；J-format 以更大的 target field 支援較遠跳躍。</p></section><section class="deep-dive"><h4>Decode 到控制訊號</h4><p>Opcode 先決定大類控制，例如是否讀 data memory、是否寫 register、ALU 第二個 operand 來自 register 或 immediate。R-format 再用 funct 決定 add、sub、and、or 或 slt。</p><p>編碼題最穩定的方法是先填十進位 register number，再依欄位寬度轉成二進位，最後每四 bits 分組轉十六進位。不要直接心算整個 32-bit pattern。</p></section></div>
+    </section>
+    <section class="section worked-example">
+      <p class="eyebrow">Worked example</p>
+      <h3>編碼 add $t0,$s1,$s2</h3>
+      <p>$s1=17、$s2=18、$t0=8，add funct=32。</p>
+      <ol><li>opcode=000000；rs=10001；rt=10010。</li><li>rd=01000；shamt=00000；funct=100000。</li><li>串接為 000000 10001 10010 01000 00000 100000。</li><li>每四 bits 分組得到 0x02324020。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>Decode 時 opcode=0 指向 R-format，再由 funct=32 選擇加法。</p>
+    </section>
+    <section class="section misconception-panel">
+      <h3>常見誤解</h3>
+      <ul><li>把組合語言 operand 順序直接當成 rs、rt、rd 順序。</li><li>忘記 register number 必須補足 5 bits。</li><li>將 branch offset 當成絕對位址。</li></ul>
+    </section>
+    <section class="section self-check">
+      <h3>自我檢核</h3>
+      <p>先在紙上作答，再展開核對。能說明理由，才算真正掌握。</p>
+      <details><summary>1. 5-bit register field 最多能指定多少暫存器？</summary><p>2^5=32 個。</p></details><details><summary>2. 為何 lw 的 immediate 要 sign extension？</summary><p>Base+offset addressing 需要支援 base 前後的位址，所以 offset 可為負數。</p></details>
+    </section>
             <section class="section">
               <h3>講義筆記</h3>
               <p>指令編碼不是單純背欄位，而是理解硬體如何從 bit pattern 產生控制訊號。Opcode 進入 control unit 後，決定 RegWrite、MemRead、MemWrite、ALUSrc、Branch 等訊號。</p><p>Branch offset 通常以 word 為單位並相對於 PC+4，這讓短距離迴圈可用較少 bits 表示。</p><p>期中考前請能手算：給一行 MIPS 指令，指出格式與主要欄位；給欄位，判斷它大致會啟動哪些資料路徑。</p>
-            </section>
-            <section class="section">
-              <h3>深入說明</h3>
-
-    <section class="detail-block">
-      <h4>Fixed-length encoding的重點說明</h4>
-      <p>MIPS 指令固定 32 bits，讓 fetch 與 decode 較規則。硬體每次 PC + 4 取得下一個 sequential instruction。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>R-format的重點說明</h4>
-      <p>用 opcode=0 搭配 funct 決定 ALU 操作，適合 register-register arithmetic/logical instructions。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>I-format的重點說明</h4>
-      <p>包含 16-bit immediate，適合 load/store、branch 與 addi。Immediate 可能需要 sign extension 或 zero extension。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>J-format的重點說明</h4>
-      <p>包含 26-bit target field，配合 PC 高位形成 jump target。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
             </section>
             <section class="section">
               <h3>學習路徑</h3>

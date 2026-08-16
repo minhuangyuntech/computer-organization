@@ -142,28 +142,38 @@
               <h3>核心概念</h3>
               <ul class="concept-list"><li><strong>Calling convention：</strong>呼叫者負責傳參數與接收回傳值；被呼叫者若使用需保存的暫存器，必須在 stack 中保存並於回傳前恢復。</li><li><strong>Stack：</strong>Stack 通常向低位址成長。函式進入時配置 frame，存放 return address、saved registers、local variables；離開時釋放 frame。</li><li><strong>Instruction cycle：</strong>每一指令可概念性分成 fetch、decode/register read、execute、memory、write back。後續單週期與 pipeline 都會使用這個分解。</li></ul>
             </section>
+            <section class="section study-entry">
+      <h3>本週自學導讀</h3>
+      <p class="study-lead">函式呼叫的本質是跨越控制流程邊界仍要維持狀態契約。Calling convention 規定誰保存什麼；instruction cycle 則說明每個保存與跳躍動作如何由硬體完成。</p>
+      <figure class="learning-figure">
+    <h4>一個函式呼叫的控制與狀態</h4>
+    <div class="flow-diagram"><span class="flow-node">Caller 準備參數</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">jal 寫入 $ra</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">配置 stack frame</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">執行 callee</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">恢復 frame</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">jr $ra 回傳</span></div>
+    <figcaption>任何巢狀呼叫都可能覆寫 $ra，因此需要由 stack 保存尚未使用的 return address。</figcaption>
+  </figure>
+    </section>
+    <section class="section">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>Stack frame 是有生命週期的記憶體區域</h4><p>函式進入時先降低 $sp 配置 frame，再把必須保留的 $ra、$s registers 與 local values 寫入固定 offset。回傳前必須以相反順序恢復內容並將 $sp 加回原值。</p><p>Caller-saved 表示呼叫者若仍需要某值，必須在 jal 前保存；callee-saved 表示被呼叫者只要改動該暫存器，就必須先保存、後恢復。兩者共同避免不必要的全部保存。</p></section><section class="deep-dive"><h4>Fetch-Decode-Execute 的狀態轉移</h4><p>Fetch 使用 PC 讀 instruction memory 並形成 PC+4；Decode 解析 opcode 與 register fields；Execute 由 ALU 運算或計算位址；Memory 階段處理 load/store；Write back 更新 register file。</p><p>不是每種指令都需要所有結果。例如 sw 不寫 register，R-format 不讀 data memory。將流程拆成共同階段，是後續 pipeline 能重疊執行的基礎。</p></section></div>
+    </section>
+    <section class="section worked-example">
+      <p class="eyebrow">Worked example</p>
+      <h3>為何 nested call 必須保存 $ra</h3>
+      <p>main 以 jal f 呼叫 f，而 f 內又以 jal g 呼叫 g。</p>
+      <ol><li>main 的 jal 把 main 返回位置寫入 $ra。</li><li>f 若直接執行 jal g，$ra 會被 g 的返回位置覆蓋。</li><li>因此 f 在呼叫 g 前先把原 $ra 存入自己的 stack frame。</li><li>g 返回後，f 從 stack 恢復原 $ra，最後才能回到 main。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>$ra 只有一個；遞迴與巢狀呼叫需要 stack 保存每一層尚未完成的返回位置。</p>
+    </section>
+    <section class="section misconception-panel">
+      <h3>常見誤解</h3>
+      <ul><li>配置 frame 後仍使用配置前的 offset。</li><li>恢復 $sp 的大小與配置大小不一致。</li><li>有 nested call 卻沒有保存 $ra。</li></ul>
+    </section>
+    <section class="section self-check">
+      <h3>自我檢核</h3>
+      <p>先在紙上作答，再展開核對。能說明理由，才算真正掌握。</p>
+      <details><summary>1. 若 leaf function 不呼叫其他函式，是否一定要保存 $ra？</summary><p>不一定。若它不改寫 $ra 且不需使用 stack，可直接 jr $ra。</p></details><details><summary>2. sw 指令的五階段中，WB 會寫什麼？</summary><p>不寫 register；對 sw 而言，真正的架構更新在 MEM 階段寫入資料記憶體。</p></details>
+    </section>
             <section class="section">
               <h3>講義筆記</h3>
               <p>函式呼叫是最能串起軟硬體的例子：高階語言看起來是一個 function call，ISA 層面是 `jal`、參數暫存器與 stack 操作，硬體層面則是 PC 改變與暫存器寫入。</p><p>遞迴函式必須特別注意 `$ra` 與參數保存，否則下一次呼叫會覆蓋上一層返回位置。</p><p>追蹤 stack 時畫表格最清楚：列出位址、內容、何時 push、何時 pop。</p>
-            </section>
-            <section class="section">
-              <h3>深入說明</h3>
-
-    <section class="detail-block">
-      <h4>Calling convention的重點說明</h4>
-      <p>呼叫者負責傳參數與接收回傳值；被呼叫者若使用需保存的暫存器，必須在 stack 中保存並於回傳前恢復。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>Stack的重點說明</h4>
-      <p>Stack 通常向低位址成長。函式進入時配置 frame，存放 return address、saved registers、local variables；離開時釋放 frame。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>Instruction cycle的重點說明</h4>
-      <p>每一指令可概念性分成 fetch、decode/register read、execute、memory、write back。後續單週期與 pipeline 都會使用這個分解。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
             </section>
             <section class="section">
               <h3>學習路徑</h3>

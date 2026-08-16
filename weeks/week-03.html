@@ -142,33 +142,38 @@
               <h3>核心概念</h3>
               <ul class="concept-list"><li><strong>位元與編碼：</strong>電腦儲存的是位元樣式；同一串位元可依情境解讀為整數、字元、指令或浮點數。資料型態不是位元本身，而是解讀規則。</li><li><strong>Two&#039;s complement：</strong>n 位元 two&#039;s complement 範圍為 -2^(n-1) 到 2^(n-1)-1。負數可由正數取反加一得到。加減法硬體可共用同一個加法器。</li><li><strong>位元延伸：</strong>有號數做 sign extension，無號數做 zero extension。若把有號/無號混用，常造成條件判斷錯誤。</li><li><strong>Endianness：</strong>Little endian 與 big endian 決定多位元組資料在記憶體中的 byte 順序。它不改變暫存器中的數值，只影響記憶體表示與資料交換。</li></ul>
             </section>
+            <section class="section study-entry">
+      <h3>本週自學導讀</h3>
+      <p class="study-lead">位元沒有天生的資料型態。正確解讀必須同時知道位元寬度、signedness、編碼規則與 byte 順序；少掉任何一項都可能得到另一個完全不同的值。</p>
+      <figure class="learning-figure">
+    <h4>8-bit two&#039;s complement 權重</h4>
+    <div class="bit-diagram" style="--total-bits:8"><div class="bit-field" style="--field-bits:1"><strong>b7</strong><span>1 bit</span><small>-128</small></div><div class="bit-field" style="--field-bits:1"><strong>b6</strong><span>1 bit</span><small>64</small></div><div class="bit-field" style="--field-bits:1"><strong>b5</strong><span>1 bit</span><small>32</small></div><div class="bit-field" style="--field-bits:1"><strong>b4</strong><span>1 bit</span><small>16</small></div><div class="bit-field" style="--field-bits:1"><strong>b3</strong><span>1 bit</span><small>8</small></div><div class="bit-field" style="--field-bits:1"><strong>b2</strong><span>1 bit</span><small>4</small></div><div class="bit-field" style="--field-bits:1"><strong>b1</strong><span>1 bit</span><small>2</small></div><div class="bit-field" style="--field-bits:1"><strong>b0</strong><span>1 bit</span><small>1</small></div></div>
+    <figcaption>最高位不是單純的正負標記，而是具有 -128 權重；因此 8-bit 範圍為 -128 到 127。</figcaption>
+  </figure>
+    </section>
+    <section class="section">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>Two&#039;s complement 的權重觀點</h4><p>n-bit two&#039;s complement 的最高位權重是 -2^(n-1)，其餘位元仍是正的 2 的冪。這個觀點可直接解讀負數，不必每次都取反加一。例如 11010110 的值是 -128+64+16+4+2=-42。</p><p>Carry out 是無號加法超出 n bits 的訊號；signed overflow 則表示有號結果超出可表示範圍。兩者判斷的數學模型不同，不能互換。</p></section><section class="deep-dive"><h4>Byte address 與 Endianness</h4><p>Byte-addressed memory 中每個位址指向 8 bits。32-bit word 會佔用四個連續位址。Little endian 把最低有效 byte 放在最低位址，big endian 則把最高有效 byte 放在最低位址。</p><p>Endianness 不會顛倒一個 byte 內的 bit，也不會改變暫存器看到的數值。它只在多 byte 資料被拆到記憶體或通訊封包時產生差異。</p></section></div>
+    </section>
+    <section class="section worked-example">
+      <p class="eyebrow">Worked example</p>
+      <h3>同一位元樣式的三種解讀</h3>
+      <p>解讀 8-bit pattern 11010110，並排列 0x12345678 在 little-endian memory 的四個 bytes。</p>
+      <ol><li>Unsigned：128+64+16+4+2 = 214。</li><li>Signed two&#039;s complement：214-256 = -42。</li><li>若只當作單一 8-bit code，其語意還需由字元集或通訊協定決定。</li><li>0x12345678 的 bytes 為 12、34、56、78；little endian 由低位址起依序存 78、56、34、12。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>位元樣式相同不代表值相同；metadata 與使用情境決定解讀。</p>
+    </section>
+    <section class="section misconception-panel">
+      <h3>常見誤解</h3>
+      <ul><li>把 sign bit 當成 signed-magnitude 的正負號。</li><li>用 carry out 判斷 signed overflow。</li><li>把 little endian 誤解為每個 byte 的 bits 也反向。</li></ul>
+    </section>
+    <section class="section self-check">
+      <h3>自我檢核</h3>
+      <p>先在紙上作答，再展開核對。能說明理由，才算真正掌握。</p>
+      <details><summary>1. 8-bit 11111111 分別代表多少 unsigned 與 signed 值？</summary><p>Unsigned 是 255；two&#039;s complement signed 是 -1。</p></details><details><summary>2. 兩個負數相加得到正數時，carry out 一定能指出 overflow 嗎？</summary><p>不能只看 carry out。Signed overflow 應看兩個 operand 同號而結果異號。</p></details>
+    </section>
             <section class="section">
               <h3>講義筆記</h3>
               <p>二進位與十六進位轉換是後續看 instruction encoding、cache address breakdown 的基本功。十六進位每一位剛好對應 4 bits，適合表達 32-bit 指令與位址。</p><p>Overflow 只對固定寬度的有號運算有意義。兩個正數相加得到負數、或兩個負數相加得到正數，就是 two&#039;s complement overflow 的典型跡象。</p><p>資料對齊（alignment）會影響硬體存取效率。MIPS word 通常要求 4-byte alignment，位址最低兩個 bit 應為 00。</p>
-            </section>
-            <section class="section">
-              <h3>深入說明</h3>
-
-    <section class="detail-block">
-      <h4>位元與編碼的重點說明</h4>
-      <p>電腦儲存的是位元樣式；同一串位元可依情境解讀為整數、字元、指令或浮點數。資料型態不是位元本身，而是解讀規則。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>Two&#039;s complement的重點說明</h4>
-      <p>n 位元 two&#039;s complement 範圍為 -2^(n-1) 到 2^(n-1)-1。負數可由正數取反加一得到。加減法硬體可共用同一個加法器。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>位元延伸的重點說明</h4>
-      <p>有號數做 sign extension，無號數做 zero extension。若把有號/無號混用，常造成條件判斷錯誤。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>Endianness的重點說明</h4>
-      <p>Little endian 與 big endian 決定多位元組資料在記憶體中的 byte 順序。它不改變暫存器中的數值，只影響記憶體表示與資料交換。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
             </section>
             <section class="section">
               <h3>學習路徑</h3>

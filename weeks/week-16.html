@@ -142,33 +142,38 @@
               <h3>核心概念</h3>
               <ul class="concept-list"><li><strong>Replacement policy：</strong>當 set 已滿且發生 miss 時，必須決定替換哪一個 way。Direct-mapped 不需要選擇；associative cache 才需要 policy。</li><li><strong>LRU：</strong>Least Recently Used 替換最久沒被使用的 block，試圖利用 temporal locality。完全精確 LRU 在高 associativity 下成本較高。</li><li><strong>FIFO / Random：</strong>FIFO 替換最早進入的 block，實作簡單但不一定符合近期使用情形；random 成本低，在某些工作負載下表現可接受。</li><li><strong>效能分析：</strong>Cache 調整要同時看 hit time、miss rate、miss penalty。降低 miss rate 若讓 hit time 變長，整體未必更快。</li></ul>
             </section>
+            <section class="section study-entry">
+      <h3>本週自學導讀</h3>
+      <p class="study-lead">Replacement policy 只在一個 set 有多個 valid 候選且需要騰出空間時生效。多層 cache 分析則要分清 local miss rate 與 global miss rate，才能正確組合平均成本。</p>
+      <figure class="learning-figure">
+    <h4>兩層 Cache 的條件成本</h4>
+    <div class="hierarchy-diagram"><div style="--level:0"><strong>L1 access</strong><span>每次 memory access 都支付</span></div><div style="--level:1"><strong>L2 access</strong><span>只在 L1 miss 時支付</span></div><div style="--level:2"><strong>Main memory</strong><span>只在 L1 與 L2 都 miss 時支付</span></div></div>
+    <figcaption>越往下的成本要乘上抵達該層的機率；L2 local miss rate 以 L1 misses 為條件。</figcaption>
+  </figure>
+    </section>
+    <section class="section">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>LRU、FIFO、Random 與近似策略</h4><p>True LRU 選最久未使用的 line，對 temporal locality 直觀有效，但 ways 增加時需要更多排序狀態與更新邏輯。實際硬體常採 pseudo-LRU 或 random，在成本與命中率間折衷。</p><p>FIFO 追蹤進入順序，不等於最近使用順序。某 line 即使剛被 hit，FIFO 仍可能最先替換它。手算時必須明確維護 policy 所需的 metadata。</p></section><section class="deep-dive"><h4>Local 與 Global Miss Rate</h4><p>L1 local miss rate 以所有 L1 accesses 為分母；L2 local miss rate 只以送到 L2 的 accesses 為分母。L2 global miss rate 等於 L1 miss rate × L2 local miss rate。</p><p>兩層 AMAT 可寫成 L1 hit time + L1 miss rate × (L2 hit time + L2 local miss rate × memory penalty)。括號內是發生 L1 miss 後的條件平均成本。</p></section></div>
+    </section>
+    <section class="section worked-example">
+      <p class="eyebrow">Worked example</p>
+      <h3>兩層 Cache AMAT</h3>
+      <p>L1 hit=1 cycle、L1 miss rate=4%；L2 hit=10 cycles、L2 local miss rate=20%；memory penalty=100 cycles。</p>
+      <ol><li>發生 L1 miss 後的平均成本 = 10 + 0.20×100 = 30 cycles。</li><li>平均 L1 miss 貢獻 = 0.04×30 = 1.2 cycles。</li><li>AMAT = 1+1.2 = 2.2 cycles。</li><li>L2 global miss rate = 0.04×0.20 = 0.008 = 0.8%。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>Memory penalty 只由同時 miss L1 與 L2 的 0.8% accesses 支付。</p>
+    </section>
+    <section class="section misconception-panel">
+      <h3>常見誤解</h3>
+      <ul><li>Direct-mapped cache 也套用 replacement policy。</li><li>把 FIFO 命中後的 line 移到最新位置。</li><li>將 L2 local miss rate 直接當成所有 accesses 的 miss rate。</li></ul>
+    </section>
+    <section class="section self-check">
+      <h3>自我檢核</h3>
+      <p>先在紙上作答，再展開核對。能說明理由，才算真正掌握。</p>
+      <details><summary>1. 為何 true LRU 在高 associativity 時成本高？</summary><p>需要追蹤與更新同一 set 各 ways 的相對使用順序，狀態與邏輯隨 ways 增加。</p></details><details><summary>2. 若 L1 miss 10%、L2 local miss 5%，L2 global miss 是多少？</summary><p>0.10×0.05=0.005，也就是所有 accesses 的 0.5%。</p></details>
+    </section>
             <section class="section">
               <h3>講義筆記</h3>
               <p>考題常給位址序列與 cache 組態，要求模擬 replacement。請維護每個 set 的內容、valid、tag、最近使用順序或進入順序。</p><p>Multi-level cache 的 AMAT 可展開：AMAT = L1 hit time + L1 miss rate × (L2 hit time + L2 miss rate × memory penalty)。</p><p>Write-back cache 在替換 dirty block 時會增加額外寫回成本；分析 miss penalty 時不要漏掉。</p>
-            </section>
-            <section class="section">
-              <h3>深入說明</h3>
-
-    <section class="detail-block">
-      <h4>Replacement policy的重點說明</h4>
-      <p>當 set 已滿且發生 miss 時，必須決定替換哪一個 way。Direct-mapped 不需要選擇；associative cache 才需要 policy。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>LRU的重點說明</h4>
-      <p>Least Recently Used 替換最久沒被使用的 block，試圖利用 temporal locality。完全精確 LRU 在高 associativity 下成本較高。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>FIFO / Random的重點說明</h4>
-      <p>FIFO 替換最早進入的 block，實作簡單但不一定符合近期使用情形；random 成本低，在某些工作負載下表現可接受。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>效能分析的重點說明</h4>
-      <p>Cache 調整要同時看 hit time、miss rate、miss penalty。降低 miss rate 若讓 hit time 變長，整體未必更快。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
             </section>
             <section class="section">
               <h3>學習路徑</h3>

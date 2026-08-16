@@ -142,33 +142,38 @@
               <h3>核心概念</h3>
               <ul class="concept-list"><li><strong>Direct-mapped：</strong>每個 memory block 只能放到一個 cache line。硬體簡單、hit time 短，但不同 block 若映到同 line，會互相趕走。</li><li><strong>Fully associative：</strong>任何 memory block 可放到任一 cache line。Conflict miss 最少，但需要同時比對很多 tags，硬體成本高。</li><li><strong>Set-associative：</strong>折衷設計。Cache 分成多個 sets，每個 set 有多個 ways。Block 由 index 選 set，再在 set 內任一 way 放置。</li><li><strong>Miss 類型：</strong>Compulsory miss 是第一次存取；capacity miss 是 cache 太小；conflict miss 是 mapping 限制使 blocks 互相衝突。</li></ul>
             </section>
+            <section class="section study-entry">
+      <h3>本週自學導讀</h3>
+      <p class="study-lead">Mapping 題先由容量求 sets，再由 sets 求 index bits，由 block size 求 offset bits，剩下才是 tag。這個順序能避免把 ways、sets 與 lines 混在一起。</p>
+      <figure class="learning-figure">
+    <h4>32-bit 位址：16 KiB、4-way、64 B block</h4>
+    <div class="bit-diagram" style="--total-bits:32"><div class="bit-field" style="--field-bits:20"><strong>Tag</strong><span>20 bits</span><small>辨認 memory block</small></div><div class="bit-field" style="--field-bits:6"><strong>Set index</strong><span>6 bits</span><small>64 sets</small></div><div class="bit-field" style="--field-bits:6"><strong>Block offset</strong><span>6 bits</span><small>64 bytes</small></div></div>
+    <figcaption>Sets=16384/(64×4)=64，所以 index=6 bits；offset=log2(64)=6 bits；tag=20 bits。</figcaption>
+  </figure>
+    </section>
+    <section class="section">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>Direct、Set-associative 與 Fully Associative</h4><p>Direct-mapped 每個 memory block 只有一個候選 line；N-way set-associative 有 N 個候選；fully associative 可放在任何 line。候選越多，conflict miss 越少，但 tag comparators、hit mux 與 replacement metadata 越多。</p><p>Set-associative cache 先用 index 選出一個 set，再平行比較該 set 每一 way 的 tag。Ways 不是 index 的額外 bits；它們是同一 index 下的多個候選位置。</p></section><section class="deep-dive"><h4>位址切割公式</h4><p>Sets = Cache data size / (block size × associativity)。Offset bits = log2(block size bytes)，index bits = log2(sets)，tag bits = address bits - index - offset。</p><p>容量題通常指 data capacity，不含 tag、valid、dirty 與 replacement bits。若題目問實際硬體儲存量，必須再把 metadata 加回每一 line。</p></section></div>
+    </section>
+    <section class="section worked-example">
+      <p class="eyebrow">Worked example</p>
+      <h3>切割位址 0x12345678</h3>
+      <p>使用上圖 cache 組態，求 offset、set index 與 tag。</p>
+      <ol><li>Offset = address &amp; 0x3F = 0x38 = 56。</li><li>Set index = (address &gt;&gt; 6) &amp; 0x3F = 25。</li><li>Tag = address &gt;&gt; 12 = 0x12345。</li><li>檢查：20+6+6=32 bits。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>此 block 只能放入 set 25，但可放在該 set 的任一個 4 ways。</p>
+    </section>
+    <section class="section misconception-panel">
+      <h3>常見誤解</h3>
+      <ul><li>用 cache lines 數直接當 sets 數，漏除 associativity。</li><li>認為 way number 來自 address bits。</li><li>把 cache data capacity 與含 metadata 的總儲存量混用。</li></ul>
+    </section>
+    <section class="section self-check">
+      <h3>自我檢核</h3>
+      <p>先在紙上作答，再展開核對。能說明理由，才算真正掌握。</p>
+      <details><summary>1. 同容量與 block size 下，4-way 相較 direct-mapped 的 index bits 如何變化？</summary><p>Sets 減為四分之一，所以 index bits 少 2；相應地 tag bits 多 2。</p></details><details><summary>2. 64-byte block 需要幾個 offset bits？</summary><p>log2(64)=6 bits。</p></details>
+    </section>
             <section class="section">
               <h3>講義筆記</h3>
               <p>n-way set associative cache 的 sets = cache size / (block size × n)。Index bits = log2(sets)，offset bits = log2(block size)。</p><p>Associativity 提高通常可降低 conflict miss，但也可能增加 hit time 與能耗。真實設計常以實驗工作負載評估。</p><p>手算題請先寫出 cache size、block size、ways，再推 lines、sets、offset/index/tag，不要跳步。</p>
-            </section>
-            <section class="section">
-              <h3>深入說明</h3>
-
-    <section class="detail-block">
-      <h4>Direct-mapped的重點說明</h4>
-      <p>每個 memory block 只能放到一個 cache line。硬體簡單、hit time 短，但不同 block 若映到同 line，會互相趕走。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>Fully associative的重點說明</h4>
-      <p>任何 memory block 可放到任一 cache line。Conflict miss 最少，但需要同時比對很多 tags，硬體成本高。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>Set-associative的重點說明</h4>
-      <p>折衷設計。Cache 分成多個 sets，每個 set 有多個 ways。Block 由 index 選 set，再在 set 內任一 way 放置。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>Miss 類型的重點說明</h4>
-      <p>Compulsory miss 是第一次存取；capacity miss 是 cache 太小；conflict miss 是 mapping 限制使 blocks 互相衝突。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
             </section>
             <section class="section">
               <h3>學習路徑</h3>

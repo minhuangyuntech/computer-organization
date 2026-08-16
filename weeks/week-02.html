@@ -142,28 +142,38 @@
               <h3>核心概念</h3>
               <ul class="concept-list"><li><strong>CPU execution time：</strong>CPU Time = Instruction Count × CPI × Clock Cycle Time，也等於 Instruction Count × CPI / Clock Rate。這個公式把軟體、ISA、編譯器與硬體設計放在同一張表中。</li><li><strong>CPI：</strong>Cycles Per Instruction 是平均每個指令需要的時脈週期數。不同指令類型可能 CPI 不同，因此常用加權平均：CPI = Σ(指令類型比例 × 該類型 CPI)。</li><li><strong>Amdahl&#039;s Law：</strong>若某部分佔總時間比例 F，被加速 S 倍，整體 speedup = 1 / ((1 - F) + F / S)。只加速少數部分，整體效能提升會很快遇到上限。</li></ul>
             </section>
+            <section class="section study-entry">
+      <h3>本週自學導讀</h3>
+      <p class="study-lead">效能不是單一規格值，而是工作量、每項工作所需週期與每個週期長度的乘積。先把因素拆開，才能判斷最佳化真正改變了哪一項。</p>
+      <figure class="learning-figure">
+    <h4>CPU 執行時間的三個乘數</h4>
+    <div class="factor-diagram"><div><strong>Instruction Count</strong><span>演算法、編譯器、ISA</span></div><span class="factor-op" aria-hidden="true">×</span><div><strong>CPI</strong><span>指令組合、hazard、cache miss</span></div><span class="factor-op" aria-hidden="true">×</span><div><strong>Cycle Time</strong><span>關鍵路徑、電路技術</span></div></div>
+    <figcaption>CPU Time = Instruction Count × CPI × Clock Cycle Time。三項任一降低都可能加速，但也可能彼此牽制。</figcaption>
+  </figure>
+    </section>
+    <section class="section">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>三個乘數各由誰影響</h4><p>Instruction Count 受演算法、程式、編譯器與 ISA 影響；CPI 受指令組合、資料路徑、pipeline hazard 與 memory stall 影響；Clock Cycle Time 受最慢組合邏輯路徑與電路技術影響。</p><p>比較處理器時必須使用同一工作負載。若程式、編譯器選項或輸入資料不同，三個乘數可能一起改變，單看 clock rate 或核心數沒有足夠資訊。</p></section><section class="deep-dive"><h4>平均值、Speedup 與 Amdahl 上限</h4><p>平均 CPI 是動態指令比例的加權平均，不是各類 CPI 的普通平均。若 load 佔 25% 且成本很高，它對總時間的影響必須乘上 0.25。</p><p>Amdahl&#039;s Law 把總時間分為可改善與不可改善兩部分。即使可改善部分變成無限快，整體 speedup 仍不會超過 1/(1-F)。因此最佳化的第一步是量測時間比例，而不是先挑看起來最先進的元件。</p></section></div>
+    </section>
+    <section class="section worked-example">
+      <p class="eyebrow">Worked example</p>
+      <h3>先求平均 CPI，再求 CPU Time</h3>
+      <p>某程式有 10^9 條指令：ALU 50%（CPI 1）、load/store 30%（CPI 2）、branch 20%（CPI 3），clock rate 為 2 GHz。</p>
+      <ol><li>平均 CPI = 0.50×1 + 0.30×2 + 0.20×3 = 1.7。</li><li>總 cycles = 10^9 × 1.7 = 1.7×10^9 cycles。</li><li>CPU Time = 1.7×10^9 / 2×10^9 = 0.85 秒。</li><li>若只把 branch CPI 從 3 降到 1，新的平均 CPI 為 1.3，CPU Time 為 0.65 秒。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>Speedup = 0.85/0.65 ≈ 1.31，而不是 3 倍，因為 branch 只佔全部指令的 20%。</p>
+    </section>
+    <section class="section misconception-panel">
+      <h3>常見誤解</h3>
+      <ul><li>將 GHz 直接當成程式效能。</li><li>對不同指令類型的 CPI 做未加權平均。</li><li>把 speedup 30% 誤寫成執行時間減少 30%；兩者分母不同。</li></ul>
+    </section>
+    <section class="section self-check">
+      <h3>自我檢核</h3>
+      <p>先在紙上作答，再展開核對。能說明理由，才算真正掌握。</p>
+      <details><summary>1. 一段程式變成原來的 2 倍快，新時間是多少？</summary><p>Speedup = Told/Tnew = 2，所以 Tnew = Told/2，時間減少 50%。</p></details><details><summary>2. 若可改善部分 F=0.8，即使它無限快，最大 speedup 是多少？</summary><p>1/(1-0.8)=5。剩下 20% 的不可改善時間形成上限。</p></details>
+    </section>
             <section class="section">
               <h3>講義筆記</h3>
               <p>不要只看 clock rate。較高頻率若伴隨較高 CPI 或更多指令數，不一定更快。效能比較必須指定工作負載，並同時考慮 instruction count、CPI 與 clock rate。</p><p>Response time 是單一任務完成時間，使用者通常直接感受到它；throughput 是單位時間完成多少工作，伺服器與批次系統常關心它。</p><p>最佳化前應先量測。若記憶體等待佔 40%，ALU 變快 10 倍也不會讓整體快 10 倍。</p>
-            </section>
-            <section class="section">
-              <h3>深入說明</h3>
-
-    <section class="detail-block">
-      <h4>CPU execution time的重點說明</h4>
-      <p>CPU Time = Instruction Count × CPI × Clock Cycle Time，也等於 Instruction Count × CPI / Clock Rate。這個公式把軟體、ISA、編譯器與硬體設計放在同一張表中。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>CPI的重點說明</h4>
-      <p>Cycles Per Instruction 是平均每個指令需要的時脈週期數。不同指令類型可能 CPI 不同，因此常用加權平均：CPI = Σ(指令類型比例 × 該類型 CPI)。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>Amdahl&#039;s Law的重點說明</h4>
-      <p>若某部分佔總時間比例 F，被加速 S 倍，整體 speedup = 1 / ((1 - F) + F / S)。只加速少數部分，整體效能提升會很快遇到上限。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
             </section>
             <section class="section">
               <h3>學習路徑</h3>

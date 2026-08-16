@@ -142,28 +142,38 @@
               <h3>核心概念</h3>
               <ul class="concept-list"><li><strong>Base + offset：</strong>`lw $t0, 12($s1)` 的有效位址為 `$s1 + 12`。陣列元素位址常由 base address 加上 index × element size 得到。</li><li><strong>Branch：</strong>`beq` 與 `bne` 根據兩個暫存器是否相等決定是否改變 PC。條件判斷常搭配 `slt` 產生 0/1 結果。</li><li><strong>Jump：</strong>`j` 用於無條件跳躍；函式呼叫會使用 `jal` 儲存 return address 到 `$ra`，回傳用 `jr $ra`。</li></ul>
             </section>
+            <section class="section study-entry">
+      <h3>本週自學導讀</h3>
+      <p class="study-lead">記憶體存取與控制流程看似是兩組指令，其實都依賴 ALU 做位址計算。掌握 base+offset、PC-relative 與 byte addressing，陣列和迴圈就能用同一套方法分析。</p>
+      <figure class="learning-figure">
+    <h4>lw 的有效位址計算</h4>
+    <div class="flow-diagram"><span class="flow-node">Base register</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">16-bit offset</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Sign extension</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">ALU 加法</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Byte address</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Data memory</span></div>
+    <figcaption>Offset 的單位是 byte；lw 一次傳回 4 bytes，但位址仍以 byte 編號。</figcaption>
+  </figure>
+    </section>
+    <section class="section">
+      <h3>概念推導</h3>
+      <div class="deep-dive-grid"><section class="deep-dive"><h4>有效位址與資料大小</h4><p>lw rt, offset(base) 先將 16-bit offset 做 sign extension，再由 ALU 與 base register 相加，所得結果是 byte address。Offset 可以是負數，因此 stack frame 兩側或結構欄位都能表示。</p><p>陣列 index 必須先乘上元素大小。int32 元素相差 4 bytes，因此 A[i] 位址是 base+4i；byte array 的元素則相差 1。Alignment 規則可讓硬體以較少次數完成存取。</p></section><section class="deep-dive"><h4>Branch 與 PC-relative 位址</h4><p>MIPS branch target 通常是 PC+4 + (sign-extended immediate &lt;&lt; 2)。左移兩位是因為指令 4-byte aligned，欄位不需儲存永遠為 00 的最低兩位。</p><p>Loop 的可靠閱讀方式是先找 back edge，再判斷 branch 是繼續迴圈還是離開。把每個 label 視為控制流程圖節點，比逐字翻譯更不容易顛倒條件。</p></section></div>
+    </section>
+    <section class="section worked-example">
+      <p class="eyebrow">Worked example</p>
+      <h3>計算 A[7] 的位址</h3>
+      <p>A 是 int32 陣列，base address = 0x10010000，求 A[7] 位址並寫出核心指令。</p>
+      <ol><li>每個元素 4 bytes，因此位移 = 7×4 = 28 = 0x1C。</li><li>有效位址 = 0x10010000 + 0x1C = 0x1001001C。</li><li>若 base 在 $s0，可用 lw $t0, 28($s0)。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>Offset 28 是 byte 數，不是第 28 個 word。</p>
+    </section>
+    <section class="section misconception-panel">
+      <h3>常見誤解</h3>
+      <ul><li>忘記 index 乘上元素大小。</li><li>將 branch immediate 直接當 byte offset。</li><li>把 pseudo-instruction 當成新增的硬體指令格式。</li></ul>
+    </section>
+    <section class="section self-check">
+      <h3>自我檢核</h3>
+      <p>先在紙上作答，再展開核對。能說明理由，才算真正掌握。</p>
+      <details><summary>1. 為何 offset 需要 sign extension？</summary><p>有效位址可能位於 base 前方，負 offset 常見於 stack 與資料結構存取。</p></details><details><summary>2. 若 char array base 在 $s0，讀 A[7] 的 offset 是多少？</summary><p>是 7，因為每個 char 佔 1 byte。</p></details>
+    </section>
             <section class="section">
               <h3>講義筆記</h3>
               <p>MIPS memory 是 byte-addressed，但 `lw` 一次讀 4 bytes。若處理 int 陣列，index 要乘以 4；若處理 char 陣列，index 不需乘以 4。</p><p>組合語言沒有高階語言的區塊結構，只有 label 與 branch/jump。閱讀 loop 時，先找 label、條件跳出點與回跳指令。</p><p>Pseudo-instructions 如 `move`、`li`、`blt` 方便書寫，但硬體真正執行的是 assembler 展開後的基本指令。</p>
-            </section>
-            <section class="section">
-              <h3>深入說明</h3>
-
-    <section class="detail-block">
-      <h4>Base + offset的重點說明</h4>
-      <p>`lw $t0, 12($s1)` 的有效位址為 `$s1 + 12`。陣列元素位址常由 base address 加上 index × element size 得到。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>Branch的重點說明</h4>
-      <p>`beq` 與 `bne` 根據兩個暫存器是否相等決定是否改變 PC。條件判斷常搭配 `slt` 產生 0/1 結果。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
-    <section class="detail-block">
-      <h4>Jump的重點說明</h4>
-      <p>`j` 用於無條件跳躍；函式呼叫會使用 `jal` 儲存 return address 到 `$ra`，回傳用 `jr $ra`。</p>
-      <p>在計算機組織中，這個概念通常同時牽涉程式、指令、硬體與效能四個層次。理解時要注意它改變了哪些狀態、使用了哪些硬體資源，以及最後如何影響正確性或執行時間。</p>
-    </section>
             </section>
             <section class="section">
               <h3>學習路徑</h3>
