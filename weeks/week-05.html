@@ -138,6 +138,13 @@
               <h3>本週學習目標</h3>
               <ul><li>熟悉 lw/sw base+offset addressing。</li><li>能撰寫 if/else 與 loop。</li><li>理解 branch target 與 PC 更新。</li></ul>
             </section>
+            <section class="edition-alignment">
+      <p class="eyebrow">Textbook map · Fourth edition</p>
+      <h3>第 4 版對照：第 5 章 深入指令集架構</h3>
+      <p><strong>節次：</strong>5.3–5.4、5.6.2</p>
+      <p>資料移動、控制轉移、addressing mode 與 MIPS memory operand。</p>
+      <a href="../fourth-edition-map.html#week-map">查看完整章節對照與 MARIE–MIPS 概念橋接</a>
+    </section>
             <section class="section">
               <h3>核心概念</h3>
               <ul class="concept-list"><li><strong>Base + offset：</strong>`lw $t0, 12($s1)` 的有效位址為 `$s1 + 12`。陣列元素位址常由 base address 加上 index × element size 得到。</li><li><strong>Branch：</strong>`beq` 與 `bne` 根據兩個暫存器是否相等決定是否改變 PC。條件判斷常搭配 `slt` 產生 0/1 結果。</li><li><strong>Jump：</strong>`j` 用於無條件跳躍；函式呼叫會使用 `jal` 儲存 return address 到 `$ra`，回傳用 `jr $ra`。</li></ul>

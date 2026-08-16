@@ -138,6 +138,13 @@
               <h3>本週學習目標</h3>
               <ul><li>理解加減乘除的硬體概念。</li><li>能判斷 signed overflow。</li><li>理解 IEEE 754 floating-point 的 sign/exponent/fraction。</li></ul>
             </section>
+            <section class="edition-alignment">
+      <p class="eyebrow">Textbook map · Fourth edition</p>
+      <h3>第 4 版對照：第 2 章 計算機系統的資料表示、第 3 章 布林代數與數位邏輯</h3>
+      <p><strong>節次：</strong>2.4–2.5；3.5</p>
+      <p>整數算術、carry/overflow、IEEE 754 與 arithmetic circuit。</p>
+      <a href="../fourth-edition-map.html#week-map">查看完整章節對照與 MARIE–MIPS 概念橋接</a>
+    </section>
             <section class="section">
               <h3>核心概念</h3>
               <ul class="concept-list"><li><strong>加減法器：</strong>Two&#039;s complement 讓加法與減法可用同一加法器完成。減法 A - B 可轉成 A + (~B + 1)。</li><li><strong>乘除法：</strong>硬體乘法可視為 shift-and-add；除法可視為 shift-and-subtract。速度與面積常需折衷，因此高效處理器會使用更複雜的乘法器。</li><li><strong>IEEE 754：</strong>Single precision 由 1-bit sign、8-bit exponent、23-bit fraction 組成。Exponent 使用 bias 表示，能同時表示極大與極小數。</li><li><strong>浮點誤差：</strong>浮點數不是實數；許多十進位小數無法用有限二進位精確表示。運算順序可能改變 rounding error。</li></ul>

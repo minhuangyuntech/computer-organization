@@ -138,6 +138,13 @@
               <h3>本週學習目標</h3>
               <ul><li>理解 cache block、tag、index、offset。</li><li>能判斷 hit/miss。</li><li>理解 write-through 與 write-back。</li></ul>
             </section>
+            <section class="edition-alignment">
+      <p class="eyebrow">Textbook map · Fourth edition</p>
+      <h3>第 4 版對照：第 6 章 記憶體</h3>
+      <p><strong>節次：</strong>6.4、6.4.5–6.4.7</p>
+      <p>cache line 狀態、write policy、instruction/data cache 與多層 cache。</p>
+      <a href="../fourth-edition-map.html#week-map">查看完整章節對照與 MARIE–MIPS 概念橋接</a>
+    </section>
             <section class="section">
               <h3>核心概念</h3>
               <ul class="concept-list"><li><strong>Block：</strong>Cache 與 memory 之間以 block 為單位搬移資料。Block size 越大可利用 spatial locality，但過大可能增加 miss penalty 與 pollution。</li><li><strong>Tag / index / offset：</strong>位址切成 tag、index、block offset。Index 選 cache set/line，tag 比對是否為想要的 memory block，offset 選 block 內 byte/word。</li><li><strong>Valid bit：</strong>表示 cache line 內容是否有效。剛開機或被清除後，即使 tag 相同也不能視為 hit。</li><li><strong>Write policy：</strong>Write-through 每次寫 cache 同步寫 memory；write-back 只在 block 被替換時寫回，需要 dirty bit。Write allocate/no-write allocate 決定 write miss 時是否載入 block。</li></ul>

@@ -138,6 +138,13 @@
               <h3>本週學習目標</h3>
               <ul><li>能追蹤單週期 datapath。</li><li>理解 control signals 的角色。</li><li>分析單週期設計的 clock period 限制。</li></ul>
             </section>
+            <section class="edition-alignment">
+      <p class="eyebrow">Textbook map · Fourth edition</p>
+      <h3>第 4 版對照：第 3 章 布林代數與數位邏輯、第 4 章 MARIE：簡易計算機導論</h3>
+      <p><strong>節次：</strong>3.5–3.6；4.2–4.3、4.9、4.13</p>
+      <p>組合邏輯、clocked state、bus、register transfer 與控制單元。</p>
+      <a href="../fourth-edition-map.html#week-map">查看完整章節對照與 MARIE–MIPS 概念橋接</a>
+    </section>
             <section class="section">
               <h3>核心概念</h3>
               <ul class="concept-list"><li><strong>Datapath：</strong>資料路徑是資料流經的硬體元件與連線，包括 PC、instruction memory、register file、ALU、data memory、sign extend、shift-left、adder 與 multiplexers。</li><li><strong>Control：</strong>控制單元根據 opcode/funct 產生控制訊號，決定 mux 選哪條路、ALU 做什麼、是否讀寫記憶體、是否寫暫存器與是否更新 PC 為 branch target。</li><li><strong>Single-cycle：</strong>每個指令都在一個 clock cycle 完成。設計簡單，但 clock period 必須長到能容納最慢指令，通常是 load 指令。</li></ul>

@@ -138,6 +138,13 @@
               <h3>本週學習目標</h3>
               <ul><li>能比較三種 mapping。</li><li>能計算 set、way、index、tag bits。</li><li>理解 conflict miss 與 associativity 的關係。</li></ul>
             </section>
+            <section class="edition-alignment">
+      <p class="eyebrow">Textbook map · Fourth edition</p>
+      <h3>第 4 版對照：第 6 章 記憶體</h3>
+      <p><strong>節次：</strong>6.4.1–6.4.3</p>
+      <p>mapping、tag/index/offset、hit ratio 與 effective access time。</p>
+      <a href="../fourth-edition-map.html#week-map">查看完整章節對照與 MARIE–MIPS 概念橋接</a>
+    </section>
             <section class="section">
               <h3>核心概念</h3>
               <ul class="concept-list"><li><strong>Direct-mapped：</strong>每個 memory block 只能放到一個 cache line。硬體簡單、hit time 短，但不同 block 若映到同 line，會互相趕走。</li><li><strong>Fully associative：</strong>任何 memory block 可放到任一 cache line。Conflict miss 最少，但需要同時比對很多 tags，硬體成本高。</li><li><strong>Set-associative：</strong>折衷設計。Cache 分成多個 sets，每個 set 有多個 ways。Block 由 index 選 set，再在 set 內任一 way 放置。</li><li><strong>Miss 類型：</strong>Compulsory miss 是第一次存取；capacity miss 是 cache 太小；conflict miss 是 mapping 限制使 blocks 互相衝突。</li></ul>

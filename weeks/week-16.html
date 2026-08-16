@@ -138,6 +138,13 @@
               <h3>本週學習目標</h3>
               <ul><li>理解 replacement policy。</li><li>能模擬 LRU/FIFO。</li><li>以 AMAT 評估 cache 參數變化。</li></ul>
             </section>
+            <section class="edition-alignment">
+      <p class="eyebrow">Textbook map · Fourth edition</p>
+      <h3>第 4 版對照：第 6 章 記憶體</h3>
+      <p><strong>節次：</strong>6.4.2–6.5.4</p>
+      <p>replacement、多層 AMAT，以及 cache、TLB、paging 的成本分解。</p>
+      <a href="../fourth-edition-map.html#week-map">查看完整章節對照與 MARIE–MIPS 概念橋接</a>
+    </section>
             <section class="section">
               <h3>核心概念</h3>
               <ul class="concept-list"><li><strong>Replacement policy：</strong>當 set 已滿且發生 miss 時，必須決定替換哪一個 way。Direct-mapped 不需要選擇；associative cache 才需要 policy。</li><li><strong>LRU：</strong>Least Recently Used 替換最久沒被使用的 block，試圖利用 temporal locality。完全精確 LRU 在高 associativity 下成本較高。</li><li><strong>FIFO / Random：</strong>FIFO 替換最早進入的 block，實作簡單但不一定符合近期使用情形；random 成本低，在某些工作負載下表現可接受。</li><li><strong>效能分析：</strong>Cache 調整要同時看 hit time、miss rate、miss penalty。降低 miss rate 若讓 hit time 變長，整體未必更快。</li></ul>

@@ -138,6 +138,13 @@
               <h3>本週學習目標</h3>
               <ul><li>整合 ISA、datapath、pipeline、cache。</li><li>能用完整路徑解釋程式效能瓶頸。</li><li>準備期末專題報告。</li></ul>
             </section>
+            <section class="edition-alignment">
+      <p class="eyebrow">Textbook map · Fourth edition</p>
+      <h3>第 4 版對照：第 8 章 系統軟體、第 9 章 替代型計算機架構、第 10 章 嵌入式系統專題、第 11 章 效能量測與分析</h3>
+      <p><strong>節次：</strong>8.4；9.2–9.4；10.2–10.3；11.2–11.5</p>
+      <p>從 compiler、ISA、pipeline、memory 到 workload 的跨層效能分析。</p>
+      <a href="../fourth-edition-map.html#week-map">查看完整章節對照與 MARIE–MIPS 概念橋接</a>
+    </section>
             <section class="section">
               <h3>核心概念</h3>
               <ul class="concept-list"><li><strong>整體路徑：</strong>一行程式經編譯成指令，指令由 PC 取出，經 decode 讀暫存器，在 ALU 計算，可能存取 cache/memory，最後寫回暫存器或記憶體。</li><li><strong>效能瓶頸：</strong>瓶頸可能來自指令數太多、CPI 過高、branch misprediction、cache miss、資料相依造成 stall，或演算法本身不具 locality。</li><li><strong>軟硬體共同設計：</strong>編譯器、資料結構、演算法與硬體設計會互相影響。例如 loop tiling 可改善 cache locality；branchless code 可減少 control hazard。</li></ul>

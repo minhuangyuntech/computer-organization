@@ -138,6 +138,13 @@
               <h3>本週學習目標</h3>
               <ul><li>理解函式呼叫與 stack frame。</li><li>能追蹤 jal/jr 與 $ra。</li><li>能將小型 C 函式翻成 MIPS。</li></ul>
             </section>
+            <section class="edition-alignment">
+      <p class="eyebrow">Textbook map · Fourth edition</p>
+      <h3>第 4 版對照：第 4 章 MARIE：簡易計算機導論、第 8 章 系統軟體</h3>
+      <p><strong>節次：</strong>4.9–4.11；8.4.1–8.4.4</p>
+      <p>instruction cycle、assembler、compiler 與函式呼叫狀態。</p>
+      <a href="../fourth-edition-map.html#week-map">查看完整章節對照與 MARIE–MIPS 概念橋接</a>
+    </section>
             <section class="section">
               <h3>核心概念</h3>
               <ul class="concept-list"><li><strong>Calling convention：</strong>呼叫者負責傳參數與接收回傳值；被呼叫者若使用需保存的暫存器，必須在 stack 中保存並於回傳前恢復。</li><li><strong>Stack：</strong>Stack 通常向低位址成長。函式進入時配置 frame，存放 return address、saved registers、local variables；離開時釋放 frame。</li><li><strong>Instruction cycle：</strong>每一指令可概念性分成 fetch、decode/register read、execute、memory、write back。後續單週期與 pipeline 都會使用這個分解。</li></ul>

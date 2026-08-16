@@ -138,6 +138,13 @@
               <h3>本週學習目標</h3>
               <ul><li>認識 MIPS register convention。</li><li>理解 load-store architecture。</li><li>能讀懂基本 arithmetic 指令。</li></ul>
             </section>
+            <section class="edition-alignment">
+      <p class="eyebrow">Textbook map · Fourth edition</p>
+      <h3>第 4 版對照：第 4 章 MARIE：簡易計算機導論、第 5 章 深入指令集架構</h3>
+      <p><strong>節次：</strong>4.8、4.14.2；5.3、5.6.2</p>
+      <p>先由 MARIE 的累加器模型看見狀態，再進入 MIPS register file 與 load-store。</p>
+      <a href="../fourth-edition-map.html#week-map">查看完整章節對照與 MARIE–MIPS 概念橋接</a>
+    </section>
             <section class="section">
               <h3>核心概念</h3>
               <ul class="concept-list"><li><strong>Load-store 架構：</strong>MIPS 算術邏輯指令只操作暫存器，記憶體資料必須先用 lw 載入暫存器，計算後再用 sw 存回記憶體。這讓資料路徑較規則，便於 pipeline。</li><li><strong>暫存器：</strong>MIPS 有 32 個 general-purpose registers。$zero 永遠為 0；$t0-$t9 常作暫時值；$s0-$s7 常保存跨函式呼叫仍需保留的值；$a0-$a3 用於參數；$v0-$v1 用於回傳。</li><li><strong>R-format 指令：</strong>如 add、sub、and、or、slt，多數有三個 register operands：目的暫存器 rd、來源暫存器 rs 與 rt。</li></ul>

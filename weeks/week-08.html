@@ -138,6 +138,13 @@
               <h3>本週學習目標</h3>
               <ul><li>能辨識 MIPS R/I/J format。</li><li>理解 opcode、rs、rt、rd、shamt、funct。</li><li>銜接指令格式到 datapath 控制訊號。</li></ul>
             </section>
+            <section class="edition-alignment">
+      <p class="eyebrow">Textbook map · Fourth edition</p>
+      <h3>第 4 版對照：第 4 章 MARIE：簡易計算機導論、第 5 章 深入指令集架構</h3>
+      <p><strong>節次：</strong>4.13–4.14；5.2、5.6.2</p>
+      <p>instruction format、decode、hardwired control 與 MIPS 編碼。</p>
+      <a href="../fourth-edition-map.html#week-map">查看完整章節對照與 MARIE–MIPS 概念橋接</a>
+    </section>
             <section class="section">
               <h3>核心概念</h3>
               <ul class="concept-list"><li><strong>Fixed-length encoding：</strong>MIPS 指令固定 32 bits，讓 fetch 與 decode 較規則。硬體每次 PC + 4 取得下一個 sequential instruction。</li><li><strong>R-format：</strong>用 opcode=0 搭配 funct 決定 ALU 操作，適合 register-register arithmetic/logical instructions。</li><li><strong>I-format：</strong>包含 16-bit immediate，適合 load/store、branch 與 addi。Immediate 可能需要 sign extension 或 zero extension。</li><li><strong>J-format：</strong>包含 26-bit target field，配合 PC 高位形成 jump target。</li></ul>

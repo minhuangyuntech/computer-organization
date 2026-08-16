@@ -5,6 +5,7 @@ const vm = require("vm");
 const root = path.resolve(__dirname, "..");
 const appSource = fs.readFileSync(path.join(root, "app.js"), "utf8");
 const supplementSource = fs.readFileSync(path.join(root, "content", "supplements.js"), "utf8");
+const fourthEditionSource = fs.readFileSync(path.join(root, "content", "fourth-edition.js"), "utf8");
 
 function extractConst(source, name) {
   const start = source.indexOf(`const ${name} = `);
@@ -18,6 +19,7 @@ const lectures = extractConst(appSource, "lectures");
 const formulas = extractConst(appSource, "formulas");
 const registers = extractConst(appSource, "registers");
 const supplements = extractConst(supplementSource, "supplements");
+const fourthEdition = extractConst(fourthEditionSource, "fourthEdition");
 
 const favicon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23006d77'/%3E%3Cpath d='M14 18h36v28H14z' fill='%23f6bd60' stroke='%2320231f' stroke-width='4'/%3E%3Cpath d='M22 28h20M22 36h14' stroke='%2320231f' stroke-width='4'/%3E%3C/svg%3E";
 
@@ -194,6 +196,21 @@ function supplementSections(lecture) {
     </section>`;
 }
 
+function editionAlignment(lecture) {
+  const mapping = fourthEdition.weekMap.find((item) => item.week === lecture.week);
+  const chapters = mapping.chapters.map((chapter) => {
+    const item = fourthEdition.chapters.find((entry) => entry.chapter === chapter);
+    return `第 ${chapter} 章 ${item.zh}`;
+  }).join("、");
+  return `<section class="edition-alignment">
+      <p class="eyebrow">Textbook map · Fourth edition</p>
+      <h3>第 4 版對照：${esc(chapters)}</h3>
+      <p><strong>節次：</strong>${esc(mapping.sections)}</p>
+      <p>${esc(mapping.focus)}</p>
+      <a href="../fourth-edition-map.html#week-map">查看完整章節對照與 MARIE–MIPS 概念橋接</a>
+    </section>`;
+}
+
 function pageShell({ title, description, body, activeWeek = 0, depth = 0 }) {
   const prefix = depth ? "../" : "";
   return `${head(title, description, depth)}
@@ -255,8 +272,8 @@ function indexPage() {
       <section class="reference-note">
         <p class="eyebrow">Independent study edition</p>
         <h2>內容範圍與編寫原則</h2>
-        <p>本站依課程大綱撰寫，並參考 Linda Null《The Essentials of Computer Organization and Architecture》第六版公開目錄所呈現的核心主題架構。所有中文敘述、例題、推導與圖表均為本站獨立編寫，不重製書中文字或原圖。</p>
-        <a href="https://samples.jblearning.com/9781284259438/9781284261202_FM_MKT_Secured.pdf" rel="noreferrer">查看出版社公開的版本與目錄資料</a>
+        <p>本站依課程大綱撰寫，並對照 Linda Null 與 Julia Lobur《The Essentials of Computer Organization and Architecture》第 4 版（2015，ISBN 9781284033144）的章節架構。所有中文敘述、例題、推導與圖表均為本站獨立編寫，不重製書中文字或原圖。</p>
+        <div class="reference-actions"><a href="fourth-edition-map.html">第 4 版章節與週次對照</a><a href="${fourthEdition.sources.chapters}" rel="noreferrer">出版社章節對照資料</a></div>
       </section>
       <section class="lecture-view">
         <h2>18 週講義索引</h2>
@@ -289,6 +306,7 @@ function weekPage(lecture) {
               <h3>本週學習目標</h3>
               <ul>${lecture.goals.map((goal) => `<li>${esc(goal)}</li>`).join("")}</ul>
             </section>
+            ${editionAlignment(lecture)}
             <section class="section">
               <h3>核心概念</h3>
               <ul class="concept-list">${lecture.concepts.map(([term, text]) => `<li><strong>${esc(term)}：</strong>${esc(text)}</li>`).join("")}</ul>
@@ -334,12 +352,103 @@ function weekPage(lecture) {
   });
 }
 
+function fourthEditionPage() {
+  const chapterCards = fourthEdition.chapters.map((chapter) => `<article class="chapter-card" id="chapter-${chapter.chapter}">
+      <p class="eyebrow">Chapter ${chapter.chapter}</p>
+      <h3>${esc(chapter.zh)}</h3>
+      <p class="chapter-title">${esc(chapter.title)}</p>
+      <p>${esc(chapter.summary)}</p>
+      <p class="chapter-course"><strong>本站對應：</strong>${esc(chapter.courseUse)}</p>
+    </article>`).join("");
+
+  const weekRows = fourthEdition.weekMap.map((mapping) => {
+    const lecture = lectures.find((item) => item.week === mapping.week);
+    const chapters = mapping.chapters.map((chapter) => `<a href="#chapter-${chapter}">第 ${chapter} 章</a>`).join("、");
+    return `<tr><th>第 ${mapping.week} 週</th><td>${esc(lecture.title)}</td><td>${chapters}<small>${esc(mapping.sections)}</small></td><td>${esc(mapping.focus)}</td></tr>`;
+  }).join("");
+
+  const marie = fourthEdition.marie;
+  const marieFormat = diagram({
+    type: "bits",
+    title: "MARIE 16-bit 指令格式",
+    totalBits: marie.format.totalBits,
+    items: marie.format.fields,
+    caption: "4-bit opcode 選擇操作，12-bit address 可定位 2^12 = 4096 個 memory words。"
+  });
+  const registerRows = marie.registers.map((row) => `<tr>${row.map((cell, index) => index === 0 ? `<th>${esc(cell)}</th>` : `<td>${esc(cell)}</td>`).join("")}</tr>`).join("");
+  const comparisonRows = marie.comparison.map((row) => `<tr>${row.map((cell, index) => index === 0 ? `<th>${esc(cell)}</th>` : `<td>${esc(cell)}</td>`).join("")}</tr>`).join("");
+
+  return pageShell({
+    title: "第 4 版章節對照與 MARIE–MIPS 概念橋接 | 計算機組織",
+    description: "計算機組織 18 週講義與 The Essentials of Computer Organization and Architecture 第 4 版的章節對照，以及 MARIE 與 MIPS 比較。",
+    body: `<article class="edition-page">
+        <nav class="breadcrumb" aria-label="麵包屑"><a href="index.html">課程首頁</a><span>第 4 版章節對照</span></nav>
+        <header class="edition-hero">
+          <p class="eyebrow">Textbook companion · Fourth edition</p>
+          <h2>第 4 版中譯本章節對照</h2>
+          <p>${esc(fourthEdition.authors.join("、"))}，${esc(fourthEdition.title)}，第 ${fourthEdition.edition} 版，${fourthEdition.year}，ISBN ${esc(fourthEdition.isbn)}。</p>
+          <p>課程依正式課綱使用 MIPS 作為主要 ISA；第 4 版第 4 章則以 MARIE 建立 CPU 基本模型。兩條路徑共享 register transfer、instruction cycle、datapath 與 control 等核心概念。</p>
+        </header>
+        <section class="section" id="week-map">
+          <h3>18 週與第 4 版節次對照</h3>
+          <p>表中的章名為本站對照名稱；節次依第 4 版英文目錄標示，方便在中譯本中以章號與主題定位。</p>
+          <div class="diagram-table-wrap"><table class="edition-map-table"><thead><tr><th>週次</th><th>本站主題</th><th>第 4 版</th><th>概念交集</th></tr></thead><tbody>${weekRows}</tbody></table></div>
+        </section>
+        <section class="section">
+          <h3>第 4 版 13 章學習地圖</h3>
+          <div class="chapter-grid">${chapterCards}</div>
+        </section>
+        <section class="section marie-section" id="marie-mips">
+          <p class="eyebrow">Chapter 4 concept bridge</p>
+          <h3>MARIE 與 MIPS：相同狀態問題，不同 ISA 表達</h3>
+          <p>${esc(marie.overview)}</p>
+          ${marieFormat}
+          <div class="marie-grid">
+            <section>
+              <h4>主要暫存器</h4>
+              <div class="diagram-table-wrap"><table class="diagram-table"><thead><tr><th>Register</th><th>寬度</th><th>角色</th></tr></thead><tbody>${registerRows}</tbody></table></div>
+            </section>
+            <section>
+              <h4>Fetch 狀態轉移</h4>
+              <ol class="state-transfer">${marie.fetch.map((step) => `<li><code>${esc(step)}</code></li>`).join("")}</ol>
+              <p>前四步完成取指與 PC 更新；最後一步才根據 opcode 決定 execute phase 需要哪些資料路徑。</p>
+            </section>
+          </div>
+          <h4>架構對照</h4>
+          <div class="diagram-table-wrap"><table class="edition-map-table"><thead><tr><th>面向</th><th>MARIE</th><th>MIPS</th></tr></thead><tbody>${comparisonRows}</tbody></table></div>
+        </section>
+        <section class="section worked-example">
+          <p class="eyebrow">Worked example</p>
+          <h3>${esc(marie.worked.prompt)}</h3>
+          <div class="code-compare">
+            <section><h4>MARIE</h4><pre><code>${esc(marie.worked.marie.join("\n"))}</code></pre></section>
+            <section><h4>MIPS</h4><pre><code>${esc(marie.worked.mips.join("\n"))}</code></pre></section>
+          </div>
+          <p>${esc(marie.worked.conclusion)}</p>
+        </section>
+        <section class="section self-check">
+          <h3>MARIE 自我檢核</h3>
+          <p>先寫出 register transfer 或位址單位，再展開答案。</p>
+          ${marie.checks.map((item, index) => `<details><summary>${index + 1}. ${esc(item[0])}</summary><p>${esc(item[1])}</p></details>`).join("")}
+        </section>
+        <section class="reference-note compact-reference">
+          <h3>版本依據</h3>
+          <p>第 4 版作者、年份與 ISBN 依 WorldCat 書目；章名與第四、第五版對照依出版社公開 transition guide。本站只使用公開書目與章節名稱進行定位，講解與圖表均為獨立編寫。</p>
+          <div class="reference-actions"><a href="${fourthEdition.sources.catalog}" rel="noreferrer">WorldCat 第 4 版書目</a><a href="${fourthEdition.sources.chapters}" rel="noreferrer">出版社章節對照</a></div>
+        </section>
+      </article>`,
+    activeWeek: 0,
+    depth: 0
+  });
+}
+
 fs.mkdirSync(path.join(root, "weeks"), { recursive: true });
 const cleanHtml = (html) => html.replace(/[ \t]+$/gm, "");
 
 fs.writeFileSync(path.join(root, "index.html"), cleanHtml(indexPage()));
+fs.writeFileSync(path.join(root, "fourth-edition-map.html"), cleanHtml(fourthEditionPage()));
 for (const lecture of lectures) {
   fs.writeFileSync(path.join(root, "weeks", slug(lecture.week)), cleanHtml(weekPage(lecture)));
 }
 
-console.log(`Generated ${lectures.length + 1} pages.`);
+console.log(`Generated ${lectures.length + 2} pages.`);

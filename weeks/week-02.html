@@ -138,6 +138,13 @@
               <h3>本週學習目標</h3>
               <ul><li>能計算 CPU execution time。</li><li>能區分 response time 與 throughput。</li><li>能用 Amdahl&#039;s Law 判斷最佳化上限。</li></ul>
             </section>
+            <section class="edition-alignment">
+      <p class="eyebrow">Textbook map · Fourth edition</p>
+      <h3>第 4 版對照：第 11 章 效能量測與分析、第 7 章 輸出入與儲存系統</h3>
+      <p><strong>節次：</strong>11.2–11.5；7.2–7.3</p>
+      <p>CPU performance equation、benchmark 限制與 Amdahl&#039;s Law。</p>
+      <a href="../fourth-edition-map.html#week-map">查看完整章節對照與 MARIE–MIPS 概念橋接</a>
+    </section>
             <section class="section">
               <h3>核心概念</h3>
               <ul class="concept-list"><li><strong>CPU execution time：</strong>CPU Time = Instruction Count × CPI × Clock Cycle Time，也等於 Instruction Count × CPI / Clock Rate。這個公式把軟體、ISA、編譯器與硬體設計放在同一張表中。</li><li><strong>CPI：</strong>Cycles Per Instruction 是平均每個指令需要的時脈週期數。不同指令類型可能 CPI 不同，因此常用加權平均：CPI = Σ(指令類型比例 × 該類型 CPI)。</li><li><strong>Amdahl&#039;s Law：</strong>若某部分佔總時間比例 F，被加速 S 倍，整體 speedup = 1 / ((1 - F) + F / S)。只加速少數部分，整體效能提升會很快遇到上限。</li></ul>

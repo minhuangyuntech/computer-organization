@@ -138,6 +138,13 @@
               <h3>本週學習目標</h3>
               <ul><li>理解五階段 pipeline。</li><li>能分辨 latency 與 throughput。</li><li>估算 pipeline speedup 與限制。</li></ul>
             </section>
+            <section class="edition-alignment">
+      <p class="eyebrow">Textbook map · Fourth edition</p>
+      <h3>第 4 版對照：第 5 章 深入指令集架構、第 9 章 替代型計算機架構</h3>
+      <p><strong>節次：</strong>5.5；9.2–9.4</p>
+      <p>instruction pipelining 與更廣義的 instruction-level parallelism。</p>
+      <a href="../fourth-edition-map.html#week-map">查看完整章節對照與 MARIE–MIPS 概念橋接</a>
+    </section>
             <section class="section">
               <h3>核心概念</h3>
               <ul class="concept-list"><li><strong>五階段：</strong>典型 MIPS pipeline 分為 IF、ID、EX、MEM、WB。不同指令在不同階段重疊執行，提升吞吐量。</li><li><strong>Pipeline registers：</strong>IF/ID、ID/EX、EX/MEM、MEM/WB 暫存器保存每階段之間需要傳遞的資料與控制訊號。</li><li><strong>效能：</strong>理想 k-stage pipeline 的 throughput 可接近 k 倍，但實際受 stage imbalance、pipeline overhead、hazard 與 branch penalty 限制。</li></ul>

@@ -138,6 +138,13 @@
               <h3>本週學習目標</h3>
               <ul><li>辨識 structural、data、control hazards。</li><li>理解 forwarding 與 stall。</li><li>能處理 load-use hazard 與 branch penalty。</li></ul>
             </section>
+            <section class="edition-alignment">
+      <p class="eyebrow">Textbook map · Fourth edition</p>
+      <h3>第 4 版對照：第 5 章 深入指令集架構、第 11 章 效能量測與分析</h3>
+      <p><strong>節次：</strong>5.5；11.5.1</p>
+      <p>pipeline hazard、branch penalty 與 branch optimization。</p>
+      <a href="../fourth-edition-map.html#week-map">查看完整章節對照與 MARIE–MIPS 概念橋接</a>
+    </section>
             <section class="section">
               <h3>核心概念</h3>
               <ul class="concept-list"><li><strong>Structural hazard：</strong>硬體資源不足造成衝突，例如同一 cycle 需要同一個 memory 同時取指令與讀資料。可用分離 instruction/data memory 或增加資源解決。</li><li><strong>Data hazard：</strong>後續指令需要前一指令尚未寫回的結果。常見解法是 forwarding/bypassing；若資料仍來不及，如 load-use，就必須 stall。</li><li><strong>Control hazard：</strong>branch/jump 改變 PC，使下一個要取的指令不確定。解法包含 stall、predict not taken、branch prediction 與延遲槽等。</li></ul>

@@ -138,6 +138,13 @@
               <h3>本週學習目標</h3>
               <ul><li>說明應用程式、系統軟體、指令集架構、微架構與電路之間的分工。</li><li>理解計算機組織關心的是「指令如何被硬體執行」。</li><li>建立本課程的學習地圖：效能、MIPS、算術、datapath、pipeline、memory hierarchy。</li></ul>
             </section>
+            <section class="edition-alignment">
+      <p class="eyebrow">Textbook map · Fourth edition</p>
+      <h3>第 4 版對照：第 1 章 導論、第 8 章 系統軟體</h3>
+      <p><strong>節次：</strong>1.6、1.8–1.10；8.4</p>
+      <p>層次結構、von Neumann 模型，以及程式從系統軟體到 ISA 的界面。</p>
+      <a href="../fourth-edition-map.html#week-map">查看完整章節對照與 MARIE–MIPS 概念橋接</a>
+    </section>
             <section class="section">
               <h3>核心概念</h3>
               <ul class="concept-list"><li><strong>抽象層次：</strong>計算機系統不是單一黑盒子，而是從高階語言、編譯器、作業系統、指令集架構（ISA）、處理器資料路徑、控制單元、記憶體系統一路堆疊而成。每一層向上一層提供較簡單的介面，同時隱藏下層大量細節。</li><li><strong>ISA 與微架構：</strong>ISA 定義程式能看見的指令、暫存器、記憶體位址模式與例外行為；微架構則是硬體如何實作 ISA。相同 ISA 可以有不同微架構，例如單週期、多週期、pipeline 或 superscalar。</li><li><strong>硬體/軟體介面：</strong>組合語言是理解硬體行為的低階入口。高階程式的一個敘述可能變成多個機器指令，而每個機器指令會驅動 ALU、暫存器檔、記憶體與控制訊號。</li></ul>

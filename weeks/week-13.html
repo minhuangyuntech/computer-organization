@@ -138,6 +138,13 @@
               <h3>本週學習目標</h3>
               <ul><li>理解 memory hierarchy 的成本/速度/容量折衷。</li><li>能說明 temporal 與 spatial locality。</li><li>能計算 Average Memory Access Time。</li></ul>
             </section>
+            <section class="edition-alignment">
+      <p class="eyebrow">Textbook map · Fourth edition</p>
+      <h3>第 4 版對照：第 6 章 記憶體</h3>
+      <p><strong>節次：</strong>6.2–6.3</p>
+      <p>memory type、hierarchy 與 temporal/spatial locality。</p>
+      <a href="../fourth-edition-map.html#week-map">查看完整章節對照與 MARIE–MIPS 概念橋接</a>
+    </section>
             <section class="section">
               <h3>核心概念</h3>
               <ul class="concept-list"><li><strong>階層：</strong>Register 最快最小，cache 次之，main memory 更大更慢，storage 最大也最慢。階層設計利用 locality 讓常用資料留在快的位置。</li><li><strong>Temporal locality：</strong>最近用過的資料很可能很快再被使用，例如迴圈中的變數與指令。</li><li><strong>Spatial locality：</strong>若某位址被使用，鄰近位址也可能很快被使用，例如 sequential instruction fetch 與陣列走訪。</li><li><strong>AMAT：</strong>Average Memory Access Time = Hit Time + Miss Rate × Miss Penalty。降低 miss rate、miss penalty 或 hit time 都能改善。</li></ul>

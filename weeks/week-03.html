@@ -138,6 +138,13 @@
               <h3>本週學習目標</h3>
               <ul><li>熟悉二進位、十六進位與位元運算。</li><li>能用 two&#039;s complement 表示有號整數。</li><li>理解 byte addressing 與 endianness。</li></ul>
             </section>
+            <section class="edition-alignment">
+      <p class="eyebrow">Textbook map · Fourth edition</p>
+      <h3>第 4 版對照：第 2 章 計算機系統的資料表示、第 5 章 深入指令集架構</h3>
+      <p><strong>節次：</strong>2.2–2.6；5.2.2</p>
+      <p>進位、補數、字元編碼與 big/little endian。</p>
+      <a href="../fourth-edition-map.html#week-map">查看完整章節對照與 MARIE–MIPS 概念橋接</a>
+    </section>
             <section class="section">
               <h3>核心概念</h3>
               <ul class="concept-list"><li><strong>位元與編碼：</strong>電腦儲存的是位元樣式；同一串位元可依情境解讀為整數、字元、指令或浮點數。資料型態不是位元本身，而是解讀規則。</li><li><strong>Two&#039;s complement：</strong>n 位元 two&#039;s complement 範圍為 -2^(n-1) 到 2^(n-1)-1。負數可由正數取反加一得到。加減法硬體可共用同一個加法器。</li><li><strong>位元延伸：</strong>有號數做 sign extension，無號數做 zero extension。若把有號/無號混用，常造成條件判斷錯誤。</li><li><strong>Endianness：</strong>Little endian 與 big endian 決定多位元組資料在記憶體中的 byte 順序。它不改變暫存器中的數值，只影響記憶體表示與資料交換。</li></ul>
