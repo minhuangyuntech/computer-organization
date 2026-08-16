@@ -33,7 +33,7 @@ assert(fourthEdition.chapters.length === 13, "Fourth edition must contain 13 map
 assert(new Set(fourthEdition.chapters.map((item) => item.chapter)).size === 13, "Fourth edition chapter numbers must be unique");
 assert(fourthEdition.weekMap.length === 18, "Every course week needs a fourth edition mapping");
 assert(new Set(fourthEdition.weekMap.map((item) => item.week)).size === 18, "Fourth edition week mappings must be unique");
-assert(chapterDetails.length >= 1, "At least one detailed self-study chapter is required");
+assert(chapterDetails.length >= 2, "At least two detailed self-study chapters are required");
 assert(new Set(chapterDetails.map((item) => item.chapter)).size === chapterDetails.length, "Detailed chapter numbers must be unique");
 
 for (const chapter of chapterDetails) {
@@ -57,6 +57,14 @@ for (const chapter of chapterDetails) {
     assert(section.sourceRefs.every((key) => sourceKeys.has(key)), `Chapter ${chapter.chapter} section references an unknown source`);
   }
 }
+
+const chapterTwo = chapterDetails.find((chapter) => chapter.chapter === 2);
+assert(chapterTwo, "Chapter 2 detailed data-representation material is missing");
+assert(chapterTwo.sections.length >= 10, "Chapter 2 needs at least ten complete concept sections");
+assert(chapterTwo.sections.filter((item) => item.figure).length >= 9, "Chapter 2 needs at least nine verifiable diagrams");
+assert(chapterTwo.workedExamples.length >= 5, "Chapter 2 needs at least five worked examples");
+assert(chapterTwo.exercises.length >= 13, "Chapter 2 needs at least thirteen exercises with solutions");
+assert(chapterTwo.sources.length >= 8, "Chapter 2 needs broad authoritative source coverage");
 
 for (const mapping of fourthEdition.weekMap) {
   assert(mapping.chapters.length >= 1, `Week ${mapping.week} needs at least one fourth edition chapter`);
@@ -121,6 +129,17 @@ assert(Math.abs((8e8 * 1.4 / 2.5e9) - 0.448) < 1e-12, "Chapter 1 processor P tim
 assert(Math.abs((8e8 * 1.0 / 2.0e9) - 0.4) < 1e-12, "Chapter 1 processor Q time check failed");
 assert(Math.abs((2e9 * 1.2 / 3e9) - 0.8) < 1e-12, "Chapter 1 exercise CPU A time check failed");
 assert(Math.abs((1.5e9 * 1.8 / 3.6e9) - 0.75) < 1e-12, "Chapter 1 exercise CPU B time check failed");
+
+const neg37 = ((~37 + 1) & 0xff);
+assert(neg37 === 0xdb, "Chapter 2 two's-complement encoding for -37 failed");
+assert(((neg37 + 54) & 0xff) === 17, "Chapter 2 signed addition example failed");
+assert(((100 + 60) & 0xff) === 0xa0, "Chapter 2 overflow result bits failed");
+assert((109 / 16) === 6.8125, "Chapter 2 Q4.4 decoding failed");
+const binary32 = Buffer.alloc(4);
+binary32.writeFloatBE(13.25, 0);
+assert(binary32.readUInt32BE(0) === 0x41540000, "Chapter 2 IEEE 754 encoding for 13.25 failed");
+assert(Buffer.from("中", "utf8").toString("hex") === "e4b8ad", "Chapter 2 UTF-8 encoding for U+4E2D failed");
+assert((2 ** 3) < (8 + 3 + 1) && (2 ** 4) >= (8 + 4 + 1), "Chapter 2 Hamming parity-bit bound failed");
 
 const homepage = path.join(root, "index.html");
 const editionPage = path.join(root, "fourth-edition-map.html");

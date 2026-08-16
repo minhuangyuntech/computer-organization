@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>第 2 章 計算機系統的資料表示 | 計算機組織</title>
-  <meta name="description" content="計算機組織第 2 章 計算機系統的資料表示完整章節教材。">
+  <title>第 2 章 位元模式、數值與文字的表示 | 計算機組織完整自學教材</title>
+  <meta name="description" content="計算機組織第 2 章完整自學教材：位元模式、數值與文字的表示，包含推導、圖表、例題、練習與詳解。">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23006d77'/%3E%3Cpath d='M14 18h36v28H14z' fill='%23f6bd60' stroke='%2320231f' stroke-width='4'/%3E%3Cpath d='M22 28h20M22 36h14' stroke='%2320231f' stroke-width='4'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="../styles.css">
 </head>
@@ -57,119 +57,187 @@
   </nav>
   <main class="page-main">
     <section id="content" class="content" tabindex="-1">
-      <article class="chapter-overview-page">
-      <nav class="breadcrumb" aria-label="麵包屑"><a href="../index.html">課程首頁</a><a href="../fourth-edition-map.html">第 4 版對照</a><span>第 2 章</span></nav>
-      <header class="chapter-overview-hero">
-        <p class="eyebrow">Chapter 2</p>
-        <h2>第 2 章<br>計算機系統的資料表示</h2>
-        <p class="chapter-english">Data Representation in Computer Systems</p>
-        <p>涵蓋進位系統、補數、整數算術、浮點數、字元編碼與錯誤偵測。共同核心是：位元本身沒有型別，解讀規則決定數值、字元與錯誤檢查的意義。</p>
-      </header>
-      <div class="chapter-integrated-reading"><section class="chapter-topic" id="topic-1">
-    <header class="chapter-topic-head">
-      <p class="eyebrow">Core topic 01</p>
-      <h2>數值表示法與資料儲存</h2>
-      <p>位元沒有天生的資料型態。正確解讀必須同時知道位元寬度、signedness、編碼規則與 byte 順序；少掉任何一項都可能得到另一個完全不同的值。</p>
-    </header>
-    <figure class="learning-figure">
-    <h4>8-bit two&#039;s complement 權重</h4>
-    <div class="bit-diagram" style="--total-bits:8"><div class="bit-field" style="--field-bits:1"><strong>b7</strong><span>1 bit</span><small>-128</small></div><div class="bit-field" style="--field-bits:1"><strong>b6</strong><span>1 bit</span><small>64</small></div><div class="bit-field" style="--field-bits:1"><strong>b5</strong><span>1 bit</span><small>32</small></div><div class="bit-field" style="--field-bits:1"><strong>b4</strong><span>1 bit</span><small>16</small></div><div class="bit-field" style="--field-bits:1"><strong>b3</strong><span>1 bit</span><small>8</small></div><div class="bit-field" style="--field-bits:1"><strong>b2</strong><span>1 bit</span><small>4</small></div><div class="bit-field" style="--field-bits:1"><strong>b1</strong><span>1 bit</span><small>2</small></div><div class="bit-field" style="--field-bits:1"><strong>b0</strong><span>1 bit</span><small>1</small></div></div>
-    <figcaption>最高位不是單純的正負標記，而是具有 -128 權重；因此 8-bit 範圍為 -128 到 127。</figcaption>
+      <article class="chapter-page">
+        <nav class="breadcrumb" aria-label="麵包屑"><a href="../index.html">課程首頁</a><a href="../fourth-edition-map.html">第 4 版對照</a><span>第 2 章</span></nav>
+        <header class="chapter-hero">
+          <p class="eyebrow">Chapter 2 · Revised 2026-08-16</p>
+          <h2>第 2 章<br>位元模式、數值與文字的表示</h2>
+          <p class="chapter-english">Representing Bits, Numbers, and Text</p>
+          <p>記憶體只保存位元模式，不會自行標記某一串 bits 是負整數、小數、字元、指令或錯誤檢查碼。真正賦予位元意義的是表示法與操作規則。本章從 positional notation 建立二進位與十六進位的數學模型，再推導 fixed-width unsigned、two&#039;s complement、定點與 IEEE 754；接著追蹤多位元組資料的 endian 排列、Unicode code point 如何轉成 UTF-8 bytes，以及 parity、Hamming distance 與 CRC 如何用冗餘換取錯誤偵測能力。每個結果都能回到欄位權重、模數運算或編碼規則逐位驗證。</p>
+          <dl class="chapter-meta"><div><dt>教材對照</dt><dd>第 2 章 Data Representation in Computer Systems</dd></div><div><dt>預估時間</dt><dd>約 180–240 分鐘</dd></div><div><dt>更新日期</dt><dd>2026-08-16</dd></div></dl>
+        </header>
+        <section class="chapter-outcomes">
+          <h3>完成本章後應能做到</h3>
+          <ol><li>能使用 positional notation 在二進位、十六進位與十進位之間轉換整數與有限小數。</li><li>能推導 n-bit unsigned 與 two&#039;s complement 的範圍，並正確完成 negation、sign extension 與 zero extension。</li><li>能分開判斷 carry out、unsigned wraparound 與 signed overflow，不再以單一旗標解釋所有算術結果。</li><li>能用定點格式的 scaling factor 解碼數值，並說明 range 與 resolution 的取捨。</li><li>能逐欄拆解 IEEE 754 binary32 的 normal、subnormal、zero、infinity 與 NaN。</li><li>能分析 endian、alignment 與 byte addressing 對 memory dump 和資料交換的影響。</li><li>能區分 Unicode code point、glyph 與 UTF-8 byte sequence，並手工編碼基本範例。</li><li>能用 parity、Hamming distance、syndrome 與 CRC 說明錯誤偵測或修正能力。</li></ol>
+        </section>
+
+        <nav class="chapter-toc" aria-label="本章目錄"><h3>本章路徑</h3><a href="#section-1">1. 位元沒有型別：解讀規則才是資料</a><a href="#section-2">2. Positional notation 與進位轉換</a><a href="#section-3">3. Unsigned、Two&#039;s Complement 與模數圓環</a><a href="#section-4">4. 加減法、Carry、Overflow 與位元延伸</a><a href="#section-5">5. 定點數：用固定 scaling factor 表示小數</a><a href="#section-6">6. IEEE 754 Binary32：範圍、精度與特殊值</a><a href="#section-7">7. Byte Addressing、Alignment 與 Endianness</a><a href="#section-8">8. Unicode Code Point 與 UTF-8 Bytes</a><a href="#section-9">9. Parity、Hamming Distance 與 CRC</a><a href="#section-10">10. 從 Bits 到 Correctness：建立表示契約</a><a href="#worked-examples">逐步例題</a><a href="#exercises">分級練習與詳解</a><a href="#glossary">術語表</a></nav>
+        <div class="chapter-reading"><section class="chapter-section" id="section-1">
+      <h3>1. 位元沒有型別：解讀規則才是資料</h3>
+      <p>bit 只有 0 與 1 兩種狀態；8 bits 通常組成一個 byte，較長資料再由多個 bytes 組合。位元模式 11111111 可以是 unsigned 255、8-bit two&#039;s complement 的 -1、像素的一個色彩通道、指令的一部分，或文字編碼中的一個 byte。硬體保存的 pattern 沒有改變，改變的是讀取它的 operation 與表示法。</p><p>一個完整表示法必須定義 pattern 空間、每個欄位的權重、合法與保留 pattern，以及 operation 遇到範圍外結果時的規則。unsigned integer 把所有 n bits 都當正權重；two&#039;s complement 讓最高位具有負權重；IEEE 754 把 bits 分成 sign、exponent 與 fraction。只看最左邊一個 bit，無法在不知道格式的情況下判定整個值。</p><p>n bits 共有 2^n 種不同 patterns。表示法只能把這些 patterns 分配給有限個 values 或 states，因此 range、precision 與特殊狀態之間必須取捨。若使用一部分 patterns 表示 NaN 與 infinity，可表示的有限浮點數就會少一些；若把一半 integer patterns 分配給負數，最大正整數便小於同寬度 unsigned。</p>
+      <figure class="learning-figure">
+    <h4>同一個 16-bit pattern 的四個 nibble</h4>
+    <div class="bit-diagram" style="--total-bits:16"><div class="bit-field" style="--field-bits:4"><strong>1011</strong><span>4 bits</span><small>hex B</small></div><div class="bit-field" style="--field-bits:4"><strong>0110</strong><span>4 bits</span><small>hex 6</small></div><div class="bit-field" style="--field-bits:4"><strong>0001</strong><span>4 bits</span><small>hex 1</small></div><div class="bit-field" style="--field-bits:4"><strong>1110</strong><span>4 bits</span><small>hex E</small></div></div>
+    <figcaption>pattern 可簡寫為 0xB61E；它的最終意義仍由 unsigned、signed、instruction 或其他格式決定。</figcaption>
   </figure>
-    <section class="chapter-topic-block">
-      <h3>學習成果</h3>
-      <ul><li>熟悉二進位、十六進位與位元運算。</li><li>能用 two&#039;s complement 表示有號整數。</li><li>理解 byte addressing 與 endianness。</li></ul>
-    </section>
-    <section class="chapter-topic-block">
-      <h3>核心概念</h3>
-      <ul class="concept-list"><li><strong>位元與編碼：</strong>電腦儲存的是位元樣式；同一串位元可依情境解讀為整數、字元、指令或浮點數。資料型態不是位元本身，而是解讀規則。</li><li><strong>Two&#039;s complement：</strong>n 位元 two&#039;s complement 範圍為 -2^(n-1) 到 2^(n-1)-1。負數可由正數取反加一得到。加減法硬體可共用同一個加法器。</li><li><strong>位元延伸：</strong>有號數做 sign extension，無號數做 zero extension。若把有號/無號混用，常造成條件判斷錯誤。</li><li><strong>Endianness：</strong>Little endian 與 big endian 決定多位元組資料在記憶體中的 byte 順序。它不改變暫存器中的數值，只影響記憶體表示與資料交換。</li></ul>
-    </section>
-    <section class="chapter-topic-block">
-      <h3>概念推導</h3>
-      <div class="deep-dive-grid"><section class="deep-dive"><h4>Two&#039;s complement 的權重觀點</h4><p>n-bit two&#039;s complement 的最高位權重是 -2^(n-1)，其餘位元仍是正的 2 的冪。這個觀點可直接解讀負數，不必每次都取反加一。例如 11010110 的值是 -128+64+16+4+2=-42。</p><p>Carry out 是無號加法超出 n bits 的訊號；signed overflow 則表示有號結果超出可表示範圍。兩者判斷的數學模型不同，不能互換。</p></section><section class="deep-dive"><h4>Byte address 與 Endianness</h4><p>Byte-addressed memory 中每個位址指向 8 bits。32-bit word 會佔用四個連續位址。Little endian 把最低有效 byte 放在最低位址，big endian 則把最高有效 byte 放在最低位址。</p><p>Endianness 不會顛倒一個 byte 內的 bit，也不會改變暫存器看到的數值。它只在多 byte 資料被拆到記憶體或通訊封包時產生差異。</p></section></div>
-    </section>
-    <section class="chapter-topic-block">
-      <h3>補充說明</h3>
-      <p>二進位與十六進位轉換是後續看 instruction encoding、cache address breakdown 的基本功。十六進位每一位剛好對應 4 bits，適合表達 32-bit 指令與位址。</p><p>Overflow 只對固定寬度的有號運算有意義。兩個正數相加得到負數、或兩個負數相加得到正數，就是 two&#039;s complement overflow 的典型跡象。</p><p>資料對齊（alignment）會影響硬體存取效率。MIPS word 通常要求 4-byte alignment，位址最低兩個 bit 應為 00。</p>
-    </section>
-    <section class="worked-example chapter-topic-worked">
-      <p class="eyebrow">Worked example</p>
-      <h3>同一位元樣式的三種解讀</h3>
-      <p>解讀 8-bit pattern 11010110，並排列 0x12345678 在 little-endian memory 的四個 bytes。</p>
-      <ol><li>Unsigned：128+64+16+4+2 = 214。</li><li>Signed two&#039;s complement：214-256 = -42。</li><li>若只當作單一 8-bit code，其語意還需由字元集或通訊協定決定。</li><li>0x12345678 的 bytes 為 12、34、56、78；little endian 由低位址起依序存 78、56、34、12。</li></ol>
-      <p class="worked-result"><strong>結論：</strong>位元樣式相同不代表值相同；metadata 與使用情境決定解讀。</p>
-    </section>
-    <section class="chapter-topic-block">
-      <h3>程式與計算例題</h3>
-      <h4>8-bit two&#039;s complement</h4>
-      <pre><code>+18 = 0001 0010
--18 = 1110 1110  # invert 0001 0010 =&gt; 1110 1101, plus 1</code></pre>
-      <p>以 8-bit 來看，1110 1110 若解讀為 unsigned 是 238，若解讀為 signed 是 -18。</p>
-    </section>
-    <section class="misconception-panel chapter-topic-misconceptions">
-      <h3>常見誤解</h3>
-      <ul><li>把 sign bit 當成 signed-magnitude 的正負號。</li><li>用 carry out 判斷 signed overflow。</li><li>把 little endian 誤解為每個 byte 的 bits 也反向。</li></ul>
-    </section>
-    <section class="self-check chapter-topic-check">
-      <h3>自我檢核</h3>
-      <details><summary>1. 8-bit 11111111 分別代表多少 unsigned 與 signed 值？</summary><p>Unsigned 是 255；two&#039;s complement signed 是 -1。</p></details><details><summary>2. 兩個負數相加得到正數時，carry out 一定能指出 overflow 嗎？</summary><p>不能只看 carry out。Signed overflow 應看兩個 operand 同號而結果異號。</p></details>
-    </section>
-  </section><section class="chapter-topic" id="topic-2">
-    <header class="chapter-topic-head">
-      <p class="eyebrow">Core topic 02</p>
-      <h2>整數算術運算與浮點數表示法</h2>
-      <p>固定寬度整數追求精確但範圍有限；浮點數以有限有效位數換取極大動態範圍。理解兩者的錯誤條件，才能知道硬體旗標與程式數值何時可信。</p>
-    </header>
-    <figure class="learning-figure">
-    <h4>IEEE 754 single precision</h4>
-    <div class="bit-diagram" style="--total-bits:32"><div class="bit-field" style="--field-bits:1"><strong>Sign</strong><span>1 bit</span><small>正負</small></div><div class="bit-field" style="--field-bits:8"><strong>Exponent</strong><span>8 bits</span><small>bias 127</small></div><div class="bit-field" style="--field-bits:23"><strong>Fraction</strong><span>23 bits</span><small>有效位數</small></div></div>
-    <figcaption>Normalized value = (-1)^sign × 1.fraction × 2^(exponent-127)。</figcaption>
+      <p class="source-ref">資料基礎：<a href="#source-S1">S1</a>、<a href="#source-S2">S2</a></p>
+    </section><section class="chapter-section" id="section-2">
+      <h3>2. Positional notation 與進位轉換</h3>
+      <p>在 base b 的 positional notation 中，digits d_k...d_0.d_-1... 的值為 Σ d_i b^i，其中每個 digit 必須介於 0 與 b-1。二進位的權重是 ...8、4、2、1、1/2、1/4...；十六進位的權重是 ...256、16、1。這個公式同時處理整數與 radix point 右側的分數，不需要把轉換規則分成互不相干的背誦表。</p><p>由 binary 轉 decimal 時，將每個為 1 的 bit weight 相加。由 decimal integer 轉 binary 時，可反覆除以 2 並由後往前讀 remainders，或由最大 power of two 逐項扣除。binary 與 hexadecimal 的轉換最直接：從 radix point 向左右每四 bits 分組，每組映射到一個 hex digit，前後不足四 bits 時補 0。</p><p>fractional decimal 轉 binary 使用反覆乘 2：每次乘積的 integer part 成為下一個 bit，留下 fractional part 繼續。若餘數回到先前狀態，binary expansion 會循環。例如 0.625×2=1.25、0.25×2=0.5、0.5×2=1.0，因此 0.625=0.101₂；0.1₁₀ 則無法以有限 binary fraction 精確結束。</p>
+      <figure class="learning-figure">
+    <h4>十進位整數轉二進位的可驗證流程</h4>
+    <div class="flow-diagram"><span class="flow-node">除以 2</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">記錄 remainder</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">對 quotient 重複</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">由最後一個 remainder 反向讀取</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">以 positional weights 回算</span></div>
+    <figcaption>最後一步不是多餘動作；回算可抓出 remainder 順序顛倒與漏位錯誤。</figcaption>
   </figure>
-    <section class="chapter-topic-block">
-      <h3>學習成果</h3>
-      <ul><li>理解加減乘除的硬體概念。</li><li>能判斷 signed overflow。</li><li>理解 IEEE 754 floating-point 的 sign/exponent/fraction。</li></ul>
-    </section>
-    <section class="chapter-topic-block">
-      <h3>核心概念</h3>
-      <ul class="concept-list"><li><strong>加減法器：</strong>Two&#039;s complement 讓加法與減法可用同一加法器完成。減法 A - B 可轉成 A + (~B + 1)。</li><li><strong>乘除法：</strong>硬體乘法可視為 shift-and-add；除法可視為 shift-and-subtract。速度與面積常需折衷，因此高效處理器會使用更複雜的乘法器。</li><li><strong>IEEE 754：</strong>Single precision 由 1-bit sign、8-bit exponent、23-bit fraction 組成。Exponent 使用 bias 表示，能同時表示極大與極小數。</li><li><strong>浮點誤差：</strong>浮點數不是實數；許多十進位小數無法用有限二進位精確表示。運算順序可能改變 rounding error。</li></ul>
-    </section>
-    <section class="chapter-topic-block">
-      <h3>概念推導</h3>
-      <div class="deep-dive-grid"><section class="deep-dive"><h4>Adder、Carry 與 Overflow</h4><p>A-B 可由 A+(~B)+1 完成，因此加法器只需用控制訊號決定是否反相 B 並設定初始 carry-in。Unsigned overflow 看最高位 carry out；signed overflow 看同號 operands 是否產生異號結果。</p><p>乘法的完整結果可能需要兩倍位元寬度。若只保留低 n bits，程式必須知道高位是否被捨棄；除法則同時產生 quotient 與 remainder。</p></section><section class="deep-dive"><h4>IEEE 754 的範圍與精度</h4><p>Normalized single precision 的值為 (-1)^s × 1.f × 2^(E-127)。隱藏的 leading 1 不佔 fraction 欄位，因此 23-bit fraction 提供 24 bits 的有效精度。</p><p>Exponent 全 0 用於 zero 與 subnormal；全 1 用於 infinity 與 NaN。浮點加法前必須對齊 exponent，較小數的 significand 右移後可能失去低位，這是吸收與 rounding error 的來源。</p></section></div>
-    </section>
-    <section class="chapter-topic-block">
-      <h3>補充說明</h3>
-      <p>整數 overflow 是位元寬度有限造成的結果。硬體可以用 operand sign 與 result sign 判斷加法 overflow。</p><p>浮點數用科學記號的想法換取範圍，但犧牲精確度。越大的數，相鄰可表示數之間的間距也越大。</p><p>學會辨認 special values：zero、subnormal、infinity、NaN。這些設計讓浮點運算能處理 underflow、overflow 與未定義結果。</p>
-    </section>
-    <section class="worked-example chapter-topic-worked">
-      <p class="eyebrow">Worked example</p>
-      <h3>解讀 0xC1200000</h3>
-      <p>將 IEEE 754 single pattern 0xC1200000 轉為十進位。</p>
-      <ol><li>最高位 sign=1，所以結果為負。</li><li>Exponent bits 對應 130，因此實際 exponent = 130-127 = 3。</li><li>Fraction 形成 significand 1.25。</li><li>值 = -1.25×2^3 = -10.0。</li></ol>
-      <p class="worked-result"><strong>結論：</strong>欄位拆解順序應固定為 sign、biased exponent、significand，最後才合成數值。</p>
-    </section>
-    <section class="chapter-topic-block">
-      <h3>程式與計算例題</h3>
-      <h4>浮點格式拆解</h4>
-      <pre><code>IEEE 754 single:
-value = (-1)^sign × 1.fraction × 2^(exponent - 127)
-0 10000001 01000000000000000000000
-= +1.25 × 2^2 = 5.0</code></pre>
-      <p>Normalized number 的 leading 1 不儲存在 fraction 中，稱為 hidden bit。</p>
-    </section>
-    <section class="misconception-panel chapter-topic-misconceptions">
-      <h3>常見誤解</h3>
-      <ul><li>把 carry out 當 signed overflow。</li><li>忘記 normalized number 的 hidden 1。</li><li>假設浮點加法符合實數的結合律。</li></ul>
-    </section>
-    <section class="self-check chapter-topic-check">
-      <h3>自我檢核</h3>
-      <details><summary>1. 兩個正的 8-bit signed 數相加得到負數，發生什麼事？</summary><p>發生 signed overflow；真實數學結果超過 127。</p></details><details><summary>2. Exponent 全 1 且 fraction 非 0 代表什麼？</summary><p>代表 NaN；若 fraction 為 0 則是正或負 infinity。</p></details>
-    </section>
-  </section></div>
-      <nav class="chapter-adjacent" aria-label="相鄰章節">
-        <a href="chapter-01.html"><span>第 1 章</span><strong>導論</strong></a><a href="chapter-03.html"><span>第 3 章</span><strong>布林代數與數位邏輯</strong></a>
-      </nav>
-    </article>
+      <p class="source-ref">資料基礎：<a href="#source-S1">S1</a>、<a href="#source-S2">S2</a></p>
+    </section><section class="chapter-section" id="section-3">
+      <h3>3. Unsigned、Two&#039;s Complement 與模數圓環</h3>
+      <p>n-bit unsigned 的值為 Σ(i=0 到 n-1) b_i2^i，範圍是 0 到 2^n-1。硬體只保留 n bits 時，算術等同 modulo 2^n：超過最大值會從 0 重新開始。例如 8-bit unsigned 的 250+10 產生 260 mod 256=4，最高位 carry out 表示精確結果需要第 9 bit。</p><p>n-bit two&#039;s complement 讓最高位 b_(n-1) 的權重成為 -2^(n-1)，其餘 bits 保持正權重，因此範圍是 -2^(n-1) 到 2^(n-1)-1。全 0 是唯一的 zero，全 1 是 -1。負值 -x 的 pattern 可由 x 的 bits 全部反相再加 1，因為 x+(~x+1)=2^n，在 n-bit modulo arithmetic 中等於 0。</p><p>two&#039;s complement 的優點不是『最左 bit 單獨表示負號』，而是 signed 與 unsigned 可以共用同一個 n-bit adder。相同 sum bits 能按不同型別解讀；是否發生 signed overflow 要由 operands 與 result 的 signs 判斷。最小值 -2^(n-1) 沒有同寬度正值，所以對它取負仍得到相同 pattern，這是重要邊界條件。</p>
+      <figure class="learning-figure">
+    <h4>8-bit patterns 的三種解讀</h4>
+    <div class="diagram-table-wrap"><table class="diagram-table"><thead><tr><th>Pattern</th><th>Unsigned</th><th>Two&#039;s complement</th><th>觀察</th></tr></thead><tbody><tr><td>00000000</td><td>0</td><td>0</td><td>共同且唯一的 zero</td></tr><tr><td>01111111</td><td>127</td><td>127</td><td>最大 signed positive</td></tr><tr><td>10000000</td><td>128</td><td>-128</td><td>最小 signed value</td></tr><tr><td>11111111</td><td>255</td><td>-1</td><td>相同 bits，不同型別</td></tr><tr><td>11111011</td><td>251</td><td>-5</td><td>反相 00000100 再加 1</td></tr></tbody></table></div>
+    <figcaption>型別不改變 bits；型別決定 weights、比較規則與 overflow 解讀。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S1">S1</a>、<a href="#source-S2">S2</a></p>
+    </section><section class="chapter-section" id="section-4">
+      <h3>4. 加減法、Carry、Overflow 與位元延伸</h3>
+      <p>subtraction A-B 可改寫為 A+(~B+1)，所以 adder-subtractor 只需在 subtract mode 反相 B 並令初始 carry-in 為 1。無論 operands 被解讀為 signed 或 unsigned，硬體產生的低 n-bit result 完全相同；差別在於程式如何判定結果是否落在目標型別範圍內。</p><p>unsigned addition 的精確結果若超過 2^n-1，會出現 carry out；signed addition 則在兩個同號 operands 產生異號 result 時 overflow。兩個異號 signed values 相加不會 overflow，因為結果位於兩者之間。carry out 與 signed overflow 可以一個發生、另一個不發生，不能互相代替。</p><p>把較窄值放入較寬 register 時，unsigned 使用 zero extension；two&#039;s complement signed 使用 sign extension，也就是複製原最高位。8-bit -5 為 11111011，sign-extend 到 16 bits 是 11111111 11111011，權重仍為 -5；若誤用 zero extension，會得到 251。縮窄則會捨棄高 bits，必須另外確認被捨棄部分是否只是不影響值的 sign copies。</p>
+      <figure class="learning-figure">
+    <h4>8-bit addition 的 Carry 與 Signed Overflow</h4>
+    <div class="diagram-table-wrap"><table class="diagram-table"><thead><tr><th>Operands</th><th>8-bit result</th><th>Carry out</th><th>Signed overflow</th></tr></thead><tbody><tr><td>250 + 10</td><td>00000100</td><td>1</td><td>不適用於 unsigned 解讀</td></tr><tr><td>100 + 60</td><td>10100000</td><td>0</td><td>是：正 + 正得到負</td></tr><tr><td>-100 + -60</td><td>01100000</td><td>1</td><td>是：負 + 負得到正</td></tr><tr><td>-20 + 30</td><td>00001010</td><td>1</td><td>否：異號相加</td></tr></tbody></table></div>
+    <figcaption>result bits 由同一個 adder 產生；flags 回答的是不同數學問題。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S1">S1</a>、<a href="#source-S2">S2</a></p>
+    </section><section class="chapter-section" id="section-5">
+      <h3>5. 定點數：用固定 scaling factor 表示小數</h3>
+      <p>fixed-point 不需要特殊浮點欄位，而是約定某個 scaling factor。例如 unsigned Q4.4 使用 8 bits，其中 4 bits 在 radix point 左側、4 bits 在右側；stored integer I 所代表的 real value 為 I×2^-4。pattern 00101010 的 I=42，因此值為 42/16=2.625。</p><p>fraction bits 越多，resolution 越細；integer bits 越多，range 越大。在總位數固定時兩者互相競爭。Q4.4 的 step size 是 1/16=0.0625，無法精確表示 0.1；量化時必須選擇 truncate 或 rounding。兩個同格式 fixed-point values 相加可直接加 stored integers，但乘法會讓 scaling factor 變成 2^-8，必須移位與 rounding 才能回到 Q4.4。</p><p>定點格式適合範圍可預測、需要可重現 step size 或硬體資源受限的工作，例如感測器、音訊與控制系統。它不是『沒有誤差』：輸入量化、乘法截位與 overflow 都會產生誤差。可靠設計要同時寫出 bit width、signedness、fraction bits、rounding mode 與 saturation/wrap 規則。</p>
+      <figure class="learning-figure">
+    <h4>Unsigned Q4.4 的欄位與權重</h4>
+    <div class="bit-diagram" style="--total-bits:8"><div class="bit-field" style="--field-bits:4"><strong>0010</strong><span>4 bits</span><small>integer part = 2</small></div><div class="bit-field" style="--field-bits:4"><strong>1010</strong><span>4 bits</span><small>fraction = 10/16</small></div></div>
+    <figcaption>0010.1010₂ = 2 + 1/2 + 1/8 = 2.625；最小 step 為 2^-4。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S10">S10</a></p>
+    </section><section class="chapter-section" id="section-6">
+      <h3>6. IEEE 754 Binary32：範圍、精度與特殊值</h3>
+      <p>IEEE 754 binary32 由 1-bit sign、8-bit biased exponent E 與 23-bit fraction F 組成。當 1≤E≤254 時，值為 (-1)^s × 1.F₂ × 2^(E-127)。normalized significand 最前面的 1 不存入 fraction，因此有效精度是 24 binary digits；這個 hidden bit 只適用於 normal numbers。</p><p>E=0 時，F=0 表示 signed zero，F≠0 表示 subnormal，值為 (-1)^s × 0.F₂ × 2^-126。subnormal 讓數值在接近 0 時逐步失去 precision，而不是突然從最小 normal 跳到 zero。E=255 且 F=0 表示 infinity；E=255 且 F≠0 表示 NaN。NaN 的比較與傳播規則不能用一般實數直覺推論。</p><p>浮點運算必須把無限精確結果 rounding 到目標格式；IEEE 754 定義多種 rounding directions，常見預設是 round to nearest, ties to even。precision 取決於 significand bits，不是 decimal point 後固定幾位。數值 magnitude 越大，相鄰 representable values 的間距通常越大，因此 x+1 可能在 x 很大時仍等於 x。</p>
+      <figure class="learning-figure">
+    <h4>IEEE 754 Binary32 欄位</h4>
+    <div class="bit-diagram" style="--total-bits:32"><div class="bit-field" style="--field-bits:1"><strong>Sign</strong><span>1 bit</span><small>0 positive / 1 negative</small></div><div class="bit-field" style="--field-bits:8"><strong>Exponent</strong><span>8 bits</span><small>bias 127；0 與 255 保留</small></div><div class="bit-field" style="--field-bits:23"><strong>Fraction</strong><span>23 bits</span><small>normal value 的 hidden leading 1 之後</small></div></div>
+    <figcaption>欄位切割只能先分類；還要依 exponent 是否為 0、1–254 或 255 選擇正確公式。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S3">S3</a>、<a href="#source-S10">S10</a></p>
+    </section><section class="chapter-section" id="section-7">
+      <h3>7. Byte Addressing、Alignment 與 Endianness</h3>
+      <p>byte-addressed memory 為每個 byte 指定位址，多 byte object 佔用連續 addresses。32-bit word 需要 4 bytes；若起始位址為 0x1000，bytes 位於 0x1000 到 0x1003。alignment 要求通常讓 object 起始位址是其大小的倍數，簡化一次存取涵蓋的 memory boundaries，但實際例外與效能規則由 ISA 與 system interface 定義。</p><p>endianness 決定 multi-byte value 的 bytes 如何放進遞增 addresses。對 32-bit value 0x12345678，big-endian 在最低位址放 0x12，little-endian 則放 0x78。它不會把每個 byte 內的 bits 反轉，也不會改變 register 中抽象的 numeric value；差異只在 serialize、memory dump 或不同寬度存取時顯現。</p><p>資料交換必須指定 byte order 與 field width，不能只寫『傳一個 int』。network protocols 常明確使用 network byte order；file formats 也會固定 endian 或加入 marker。RISC-V 基礎 ISA 的自然 load/store 語意與實作支援的 endian 由規格界定；assembler 顯示的 word hex 與 memory debugger 顯示的 bytes 可能順序相反，但兩者都正確。</p>
+      <figure class="learning-figure">
+    <h4>0x12345678 從位址 0x1000 開始的 byte 排列</h4>
+    <div class="diagram-table-wrap"><table class="diagram-table"><thead><tr><th>Byte address</th><th>Big-endian</th><th>Little-endian</th></tr></thead><tbody><tr><td>0x1000</td><td>0x12</td><td>0x78</td></tr><tr><td>0x1001</td><td>0x34</td><td>0x56</td></tr><tr><td>0x1002</td><td>0x56</td><td>0x34</td></tr><tr><td>0x1003</td><td>0x78</td><td>0x12</td></tr></tbody></table></div>
+    <figcaption>endian 只重新安排 bytes；每個 byte 內仍以相同 bit pattern 表示。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S6">S6</a></p>
+    </section><section class="chapter-section" id="section-8">
+      <h3>8. Unicode Code Point 與 UTF-8 Bytes</h3>
+      <p>Unicode 為文字元素指定 code points，例如字元 A 是 U+0041，中是 U+4E2D。code point 是抽象編號，不等於 glyph：相同 code point 可由不同 font 畫成不同形狀，多個 code points 也可能組成使用者看見的一個 grapheme cluster。字元數、code point 數與 bytes 數因此不一定相等。</p><p>UTF-8 是把 Unicode scalar values 轉成 1 到 4 bytes 的 encoding。U+0000 到 U+007F 使用 0xxxxxxx；較大 code point 依序使用 110xxxxx 10xxxxxx、1110xxxx 10xxxxxx 10xxxxxx 或 11110xxx 加三個 continuation bytes。continuation byte 固定以 10 開頭，讓 decoder 能辨認 byte sequence 邊界。</p><p>截至 2026-08-16，Unicode 17.0 是已發布的正式版本。UTF-8 的 ASCII 區段保持單 byte 相容，但不能因此假設一個文字字元永遠是一個 byte。處理 substring、游標移動與欄寬時，應明確區分 byte offset、code point index 與 grapheme boundary。</p>
+      <figure class="learning-figure">
+    <h4>Unicode 文字進入記憶體的三層表示</h4>
+    <div class="flow-diagram"><span class="flow-node">Character identity</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Unicode code point U+HHHH</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">UTF-8 encoding rule</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">1–4 bytes</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">font shaping produces glyphs</span></div>
+    <figcaption>code point 定義文字身分，UTF-8 定義 bytes，font 與 shaping system 才決定畫面上的 glyph。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S4">S4</a>、<a href="#source-S5">S5</a></p>
+    </section><section class="chapter-section" id="section-9">
+      <h3>9. Parity、Hamming Distance 與 CRC</h3>
+      <p>error detection 會加入由資料計算出的 redundant bits。even parity 讓 codeword 中 1 的總數為偶數；任一單 bit 翻轉會改變奇偶性，因此必能偵測，但兩個 bits 同時翻轉可能讓 parity 恢復原狀。偵測能力取決於合法 codewords 之間的 Hamming distance，而不是單純看附加 bits 數量。</p><p>兩個等長 bit strings 的 Hamming distance 是不同 bit positions 的數量。若 code 的 minimum distance 為 d_min，最多可保證偵測 d_min-1 個 bit errors，並可保證修正 floor((d_min-1)/2) 個。Hamming code 把 parity bits 放在 power-of-two positions，接收端重新計算 parity 所形成的 syndrome 可指出單一錯誤位置；加入整體 parity 可形成常見 SECDED 結構。</p><p>CRC 把 message bits 視為 GF(2) polynomial coefficients，以指定 generator polynomial 做除法並附上 remainder。接收端用同一 generator 檢查 remainder；XOR 取代一般減法，因此硬體可用 shift register 與 XOR network 實作。CRC 很擅長偵測 burst errors，但不是 cryptographic integrity proof，不能抵抗刻意選擇的惡意修改。</p>
+      <figure class="learning-figure">
+    <h4>常見冗餘機制的能力邊界</h4>
+    <div class="diagram-table-wrap"><table class="diagram-table"><thead><tr><th>機制</th><th>核心計算</th><th>可保證的典型能力</th><th>限制</th></tr></thead><tbody><tr><td>Even parity</td><td>所有 bits XOR</td><td>偵測任一 single-bit error</td><td>偶數個翻轉可能漏失</td></tr><tr><td>Hamming SEC</td><td>多組 parity + syndrome</td><td>定位並修正一個 bit</td><td>多錯誤需更大 distance</td></tr><tr><td>SECDED</td><td>Hamming + overall parity</td><td>修正一個、偵測兩個</td><td>不可任意修正多錯誤</td></tr><tr><td>CRC</td><td>GF(2) polynomial remainder</td><td>依 polynomial 偵測多種 burst patterns</td><td>不是防惡意竄改的 MAC</td></tr></tbody></table></div>
+    <figcaption>冗餘不是越多就自動越可靠；能力由 code construction 與 minimum distance 決定。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S7">S7</a>、<a href="#source-S8">S8</a>、<a href="#source-S9">S9</a></p>
+    </section><section class="chapter-section" id="section-10">
+      <h3>10. 從 Bits 到 Correctness：建立表示契約</h3>
+      <p>分析任何 bit pattern 時，先寫出 representation contract：總寬度、field boundaries、signedness、scaling 或 bias、byte order、合法 special patterns，以及 overflow/rounding/error rules。這些條件缺一時，單一 hex value 往往沒有唯一答案。0xFFFFFFFF 可依 context 成為 unsigned 4294967295、signed -1、NaN 的一部分或四個 bytes。</p><p>再把 conversion 分成可驗證步驟：切欄位、標權重、依分類選公式、執行 arithmetic、重新 encode，最後用 range 或 round-trip 檢查。IEEE 754 題先分類 exponent；UTF-8 題先確認 code point range；endian 題先列 addresses；overflow 題先決定 signed 或 unsigned。固定流程能避免只靠圖形直覺猜答案。</p><p>表示法也會跨層影響效能與安全性。alignment 改變 memory transactions，浮點 precision 改變數值穩定性，signed/unsigned conversion 可能破壞 bounds check，錯誤的 UTF-8 邊界可能截斷 sequence。correctness 的起點不是『電腦只懂 0 和 1』，而是每一層都對同一串 bits 採用一致且明確的契約。</p>
+      <figure class="learning-figure">
+    <h4>解讀未知位元模式的證據鏈</h4>
+    <div class="flow-diagram"><span class="flow-node">Identify width and context</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Split fields or bytes</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Assign weights / rules</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Compute value or state</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Check range and special cases</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Round-trip to original bits</span></div>
+    <figcaption>能 round-trip 回原 pattern，代表欄位切割與解讀至少彼此一致；仍需確認 context 選對格式。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S2">S2</a>、<a href="#source-S3">S3</a>、<a href="#source-S4">S4</a>、<a href="#source-S6">S6</a></p>
+    </section></div>
+        <section class="chapter-worked-list" id="worked-examples"><h2>逐步例題</h2><section class="worked-example chapter-worked">
+      <p class="eyebrow">Worked example 1</p>
+      <h3>例題一：0x2D7 的二進位與十進位</h3>
+      <p><strong>題目：</strong>把 hexadecimal 0x2D7 轉成 12-bit binary 與 decimal，並用 positional weights 回算。</p>
+      <ol><li>每個 hex digit 對應 4 bits：2→0010、D→1101、7→0111。</li><li>依原順序串接得到 0010 1101 0111₂。</li><li>用 hex weights 回算：2×16² + 13×16¹ + 7×16⁰。</li><li>16²=256，因此第一項為 512；13×16=208；最後一項為 7。</li><li>總和 512+208+7=727。</li><li>用 binary weights 檢查：2^9+2^7+2^6+2^4+2^2+2^1+2^0=727。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>0x2D7 = 0010 1101 0111₂ = 727₁₀。四 bits 一組可避免把 D 誤寫成十進位 13 的字串。</p>
+    </section><section class="worked-example chapter-worked">
+      <p class="eyebrow">Worked example 2</p>
+      <h3>例題二：8-bit Two&#039;s Complement 的 -37 + 54</h3>
+      <p><strong>題目：</strong>以 8-bit two&#039;s complement 編碼 -37 與 54，完成 addition 並判斷 signed overflow。</p>
+      <ol><li>37 的 8-bit pattern 是 00100101。</li><li>反相得到 11011010，再加 1 得 -37 的 pattern 11011011。</li><li>54 的 pattern 是 00110110。</li><li>相加：11011011 + 00110110 = 1 00010001；保留低 8 bits 得 00010001。</li><li>00010001₂=17，與數學結果 -37+54=17 相同。</li><li>operands 異號，因此 signed addition 不會 overflow；carry out=1 也不代表 signed overflow。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>結果是 17，無 signed overflow。carry out 與 signed overflow 回答不同問題。</p>
+    </section><section class="worked-example chapter-worked">
+      <p class="eyebrow">Worked example 3</p>
+      <h3>例題三：相同 8-bit Sum 的兩種 Overflow 判斷</h3>
+      <p><strong>題目：</strong>計算 100+60 的 8-bit result，分別以 unsigned 與 two&#039;s complement 判斷。</p>
+      <ol><li>100=01100100₂，60=00111100₂。</li><li>binary addition 得 10100000₂，沒有第 9-bit carry out。</li><li>unsigned 解讀為 128+32=160，仍在 0..255 內，因此沒有 unsigned overflow。</li><li>two&#039;s complement 把 10100000 解讀為 -128+32=-96。</li><li>兩個正 operands 卻得到負 result，符合 signed overflow 條件。</li><li>精確 signed 結果 160 超過 8-bit signed 最大值 127，與 sign-rule 判斷一致。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>同一個 result bits 對 unsigned 是合法 160，對 signed 是 overflow 後的 -96。</p>
+    </section><section class="worked-example chapter-worked">
+      <p class="eyebrow">Worked example 4</p>
+      <h3>例題四：把 13.25 編成 IEEE 754 Binary32</h3>
+      <p><strong>題目：</strong>求 13.25 的 sign、biased exponent、fraction 與 hexadecimal encoding。</p>
+      <ol><li>13₁₀=1101₂，0.25₁₀=0.01₂，所以 13.25=1101.01₂。</li><li>normalize：1101.01₂ = 1.10101₂ × 2³。</li><li>數值為正，因此 sign=0。</li><li>actual exponent=3，biased exponent E=3+127=130=10000010₂。</li><li>fraction 儲存 leading 1 後的 10101，再補 0 成 23 bits：10101000000000000000000。</li><li>串接為 0 10000010 10101000000000000000000，四 bits 分組後是 0x41540000。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>13.25 的 binary32 encoding 是 0x41540000；exponent 不是 two&#039;s complement，而是 biased encoding。</p>
+    </section><section class="worked-example chapter-worked">
+      <p class="eyebrow">Worked example 5</p>
+      <h3>例題五：把「中」編成 UTF-8</h3>
+      <p><strong>題目：</strong>字元「中」的 code point 是 U+4E2D。求其 UTF-8 byte sequence。</p>
+      <ol><li>U+4E2D 位於 U+0800..U+FFFF，使用三-byte template：1110xxxx 10xxxxxx 10xxxxxx。</li><li>4E2D 的 16-bit binary 是 0100 1110 0010 1101。</li><li>依 4+6+6 bits 分組：0100 | 111000 | 101101。</li><li>填入 templates：11100100 | 10111000 | 10101101。</li><li>轉為 hexadecimal：E4 B8 AD。</li><li>檢查後兩個 continuation bytes 都以 10 開頭，sequence length 與 code point range 一致。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>「中」的 UTF-8 是三個 bytes：E4 B8 AD；它不是單一 byte，也不是把 U+4E2D 直接分成 4E 2D。</p>
+    </section></section>
+        <section class="chapter-misconceptions misconception-panel"><h2>常見誤解與修正</h2><div><article><h4>最高位是 1，就一定是負數。</h4><p>只有在指定為 two&#039;s complement 等 signed format 時才成立；unsigned、float field 或 instruction bits 都可能以 1 開頭。</p></article><article><h4>carry out 就是 signed overflow。</h4><p>carry out 檢查 unsigned 精確結果是否需要第 n+1 bit；signed overflow 檢查同號 operands 是否得到異號 result。</p></article><article><h4>取反加一之後，最高位就是獨立的負號。</h4><p>two&#039;s complement 最高位具有 -2^(n-1) 權重，不能像 sign-magnitude 一樣先去掉 sign bit 再讀 magnitude。</p></article><article><h4>浮點數的 exponent 越大，精度越高。</h4><p>significand bits 決定相對精度；exponent 越大時 absolute spacing 反而通常越大。</p></article><article><h4>0.1 在 binary32 裡就是精確的十分之一。</h4><p>0.1 的 binary expansion 循環，必須 rounding 到鄰近 representable value。</p></article><article><h4>Little-endian 會把每個 byte 裡的 bits 倒過來。</h4><p>endianness 只決定 multi-byte object 的 byte order；byte 內 bit pattern 不反轉。</p></article><article><h4>一個 Unicode 字元就是兩個 bytes。</h4><p>Unicode code point 與 encoding 不同；UTF-8 使用 1–4 bytes，grapheme 還可能由多個 code points 組成。</p></article><article><h4>有 parity 就能修正任何錯誤。</h4><p>單一 parity 通常只能保證偵測奇數個 bit flips，無法定位錯誤；修正能力需要足夠 minimum distance 與結構。</p></article></div></section>
+        <section class="chapter-exercises self-check" id="exercises"><h2>分級練習與完整解答</h2><p>先完成 state、公式或推理，再展開答案核對。每題解答都列出判斷依據。</p><details>
+      <summary><span>基礎</span>1. 把 10110110₂ 轉成 hexadecimal 與 unsigned decimal。</summary>
+      <div><h4>完整解答</h4><ol><li>四 bits 分組：1011 0110，因此是 0xB6。</li><li>unsigned value = 128+32+16+4+2 = 182。</li></ol></div>
+    </details><details>
+      <summary><span>基礎</span>2. 12-bit unsigned 與 12-bit two&#039;s complement 的範圍各是多少？</summary>
+      <div><h4>完整解答</h4><ol><li>unsigned：0 到 2^12-1 = 4095。</li><li>two&#039;s complement：-2^11 到 2^11-1，也就是 -2048 到 2047。</li></ol></div>
+    </details><details>
+      <summary><span>基礎</span>3. 求 -52 的 8-bit two&#039;s complement pattern。</summary>
+      <div><h4>完整解答</h4><ol><li>52=00110100。</li><li>反相得 11001011，加 1 得 11001100。</li><li>回算權重：-128+64+8+4=-52。</li></ol></div>
+    </details><details>
+      <summary><span>理解</span>4. 將 8-bit pattern 10110111 分別 zero-extend 與 sign-extend 到 16 bits，並解釋其值。</summary>
+      <div><h4>完整解答</h4><ol><li>zero extension：00000000 10110111，unsigned value=183。</li><li>sign extension：11111111 10110111；原 8-bit two&#039;s complement 是 -73，延伸後仍是 -73。</li></ol></div>
+    </details><details>
+      <summary><span>計算</span>5. 8-bit two&#039;s complement 計算 -90 + -50，列出 result bits 並判斷 overflow。</summary>
+      <div><h4>完整解答</h4><ol><li>-90=10100110，-50=11001110。</li><li>相加得 1 01110100，低 8 bits 為 01110100=116。</li><li>兩個負數得到正數，發生 signed overflow；精確結果 -140 小於 -128。</li></ol></div>
+    </details><details>
+      <summary><span>計算</span>6. unsigned Q4.4 pattern 01101101 表示多少？最小 step size 是多少？</summary>
+      <div><h4>完整解答</h4><ol><li>stored integer 01101101₂=109。</li><li>value=109×2^-4=109/16=6.8125。</li><li>step size=2^-4=0.0625。</li></ol></div>
+    </details><details>
+      <summary><span>計算</span>7. 解碼 IEEE 754 binary32 hexadecimal 0xC1200000。</summary>
+      <div><h4>完整解答</h4><ol><li>sign=1，所以為負。</li><li>exponent bits=10000010₂=130，actual exponent=3。</li><li>fraction 開頭為 010...，significand=1.01₂=1.25。</li><li>value=-1.25×2^3=-10。</li></ol></div>
+    </details><details>
+      <summary><span>理解</span>8. 為何 binary32 在 2^24 附近不能表示每一個相鄰整數？</summary>
+      <div><h4>完整解答</h4><ol><li>normal binary32 只有 24 bits precision，包含 hidden leading 1。</li><li>當 exponent 使 unit in last place 變成 2 時，相鄰 representable values 間距為 2；奇數整數需要 rounding。</li></ol></div>
+    </details><details>
+      <summary><span>應用</span>9. Little-endian 系統從位址 0x2000 儲存 32-bit value 0x89ABCDEF。列出四個 bytes。</summary>
+      <div><h4>完整解答</h4><ol><li>little-endian 把 least significant byte 放在最低位址。</li><li>0x2000:EF、0x2001:CD、0x2002:AB、0x2003:89。</li></ol></div>
+    </details><details>
+      <summary><span>應用</span>10. ASCII 字元 A 與字元「中」在 UTF-8 各需要幾個 bytes？列出 encoding。</summary>
+      <div><h4>完整解答</h4><ol><li>A 是 U+0041，位於 ASCII range，UTF-8 是單 byte 0x41。</li><li>中是 U+4E2D，UTF-8 是三 bytes E4 B8 AD。</li><li>字元數相同都是一個，但 byte lengths 不同。</li></ol></div>
+    </details><details>
+      <summary><span>理解</span>11. payload 1011001 要加入 even parity bit。parity bit 是多少？單一與雙 bit errors 的偵測情況如何？</summary>
+      <div><h4>完整解答</h4><ol><li>payload 有四個 1，已是偶數，因此 parity bit=0。</li><li>任一 single-bit flip 會讓 1 的總數變奇數，必被偵測。</li><li>若恰有兩個 bits 翻轉，總 parity 仍可能為偶數，因此 simple parity 無法保證偵測。</li></ol></div>
+    </details><details>
+      <summary><span>計算</span>12. 要為 8 個 data bits 建立能定位 single-bit error 的 Hamming code，至少需要幾個 parity bits？使用 2^r ≥ m+r+1。</summary>
+      <div><h4>完整解答</h4><ol><li>m=8。測試 r=3：2^3=8，小於 8+3+1=12，不足。</li><li>測試 r=4：2^4=16，大於等於 8+4+1=13。</li><li>至少需要 4 個 Hamming parity bits；若再加 overall parity，可形成常見 SECDED 結構。</li></ol></div>
+    </details><details>
+      <summary><span>整合</span>13. pattern 0xFFFFFFFF 有哪些可能解讀？至少列出四種，並說明還缺什麼資訊才能決定答案。</summary>
+      <div><h4>完整解答</h4><ol><li>可解讀為 32-bit unsigned 4294967295、32-bit two&#039;s complement -1、四個 0xFF bytes、RGBA color、instruction 或其他欄位。</li><li>若切成 IEEE binary32，sign=1、exponent 全 1、fraction 非 0，屬於 NaN。</li><li>必須知道 width、format/type、field boundaries、byte order 與操作 context 才能決定。</li></ol></div>
+    </details></section>
+        <section class="chapter-glossary" id="glossary"><h2>本章術語表</h2><div class="diagram-table-wrap"><table><tbody><tr><th>Bit pattern</th><td>固定寬度的 0/1 序列；本身不帶型別，需由表示規則解讀。</td></tr><tr><th>Radix / Base</th><td>positional notation 中相鄰 digit 權重的倍率，例如 binary 的 base 2。</td></tr><tr><th>Nibble</th><td>4 bits，恰好對應一個 hexadecimal digit。</td></tr><tr><th>Unsigned integer</th><td>所有 bit positions 都使用非負 powers-of-two 權重的整數表示。</td></tr><tr><th>Two&#039;s complement</th><td>最高位具有負權重、可與 unsigned 共用加法器的 fixed-width signed representation。</td></tr><tr><th>Carry out</th><td>addition 超出最高 bit position 產生的進位，常用於 unsigned range 判定。</td></tr><tr><th>Signed overflow</th><td>fixed-width signed 精確結果超出可表示範圍。</td></tr><tr><th>Sign extension</th><td>擴寬 two&#039;s complement value 時複製 sign bit，以保持數值。</td></tr><tr><th>Fixed-point</th><td>以固定 scaling factor 解讀 stored integer 的小數表示法。</td></tr><tr><th>Resolution</th><td>相鄰 representable values 之間的最小間距。</td></tr><tr><th>Biased exponent</th><td>把 actual exponent 加上固定 bias 後以 unsigned field 儲存。</td></tr><tr><th>Subnormal</th><td>IEEE 754 exponent field 為 0、fraction 非 0，沒有 hidden leading 1 的有限小數。</td></tr><tr><th>NaN</th><td>Not a Number；IEEE 754 用來表示無效或未定義數值結果的特殊值。</td></tr><tr><th>Endianness</th><td>multi-byte object 的 bytes 在遞增 memory addresses 中的排列順序。</td></tr><tr><th>Code point</th><td>Unicode 為抽象文字元素指定的編號，通常寫成 U+HHHH。</td></tr><tr><th>UTF-8</th><td>將 Unicode scalar value 編成 1–4 bytes 的 variable-length encoding。</td></tr><tr><th>Hamming distance</th><td>兩個等長 strings 在多少 bit positions 上不同。</td></tr><tr><th>Syndrome</th><td>由接收 codeword 重新計算 parity checks 得到、用於辨認錯誤狀態的 bit vector。</td></tr><tr><th>CRC</th><td>以 GF(2) polynomial division remainder 建立錯誤偵測碼的方法。</td></tr></tbody></table></div></section>
+        <section class="chapter-sources"><h2>技術來源與延伸閱讀</h2><p>各節所引用的架構、規格與技術資料如下。</p><ol><li id="source-S1"><a href="https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/pages/c1/c1s1/" rel="noreferrer">S1 · MIT OpenCourseWare 6.004: Binary Representations</a><p>positional notation、unsigned 與 two&#039;s complement 權重、範圍與加減法推導。（查閱：2026-08-16）</p></li><li id="source-S2"><a href="https://notes.cs61c.org/content/number-rep/summary/" rel="noreferrer">S2 · UC Berkeley CS61C Course Notes: Number Representation and Floating Point</a><p>現行大學課程中的表示法、range、step size、two&#039;s complement 與 floating-point 教學脈絡。（查閱：2026-08-16）</p></li><li id="source-S3"><a href="https://standards.ieee.org/ieee/315/6210/" rel="noreferrer">S3 · IEEE 754-2019: IEEE Standard for Floating-Point Arithmetic</a><p>binary/decimal floating-point formats、operations、exceptions 與 rounding 的現行標準依據。（查閱：2026-08-16）</p></li><li id="source-S4"><a href="https://www.unicode.org/versions/Unicode17.0.0/core-spec/" rel="noreferrer">S4 · The Unicode Standard, Version 17.0</a><p>目前正式 Unicode 版本、code point、character 與 encoding 的標準定義。（查閱：2026-08-16）</p></li><li id="source-S5"><a href="https://www.rfc-editor.org/info/rfc3629/" rel="noreferrer">S5 · RFC 3629: UTF-8, a transformation format of ISO 10646</a><p>UTF-8 的 1–4 octet encoding ranges、prefix templates 與合法範圍。（查閱：2026-08-16）</p></li><li id="source-S6"><a href="https://docs.riscv.org/reference/isa/unpriv/unpriv-index.html" rel="noreferrer">S6 · RISC-V Instruction Set Manual, Volume I, Official Release 20260120</a><p>現代 byte-addressed ISA、load/store、alignment 與 endian 規格脈絡。（查閱：2026-08-16）</p></li><li id="source-S7"><a href="https://itl.nist.gov/div898/software/dataplot/refman2/auxillar/hammdist.htm" rel="noreferrer">S7 · NIST Dataplot Reference: Hamming Distance</a><p>Hamming distance 的正式計算定義。（查閱：2026-08-16）</p></li><li id="source-S8"><a href="https://xlinux.nist.gov/dads/HTML/cyclicRedundancyCheck.html" rel="noreferrer">S8 · NIST Dictionary of Algorithms and Data Structures: Cyclic Redundancy Check</a><p>CRC 的 polynomial/modulo-2 定義與錯誤偵測用途。（查閱：2026-08-16）</p></li><li id="source-S9"><a href="https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nbsspecialpublication652.pdf" rel="noreferrer">S9 · NBS Special Publication 652: Hamming Code and Error Detection</a><p>Hamming parity positions、syndrome、single-error correction 與 double-error detection 概念。（查閱：2026-08-16）</p></li><li id="source-S10"><a href="https://notes.cs61c.org/content/floating-point/" rel="noreferrer">S10 · UC Berkeley CS61C Course Notes: Fixed Point and Floating Point</a><p>fixed-point scaling、range、step size，以及 IEEE 754 normalized representation 的公開課程推導。（查閱：2026-08-16）</p></li></ol></section>
+      </article>
     </section>
   </main>
   <footer class="footer">

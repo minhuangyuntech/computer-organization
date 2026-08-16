@@ -1535,8 +1535,7 @@ p, li {
 }
 
 .bit-diagram {
-  display: grid;
-  grid-template-columns: repeat(var(--total-bits), minmax(18px, 1fr));
+  display: flex;
   min-width: 600px;
   border: 2px solid var(--ink);
   background: var(--ink);
@@ -1544,10 +1543,11 @@ p, li {
 }
 
 .bit-field {
-  grid-column: span var(--field-bits);
+  flex: var(--field-bits) 1 calc(var(--field-bits) * 18px);
   display: grid;
   align-content: center;
   gap: 5px;
+  min-width: 96px;
   min-height: 104px;
   padding: 10px 6px;
   background: var(--panel);

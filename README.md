@@ -47,3 +47,7 @@ Repository 根目錄就是這個 `lectures/` 資料夾。GitHub Pages 目前從 
 ## 參考範圍
 
 內容對照 Linda Null 與 Julia Lobur《The Essentials of Computer Organization and Architecture》第 4 版（2015，ISBN 9781284033144）的章節架構。網站的中文敘述、例題、推導與圖表均為獨立編寫。
+
+## 修訂紀錄
+
+- 2026-08-16：完成第 2 章「位元模式、數值與文字的表示」深度教材，新增 10 個概念單元、5 個逐步例題、13 題分級練習、圖表、術語與 IEEE、Unicode、RFC、MIT、Berkeley、RISC-V、NIST 一手來源。
