@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>第 2 章 計算機系統的資料表示 | 計算機組織</title>
+  <meta name="description" content="計算機組織第 2 章 計算機系統的資料表示獨立頁面與相關週次教材。">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23006d77'/%3E%3Cpath d='M14 18h36v28H14z' fill='%23f6bd60' stroke='%2320231f' stroke-width='4'/%3E%3Cpath d='M22 28h20M22 36h14' stroke='%2320231f' stroke-width='4'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#content">跳到主要內容</a>
+  <header class="topbar">
+    <a class="brand brand-link" href="../index.html">
+      <span class="brand-mark" aria-hidden="true">CO</span>
+      <div>
+        <p>YunTech 115-1 / EL3021</p>
+        <h1>計算機組織線上講義</h1>
+      </div>
+    </a>
+    <nav class="top-actions" aria-label="工具列">
+      <button id="toggleTheme" type="button" title="切換明暗色調">◐</button>
+      <button id="printPage" type="button" title="列印目前內容">⎙</button>
+    </nav>
+  </header>
+  <nav class="chapter-nav" aria-label="課程章節導覽">
+    <div class="chapter-nav-inner">
+      <a class="chapter-nav-home" href="../index.html">首頁</a>
+      <a class="chapter-nav-link" href="../chapters/chapter-01.html" title="第 1 章 導論">
+        <strong>01</strong><span>導論</span>
+      </a><a class="chapter-nav-link active" href="../chapters/chapter-02.html" aria-current="page" title="第 2 章 計算機系統的資料表示">
+        <strong>02</strong><span>資料表示</span>
+      </a><a class="chapter-nav-link" href="../chapters/chapter-03.html" title="第 3 章 布林代數與數位邏輯">
+        <strong>03</strong><span>數位邏輯</span>
+      </a><a class="chapter-nav-link" href="../chapters/chapter-04.html" title="第 4 章 MARIE：簡易計算機導論">
+        <strong>04</strong><span>MARIE</span>
+      </a><a class="chapter-nav-link" href="../chapters/chapter-05.html" title="第 5 章 深入指令集架構">
+        <strong>05</strong><span>ISA</span>
+      </a><a class="chapter-nav-link" href="../chapters/chapter-06.html" title="第 6 章 記憶體">
+        <strong>06</strong><span>記憶體</span>
+      </a><a class="chapter-nav-link" href="../chapters/chapter-07.html" title="第 7 章 輸出入與儲存系統">
+        <strong>07</strong><span>I/O</span>
+      </a><a class="chapter-nav-link" href="../chapters/chapter-08.html" title="第 8 章 系統軟體">
+        <strong>08</strong><span>系統軟體</span>
+      </a><a class="chapter-nav-link" href="../chapters/chapter-09.html" title="第 9 章 替代型計算機架構">
+        <strong>09</strong><span>替代架構</span>
+      </a><a class="chapter-nav-link" href="../chapters/chapter-10.html" title="第 10 章 嵌入式系統專題">
+        <strong>10</strong><span>嵌入式</span>
+      </a><a class="chapter-nav-link" href="../chapters/chapter-11.html" title="第 11 章 效能量測與分析">
+        <strong>11</strong><span>效能</span>
+      </a><a class="chapter-nav-link" href="../chapters/chapter-12.html" title="第 12 章 網路組織與架構">
+        <strong>12</strong><span>網路</span>
+      </a><a class="chapter-nav-link" href="../chapters/chapter-13.html" title="第 13 章 儲存系統與介面選論">
+        <strong>13</strong><span>儲存介面</span>
+      </a>
+      <a class="chapter-nav-weeks" href="../index.html#weeks">18 週</a>
+    </div>
+  </nav>
+  <main class="page-main">
+    <section id="content" class="content" tabindex="-1">
+      <article class="chapter-overview-page">
+      <nav class="breadcrumb" aria-label="麵包屑"><a href="../index.html">課程首頁</a><a href="../fourth-edition-map.html">第 4 版對照</a><span>第 2 章</span></nav>
+      <header class="chapter-overview-hero">
+        <p class="eyebrow">Chapter 2 · Independent page</p>
+        <h2>第 2 章<br>計算機系統的資料表示</h2>
+        <p class="chapter-english">Data Representation in Computer Systems</p>
+        <p>涵蓋進位系統、補數、整數算術、浮點數、字元編碼與錯誤偵測。共同核心是：位元本身沒有型別，解讀規則決定數值、字元與錯誤檢查的意義。</p>
+      </header>
+      <section class="chapter-overview-focus">
+        <p class="eyebrow">Course connection</p>
+        <h3>本章與課程的連結</h3>
+        <p>第 3、7 週的 two&#039;s complement、carry/overflow、IEEE 754 與位元解讀。</p>
+        <p>以下週次頁面收錄本章目前對應的完整講義、概念推導、原創圖表、逐步例題、自我檢核與解答。每個連結都是可直接引用與返回的獨立頁面。</p>
+      </section>
+      <section class="chapter-week-path">
+        <h2>本章相關週次教材</h2>
+        <div class="chapter-week-grid"><a class="chapter-week-card" href="../weeks/week-03.html">
+      <span>Week 03</span>
+      <h3>數值表示法與資料儲存</h3>
+      <p>進位、補數、字元編碼與 big/little endian。</p>
+      <small>第 4 版節次：2.2–2.6；5.2.2</small>
+    </a><a class="chapter-week-card" href="../weeks/week-07.html">
+      <span>Week 07</span>
+      <h3>整數算術運算與浮點數表示法</h3>
+      <p>整數算術、carry/overflow、IEEE 754 與 arithmetic circuit。</p>
+      <small>第 4 版節次：2.4–2.5；3.5</small>
+    </a><a class="chapter-week-card" href="../weeks/week-09.html">
+      <span>Week 09</span>
+      <h3>期中考試週</h3>
+      <p>由抽象層、資料表示、指令週期、ISA 到效能方程式建立完整證據鏈。</p>
+      <small>第 4 版節次：前八週整合</small>
+    </a><a class="chapter-week-card" href="../weeks/week-18.html">
+      <span>Week 18</span>
+      <h3>期末測驗</h3>
+      <p>以 correctness、state、cycle、memory traffic 與 CPU Time 五種證據交叉檢查。</p>
+      <small>第 4 版節次：全課整合</small>
+    </a></div>
+      </section>
+      <nav class="chapter-adjacent" aria-label="相鄰章節">
+        <a href="chapter-01.html"><span>第 1 章</span><strong>導論</strong></a><a href="chapter-03.html"><span>第 3 章</span><strong>布林代數與數位邏輯</strong></a>
+      </nav>
+    </article>
+    </section>
+  </main>
+  <footer class="footer">
+    <p>計算機組織線上講義 · 多頁式靜態網站 · 適用 GitHub Pages</p>
+  </footer>
+  <script src="../site.js"></script>
+</body>
+</html>

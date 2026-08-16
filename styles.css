@@ -682,6 +682,125 @@ dd { margin: 0; }
   margin: 0 auto;
 }
 
+.chapter-overview-page {
+  min-width: 0;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.chapter-overview-hero {
+  margin-bottom: 24px;
+  padding: clamp(28px, 5vw, 58px);
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.chapter-overview-hero h2 {
+  max-width: 980px;
+  margin: 10px 0 12px;
+  font-size: clamp(38px, 6vw, 72px);
+  line-height: 1.04;
+}
+
+.chapter-overview-hero > p:not(.eyebrow, .chapter-english) {
+  max-width: 920px;
+  color: color-mix(in srgb, var(--bg) 88%, transparent);
+}
+
+.chapter-overview-focus,
+.chapter-week-path {
+  padding: clamp(22px, 4vw, 42px);
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.chapter-overview-focus {
+  margin-bottom: 18px;
+  border-left: 8px solid var(--accent-3);
+}
+
+.chapter-week-path > h2 {
+  margin-top: 0;
+}
+
+.chapter-week-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.chapter-week-card {
+  display: grid;
+  gap: 7px;
+  min-height: 190px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-top: 5px solid var(--accent);
+  background: color-mix(in srgb, var(--panel) 84%, var(--bg));
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.chapter-week-card:hover {
+  border-color: var(--accent-2);
+}
+
+.chapter-week-card span,
+.chapter-week-card small {
+  color: var(--accent-2);
+  font: 800 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.chapter-week-card h3,
+.chapter-week-card p {
+  margin: 0;
+}
+
+.chapter-week-card small {
+  margin-top: auto;
+  color: var(--muted);
+}
+
+.chapter-extension {
+  grid-column: 1 / -1;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-left: 6px solid var(--accent-2);
+  background: color-mix(in srgb, var(--accent-2) 6%, var(--panel));
+}
+
+.chapter-extension h3 {
+  margin-top: 0;
+}
+
+.chapter-extension a {
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.chapter-adjacent {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.chapter-adjacent a {
+  display: grid;
+  gap: 4px;
+  min-width: 180px;
+  padding: 14px 18px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.chapter-adjacent span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .chapter-page p,
 .chapter-page li,
 .chapter-page summary {
@@ -1759,6 +1878,9 @@ code {
   }
 
   .chapter-hero,
+  .chapter-overview-hero,
+  .chapter-overview-focus,
+  .chapter-week-path,
   .chapter-outcomes,
   .chapter-toc,
   .chapter-reading,
@@ -1773,6 +1895,18 @@ code {
   .chapter-meta,
   .chapter-toc {
     grid-template-columns: 1fr;
+  }
+
+  .chapter-week-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chapter-adjacent {
+    display: grid;
+  }
+
+  .chapter-adjacent a {
+    min-width: 0;
   }
 
   .chapter-toc h3 {

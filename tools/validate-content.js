@@ -125,7 +125,8 @@ assert(Math.abs((1.5e9 * 1.8 / 3.6e9) - 0.75) < 1e-12, "Chapter 1 exercise CPU B
 const homepage = path.join(root, "index.html");
 const editionPage = path.join(root, "fourth-edition-map.html");
 const weekFiles = Array.from({ length: 18 }, (_, index) => path.join(root, "weeks", `week-${String(index + 1).padStart(2, "0")}.html`));
-const chapterFiles = chapterDetails.map((chapter) => path.join(root, "chapters", `chapter-${String(chapter.chapter).padStart(2, "0")}.html`));
+const chapterFiles = fourthEdition.chapters.map((chapter) => path.join(root, "chapters", `chapter-${String(chapter.chapter).padStart(2, "0")}.html`));
+const detailedChapterFiles = chapterDetails.map((chapter) => path.join(root, "chapters", `chapter-${String(chapter.chapter).padStart(2, "0")}.html`));
 const htmlFiles = [homepage, editionPage, ...weekFiles, ...chapterFiles];
 const prohibited = /教學建議|授課|請學生|讓學生|給學生|要求學生/;
 
@@ -142,10 +143,13 @@ for (const file of htmlFiles) {
     assert((html.match(/<details>/g) || []).length >= 2, `Missing self-check answers in ${path.relative(root, file)}`);
     assert(html.includes("class=\"edition-alignment\""), `Missing fourth edition alignment in ${path.relative(root, file)}`);
   }
-  if (chapterFiles.includes(file)) {
+  if (detailedChapterFiles.includes(file)) {
     assert(html.includes("class=\"chapter-page\""), `Missing detailed chapter layout in ${path.relative(root, file)}`);
     assert((html.match(/class=\"chapter-section\"/g) || []).length >= 8, `Detailed chapter sections are incomplete in ${path.relative(root, file)}`);
     assert((html.match(/<details>/g) || []).length >= 10, `Detailed chapter exercises are incomplete in ${path.relative(root, file)}`);
+  } else if (chapterFiles.includes(file)) {
+    assert(html.includes("class=\"chapter-overview-page\""), `Missing independent chapter overview in ${path.relative(root, file)}`);
+    assert(html.includes("class=\"chapter-week-card\"") || html.includes("class=\"chapter-extension\""), `Missing chapter learning path in ${path.relative(root, file)}`);
   }
 
   for (const match of html.matchAll(/(?:href|src)="([^"]+)"/g)) {
@@ -169,5 +173,6 @@ assert(editionHtml.includes("MARIE 16-bit 指令格式"), "Fourth edition page i
 assert(editionHtml.includes("MAR ← PC"), "Fourth edition page is missing the MARIE fetch sequence");
 assert((editionHtml.match(/class=\"chapter-card\"/g) || []).length === 13, "Fourth edition page must show 13 chapter cards");
 assert((editionHtml.match(/<details>/g) || []).length === 3, "Fourth edition page must show three MARIE self-checks");
+assert(chapterFiles.every((file) => fs.existsSync(file)), "Every chapter navigation item needs an independent HTML page");
 
-console.log(`Validated 18 supplements, ${chapterDetails.length} detailed chapter, fourth edition mapping, worked calculations, and ${htmlFiles.length} generated pages.`);
+console.log(`Validated 18 supplements, ${chapterDetails.length} detailed chapter, 13 independent chapter pages, fourth edition mapping, worked calculations, and ${htmlFiles.length} generated pages.`);

@@ -90,10 +90,7 @@ function topbar(depth = 0) {
 function chapterNav(activeChapter = 0, depth = 0) {
   const prefix = depth ? "../" : "";
   const chapterLinks = fourthEdition.chapters.map((chapter, index) => {
-    const detail = chapterDetails.find((item) => item.chapter === chapter.chapter);
-    const href = detail
-      ? `${prefix}chapters/chapter-${String(chapter.chapter).padStart(2, "0")}.html`
-      : `${prefix}fourth-edition-map.html#chapter-${chapter.chapter}`;
+    const href = `${prefix}chapters/chapter-${String(chapter.chapter).padStart(2, "0")}.html`;
     const current = chapter.chapter === activeChapter;
     return `<a class="chapter-nav-link${current ? " active" : ""}" href="${href}"${current ? " aria-current=\"page\"" : ""} title="第 ${chapter.chapter} 章 ${esc(chapter.zh)}">
         <strong>${String(chapter.chapter).padStart(2, "0")}</strong><span>${esc(chapterNavLabels[index])}</span>
@@ -406,14 +403,13 @@ function weekPage(lecture) {
 
 function fourthEditionPage() {
   const chapterCards = fourthEdition.chapters.map((chapter) => {
-    const detail = chapterDetails.find((item) => item.chapter === chapter.chapter);
     return `<article class="chapter-card" id="chapter-${chapter.chapter}">
       <p class="eyebrow">Chapter ${chapter.chapter}</p>
       <h3>${esc(chapter.zh)}</h3>
       <p class="chapter-title">${esc(chapter.title)}</p>
       <p>${esc(chapter.summary)}</p>
       <p class="chapter-course"><strong>本站對應：</strong>${esc(chapter.courseUse)}</p>
-      ${detail ? `<a class="chapter-detail-link" href="chapters/chapter-${String(chapter.chapter).padStart(2, "0")}.html">閱讀完整自學章節</a>` : `<span class="chapter-pending">詳細章節逐步建置中</span>`}
+      <a class="chapter-detail-link" href="chapters/chapter-${String(chapter.chapter).padStart(2, "0")}.html">進入本章獨立頁面</a>
     </article>`;
   }).join("");
 
@@ -551,6 +547,54 @@ function chapterPage(chapter) {
   });
 }
 
+function chapterOverviewPage(chapter) {
+  const relatedWeeks = fourthEdition.weekMap.filter((mapping) => mapping.chapters.includes(chapter.chapter));
+  const weekCards = relatedWeeks.map((mapping) => {
+    const lecture = lectures.find((item) => item.week === mapping.week);
+    return `<a class="chapter-week-card" href="../weeks/${slug(mapping.week)}">
+      <span>Week ${String(mapping.week).padStart(2, "0")}</span>
+      <h3>${esc(lecture.title)}</h3>
+      <p>${esc(mapping.focus)}</p>
+      <small>第 4 版節次：${esc(mapping.sections)}</small>
+    </a>`;
+  }).join("");
+  const weekPath = weekCards || `<div class="chapter-extension">
+    <h3>課程延伸範圍</h3>
+    <p>本章不配置單獨週次，但它延伸了前面章節建立的資料表示、I/O、記憶體階層與系統介面概念。可先從完整章節對照確認它在全書中的位置，再回到相關基礎週次建立所需術語。</p>
+    <div class="reference-actions"><a href="../fourth-edition-map.html#chapter-${chapter.chapter}">查看本章與全書的關係</a><a href="../index.html#weeks">返回 18 週講義索引</a></div>
+  </div>`;
+
+  const adjacent = fourthEdition.chapters.filter((item) => Math.abs(item.chapter - chapter.chapter) === 1);
+  return pageShell({
+    title: `第 ${chapter.chapter} 章 ${chapter.zh} | 計算機組織`,
+    description: `計算機組織第 ${chapter.chapter} 章 ${chapter.zh}獨立頁面與相關週次教材。`,
+    body: `<article class="chapter-overview-page">
+      <nav class="breadcrumb" aria-label="麵包屑"><a href="../index.html">課程首頁</a><a href="../fourth-edition-map.html">第 4 版對照</a><span>第 ${chapter.chapter} 章</span></nav>
+      <header class="chapter-overview-hero">
+        <p class="eyebrow">Chapter ${chapter.chapter} · Independent page</p>
+        <h2>第 ${chapter.chapter} 章<br>${esc(chapter.zh)}</h2>
+        <p class="chapter-english">${esc(chapter.title)}</p>
+        <p>${esc(chapter.summary)}</p>
+      </header>
+      <section class="chapter-overview-focus">
+        <p class="eyebrow">Course connection</p>
+        <h3>本章與課程的連結</h3>
+        <p>${esc(chapter.courseUse)}</p>
+        <p>以下週次頁面收錄本章目前對應的完整講義、概念推導、原創圖表、逐步例題、自我檢核與解答。每個連結都是可直接引用與返回的獨立頁面。</p>
+      </section>
+      <section class="chapter-week-path">
+        <h2>本章相關週次教材</h2>
+        <div class="chapter-week-grid">${weekPath}</div>
+      </section>
+      <nav class="chapter-adjacent" aria-label="相鄰章節">
+        ${adjacent.map((item) => `<a href="chapter-${String(item.chapter).padStart(2, "0")}.html"><span>第 ${item.chapter} 章</span><strong>${esc(item.zh)}</strong></a>`).join("")}
+      </nav>
+    </article>`,
+    activeChapter: chapter.chapter,
+    depth: 1
+  });
+}
+
 fs.mkdirSync(path.join(root, "weeks"), { recursive: true });
 fs.mkdirSync(path.join(root, "chapters"), { recursive: true });
 const cleanHtml = (html) => html.replace(/[ \t]+$/gm, "");
@@ -560,8 +604,10 @@ fs.writeFileSync(path.join(root, "fourth-edition-map.html"), cleanHtml(fourthEdi
 for (const lecture of lectures) {
   fs.writeFileSync(path.join(root, "weeks", slug(lecture.week)), cleanHtml(weekPage(lecture)));
 }
-for (const chapter of chapterDetails) {
-  fs.writeFileSync(path.join(root, "chapters", `chapter-${String(chapter.chapter).padStart(2, "0")}.html`), cleanHtml(chapterPage(chapter)));
+for (const chapter of fourthEdition.chapters) {
+  const detail = chapterDetails.find((item) => item.chapter === chapter.chapter);
+  const html = detail ? chapterPage(detail) : chapterOverviewPage(chapter);
+  fs.writeFileSync(path.join(root, "chapters", `chapter-${String(chapter.chapter).padStart(2, "0")}.html`), cleanHtml(html));
 }
 
-console.log(`Generated ${lectures.length + chapterDetails.length + 2} pages.`);
+console.log(`Generated ${lectures.length + fourthEdition.chapters.length + 2} pages.`);
