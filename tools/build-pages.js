@@ -33,6 +33,11 @@ const units = [
   { title: "整合與評量", weeks: [9, 17, 18], text: "安排期中、期末與專題整合，把公式、指令、資料路徑與 cache 放回完整系統。" }
 ];
 
+const chapterNavLabels = [
+  "導論", "資料表示", "數位邏輯", "MARIE", "ISA", "記憶體", "I/O",
+  "系統軟體", "替代架構", "嵌入式", "效能", "網路", "儲存介面"
+];
+
 function esc(value) {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -82,33 +87,26 @@ function topbar(depth = 0) {
   </header>`;
 }
 
-function courseCard() {
-  return `<section class="course-card">
-        <p class="eyebrow">Computer Organization</p>
-        <h2>何敏煌老師</h2>
-        <dl>
-          <div><dt>班級</dt><dd>四電子三</dd></div>
-          <div><dt>時間</dt><dd>週一 BCD / ES004</dd></div>
-          <div><dt>教室</dt><dd>ES004</dd></div>
-          <div><dt>學分</dt><dd>3-0-3</dd></div>
-          <div><dt>評量</dt><dd>平時 30%、期中 30%、期末專題 40%</dd></div>
-        </dl>
-      </section>`;
-}
+function chapterNav(activeChapter = 0, depth = 0) {
+  const prefix = depth ? "../" : "";
+  const chapterLinks = fourthEdition.chapters.map((chapter, index) => {
+    const detail = chapterDetails.find((item) => item.chapter === chapter.chapter);
+    const href = detail
+      ? `${prefix}chapters/chapter-${String(chapter.chapter).padStart(2, "0")}.html`
+      : `${prefix}fourth-edition-map.html#chapter-${chapter.chapter}`;
+    const current = chapter.chapter === activeChapter;
+    return `<a class="chapter-nav-link${current ? " active" : ""}" href="${href}"${current ? " aria-current=\"page\"" : ""} title="第 ${chapter.chapter} 章 ${esc(chapter.zh)}">
+        <strong>${String(chapter.chapter).padStart(2, "0")}</strong><span>${esc(chapterNavLabels[index])}</span>
+      </a>`;
+  }).join("");
 
-function weekNav(activeWeek, depth = 0, weekPrefix) {
-  const prefix = weekPrefix ?? (depth ? "" : "weeks/");
-  return `<label class="search-box">
-        <span>搜尋週次</span>
-        <input id="searchInput" type="search" placeholder="例如：CPI、hazard、cache">
-      </label>
-      <div class="week-list" id="weekList">
-        ${lectures.map((lecture) => `
-        <a class="week-button week-link ${lecture.week === activeWeek ? "active" : ""}" href="${prefix}${slug(lecture.week)}" data-search="${esc([lecture.title, lecture.english, lecture.tags.join(" "), lecture.goals.join(" "), lecture.notes.join(" ")].join(" ").toLowerCase())}">
-          <strong>${String(lecture.week).padStart(2, "0")}</strong>
-          <span>${esc(lecture.title)}<small>${esc(lecture.english)}</small></span>
-        </a>`).join("")}
-      </div>`;
+  return `<nav class="chapter-nav" aria-label="課程章節導覽">
+    <div class="chapter-nav-inner">
+      <a class="chapter-nav-home${activeChapter === 0 ? " active" : ""}" href="${prefix}index.html"${activeChapter === 0 ? " aria-current=\"page\"" : ""}>首頁</a>
+      ${chapterLinks}
+      <a class="chapter-nav-weeks" href="${prefix}index.html#weeks">18 週</a>
+    </div>
+  </nav>`;
 }
 
 function table(rows) {
@@ -214,16 +212,13 @@ function editionAlignment(lecture) {
     </section>`;
 }
 
-function pageShell({ title, description, body, activeWeek = 0, depth = 0, weekPrefix }) {
+function pageShell({ title, description, body, activeChapter = 0, depth = 0 }) {
   const prefix = depth ? "../" : "";
   return `${head(title, description, depth)}
 <body>
   ${topbar(depth)}
-  <main class="layout">
-    <aside class="sidebar" aria-label="週次導覽">
-      ${courseCard()}
-      ${weekNav(activeWeek, depth, weekPrefix)}
-    </aside>
+  ${chapterNav(activeChapter, depth)}
+  <main class="page-main">
     <section id="content" class="content" tabindex="-1">
       ${body}
     </section>
@@ -256,20 +251,72 @@ function indexPage() {
   return pageShell({
     title: "計算機組織線上講義 | 115-1 YunTech",
     description: "國立雲林科技大學 115 學年度第 1 學期計算機組織多頁式線上講義。",
-    body: `<section class="hero">
-        <div class="hero-copy">
+    body: `<section class="cpu-hero">
+        <header class="cpu-hero-copy">
           <p class="eyebrow">從程式到硬體的可追蹤路徑</p>
           <h2>看懂一行指令如何穿過暫存器、ALU、Pipeline 與 Cache</h2>
           <p>本講義依據課綱 18 週進度展開。每週都有獨立 URL，可依序自學、反覆推導、完成練習、課後複習，並可列印成 PDF 離線閱讀。</p>
-        </div>
-        <div class="chip-visual" aria-label="處理器與記憶體階層示意圖" role="img">
-          <div class="chip-core">CPU</div>
-          <div class="chip-block b1">REG</div>
-          <div class="chip-block b2">ALU</div>
-          <div class="chip-block b3">CTRL</div>
-          <div class="chip-block b4">L1</div>
-          <div class="trace t1"></div><div class="trace t2"></div><div class="trace t3"></div><div class="trace t4"></div>
-        </div>
+        </header>
+        <figure class="modern-cpu-diagram">
+          <div class="diagram-heading">
+            <div><span>Conceptual microarchitecture</span><strong>Modern out-of-order CPU core</strong></div>
+            <p>指令流由左向右；記憶體存取由核心向下進入快取階層。</p>
+          </div>
+          <div class="core-boundary">
+            <div class="boundary-label">單一高效能核心</div>
+            <div class="pipeline-flow">
+              <section class="architecture-zone frontend-zone">
+                <h3><span>01</span> Front end</h3>
+                <div class="unit-grid">
+                  <div><strong>Branch predictor</strong><small>預測下一個取指位址</small></div>
+                  <div><strong>L1 I-cache</strong><small>提供低延遲指令</small></div>
+                  <div><strong>Fetch</strong><small>取得指令位元</small></div>
+                  <div><strong>Decode</strong><small>轉為內部操作</small></div>
+                </div>
+              </section>
+              <span class="stage-arrow" aria-hidden="true">→</span>
+              <section class="architecture-zone rename-zone">
+                <h3><span>02</span> Rename / Dispatch</h3>
+                <div class="unit-grid compact-units">
+                  <div><strong>Register rename</strong><small>移除假相依</small></div>
+                  <div><strong>Dispatch</strong><small>送入執行視窗</small></div>
+                </div>
+              </section>
+              <span class="stage-arrow" aria-hidden="true">→</span>
+              <section class="architecture-zone backend-zone">
+                <h3><span>03</span> Out-of-order back end</h3>
+                <div class="unit-grid backend-units">
+                  <div><strong>Issue queues</strong><small>等待運算元就緒</small></div>
+                  <div><strong>Reorder buffer</strong><small>依程式順序退休</small></div>
+                  <div><strong>Integer ALUs</strong><small>整數與位址運算</small></div>
+                  <div><strong>FP / Vector</strong><small>浮點與向量運算</small></div>
+                  <div class="load-store-unit"><strong>Load / Store</strong><small>排序並執行記憶體操作</small></div>
+                </div>
+              </section>
+            </div>
+            <div class="cache-path">
+              <div class="data-cache"><span>Load / Store path</span><strong>L1 D-cache</strong><small>核心私有資料快取</small></div>
+              <span class="cache-arrow" aria-hidden="true">↓</span>
+              <div class="private-cache"><span>Instruction + data misses</span><strong>Private L2</strong><small>容量較大、延遲較高</small></div>
+            </div>
+          </div>
+          <div class="hierarchy-drop"><span aria-hidden="true">↓</span><strong>L2 miss / coherence traffic</strong></div>
+          <div class="memory-hierarchy">
+            <div><span>On-chip fabric</span><strong>Coherent interconnect + Shared LLC</strong><small>在多核心間維持可見性並承接 L2 miss</small></div>
+            <span class="memory-arrow" aria-hidden="true">→</span>
+            <div><span>Off-core access</span><strong>Memory controller</strong><small>排程 DRAM 命令與資料傳輸</small></div>
+            <span class="memory-arrow" aria-hidden="true">→</span>
+            <div><span>Main memory</span><strong>DRAM</strong><small>容量最大，存取延遲也最高</small></div>
+          </div>
+          <figcaption>這是用於建立心智模型的通用示意圖，不代表特定晶片的實體 floorplan。不同處理器會改變管線寬度、佇列大小、快取層級與共享方式；圖中的 front end、out-of-order execution 與記憶體階層已依 <a href="https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html" rel="noreferrer">Intel 官方架構手冊</a>、<a href="https://developer.arm.com/community/arm-community-blogs/b/announcements/posts/cortex-x4-cpu-performance" rel="noreferrer">Arm Cortex-X4 說明</a>與 <a href="https://www.amd.com/en/technologies/zen-core.html" rel="noreferrer">AMD Zen 核心資料</a>交叉核對。</figcaption>
+        </figure>
+      </section>
+      <section class="course-facts" aria-label="課程資訊">
+        <div><span>班級</span><strong>四電子三</strong></div>
+        <div><span>時間</span><strong>週一 BCD</strong></div>
+        <div><span>教室</span><strong>ES004</strong></div>
+        <div><span>學分</span><strong>3-0-3</strong></div>
+        <div><span>評量</span><strong>平時 30% · 期中 30% · 期末專題 40%</strong></div>
       </section>
       <section class="overview-grid">${unitCards}</section>
       <section class="reference-note">
@@ -278,12 +325,12 @@ function indexPage() {
         <p>本站依課程大綱撰寫，並對照 Linda Null 與 Julia Lobur《The Essentials of Computer Organization and Architecture》第 4 版（2015，ISBN 9781284033144）的章節架構。所有中文敘述、例題、推導與圖表均為本站獨立編寫，不重製書中文字或原圖。</p>
         <div class="reference-actions"><a href="fourth-edition-map.html">第 4 版章節與週次對照</a><a href="chapters/chapter-01.html">閱讀第 1 章完整自學教材</a><a href="${fourthEdition.sources.chapters}" rel="noreferrer">出版社章節對照資料</a></div>
       </section>
-      <section class="lecture-view">
+      <section class="lecture-view" id="weeks">
         <h2>18 週講義索引</h2>
         <p>每週頁面都包含學習目標、自學導讀、原創圖表、概念推導、逐步例題、常見誤解、自我檢核、練習任務與公式速查。</p>
         <div class="week-card-grid">${cards}</div>
       </section>`,
-    activeWeek: 0,
+    activeChapter: 0,
     depth: 0
   });
 }
@@ -302,8 +349,7 @@ function weekPage(lecture) {
             <div class="tags">${lecture.tags.map((tag) => `<span class="tag">${esc(tag)}</span>`).join("")}</div>
           </div>
         </header>
-        <div class="lecture-grid">
-          <div>
+        <div class="lecture-content">
             ${conceptMap(lecture)}
             <section class="section">
               <h3>本週學習目標</h3>
@@ -334,23 +380,26 @@ function weekPage(lecture) {
               <h3>課後檢核</h3>
               <ol>${lecture.checks.map((check) => `<li>${esc(check)}</li>`).join("")}</ol>
             </section>
+            <section class="reference-tools">
+              <h3>本週速查</h3>
+              <div class="reference-tools-grid">
+                <section class="tool-card"><h4>常用公式</h4>${table(formulas)}</section>
+                <section class="tool-card"><h4>MIPS 暫存器速查</h4>${table(registers)}</section>
+                <section class="tool-card"><h4>學習重點</h4><p>先掌握本週名詞，再追蹤資料或控制如何流動，最後用公式或例題檢查自己的理解。</p></section>
+              </div>
+            </section>
             <nav class="pager" aria-label="週次切換">
               ${prev ? `<a href="${slug(prev.week)}">← 第 ${prev.week} 週</a>` : `<span></span>`}
               ${next ? `<a href="${slug(next.week)}">第 ${next.week} 週 →</a>` : `<span></span>`}
             </nav>
-          </div>
-          <aside class="side-notes">
-            <section class="tool-card"><h4>常用公式</h4>${table(formulas)}</section>
-            <section class="tool-card"><h4>MIPS 暫存器速查</h4>${table(registers)}</section>
-            <section class="tool-card"><h4>學習重點</h4><p>先掌握本週名詞，再追蹤資料或控制如何流動，最後用公式或例題檢查自己的理解。</p></section>
-          </aside>
         </div>
       </article>`;
+  const mapping = fourthEdition.weekMap.find((item) => item.week === lecture.week);
   return pageShell({
     title: `第 ${lecture.week} 週 ${lecture.title} | 計算機組織`,
     description: `計算機組織第 ${lecture.week} 週講義：${lecture.title}。`,
     body,
-    activeWeek: lecture.week,
+    activeChapter: mapping.chapters[0],
     depth: 1
   });
 }
@@ -444,7 +493,7 @@ function fourthEditionPage() {
           <div class="reference-actions"><a href="${fourthEdition.sources.catalog}" rel="noreferrer">WorldCat 第 4 版書目</a><a href="${fourthEdition.sources.chapters}" rel="noreferrer">出版社章節對照</a></div>
         </section>
       </article>`,
-    activeWeek: 0,
+    activeChapter: 0,
     depth: 0
   });
 }
@@ -497,9 +546,8 @@ function chapterPage(chapter) {
         <section class="chapter-glossary" id="glossary"><h2>本章術語表</h2><div class="diagram-table-wrap"><table><tbody>${glossary}</tbody></table></div></section>
         <section class="chapter-sources"><h2>研究來源與查閱日期</h2><p>以下來源只用來核對技術事實與當前規格；本站文字、例題與圖表均為原創整理。</p><ol>${sources}</ol></section>
       </article>`,
-    activeWeek: chapter.chapter === 1 ? 1 : 0,
-    depth: 1,
-    weekPrefix: "../weeks/"
+    activeChapter: chapter.chapter,
+    depth: 1
   });
 }
 

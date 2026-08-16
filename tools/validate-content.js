@@ -132,6 +132,11 @@ const prohibited = /教學建議|授課|請學生|讓學生|給學生|要求學�
 for (const file of htmlFiles) {
   const html = fs.readFileSync(file, "utf8");
   assert(!prohibited.test(html), `Teacher-facing wording found in ${path.relative(root, file)}`);
+  assert(html.includes("class=\"chapter-nav\""), `Missing chapter navigation in ${path.relative(root, file)}`);
+  assert((html.match(/class=\"chapter-nav-link/g) || []).length === 13, `Chapter navigation must contain 13 chapters in ${path.relative(root, file)}`);
+  assert(!html.includes("<aside"), `Sidebar markup found in ${path.relative(root, file)}`);
+  assert(!html.includes("class=\"sidebar\""), `Legacy sidebar found in ${path.relative(root, file)}`);
+  assert(!html.includes("class=\"side-notes\""), `Legacy weekly sidebar found in ${path.relative(root, file)}`);
   if (weekFiles.includes(file)) {
     assert(html.includes("class=\"learning-figure\""), `Missing learning figure in ${path.relative(root, file)}`);
     assert((html.match(/<details>/g) || []).length >= 2, `Missing self-check answers in ${path.relative(root, file)}`);
@@ -155,6 +160,11 @@ const homepageHtml = fs.readFileSync(homepage, "utf8");
 const editionHtml = fs.readFileSync(editionPage, "utf8");
 assert(homepageHtml.includes("第 4 版（2015，ISBN 9781284033144）"), "Homepage fourth edition metadata is missing");
 assert(!homepageHtml.includes("第六版"), "Homepage still references the sixth edition");
+assert(homepageHtml.includes("class=\"modern-cpu-diagram\""), "Homepage modern CPU diagram is missing");
+assert(!homepageHtml.includes("class=\"chip-visual\""), "Homepage still contains the legacy CPU image");
+for (const label of ["Branch predictor", "L1 I-cache", "Fetch", "Decode", "Register rename", "Reorder buffer", "Integer ALUs", "FP / Vector", "Load / Store", "L1 D-cache", "Private L2", "Shared LLC", "Memory controller", "DRAM"]) {
+  assert(homepageHtml.includes(label), `Homepage CPU diagram is missing ${label}`);
+}
 assert(editionHtml.includes("MARIE 16-bit 指令格式"), "Fourth edition page is missing the MARIE format diagram");
 assert(editionHtml.includes("MAR ← PC"), "Fourth edition page is missing the MARIE fetch sequence");
 assert((editionHtml.match(/class=\"chapter-card\"/g) || []).length === 13, "Fourth edition page must show 13 chapter cards");

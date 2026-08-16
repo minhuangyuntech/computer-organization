@@ -23,99 +23,40 @@
       <button id="printPage" type="button" title="列印目前內容">⎙</button>
     </nav>
   </header>
-  <main class="layout">
-    <aside class="sidebar" aria-label="週次導覽">
-      <section class="course-card">
-        <p class="eyebrow">Computer Organization</p>
-        <h2>何敏煌老師</h2>
-        <dl>
-          <div><dt>班級</dt><dd>四電子三</dd></div>
-          <div><dt>時間</dt><dd>週一 BCD / ES004</dd></div>
-          <div><dt>教室</dt><dd>ES004</dd></div>
-          <div><dt>學分</dt><dd>3-0-3</dd></div>
-          <div><dt>評量</dt><dd>平時 30%、期中 30%、期末專題 40%</dd></div>
-        </dl>
-      </section>
-      <label class="search-box">
-        <span>搜尋週次</span>
-        <input id="searchInput" type="search" placeholder="例如：CPI、hazard、cache">
-      </label>
-      <div class="week-list" id="weekList">
-
-        <a class="week-button week-link " href="weeks/week-01.html" data-search="計算機系統的抽象層次與課程介紹 introduction to computer systems and levels of abstraction abstraction isa hardware/software interface 說明應用程式、系統軟體、指令集架構、微架構與電路之間的分工。 理解計算機組織關心的是「指令如何被硬體執行」。 建立本課程的學習地圖：效能、mips、算術、datapath、pipeline、memory hierarchy。 本課程的核心問題是：一段程式如何變成可以在 cpu 上執行的二進位指令？cpu 又如何在有限硬體資源下快速且正確地完成這些指令？ 學習計算機組織時，請同時保留兩種視角。第一種是程式設計者視角：指令、暫存器、記憶體位址、效能。第二種是硬體設計者視角：資料路徑、控制訊號、pipeline stage、cache hit/miss。 本學期前半段會建立 isa 與算術基礎；後半段把指令放入處理器資料路徑，進一步分析 pipeline 與 cache 對效能的影響。">
-          <strong>01</strong>
-          <span>計算機系統的抽象層次與課程介紹<small>Introduction to Computer Systems and Levels of Abstraction</small></span>
-        </a>
-        <a class="week-button week-link " href="weeks/week-02.html" data-search="計算機效能評估 computer performance evaluation: cpu time, clock rate, and cpi cpu time cpi amdahl&#039;s law 能計算 cpu execution time。 能區分 response time 與 throughput。 能用 amdahl&#039;s law 判斷最佳化上限。 不要只看 clock rate。較高頻率若伴隨較高 cpi 或更多指令數，不一定更快。效能比較必須指定工作負載，並同時考慮 instruction count、cpi 與 clock rate。 response time 是單一任務完成時間，使用者通常直接感受到它；throughput 是單位時間完成多少工作，伺服器與批次系統常關心它。 最佳化前應先量測。若記憶體等待佔 40%，alu 變快 10 倍也不會讓整體快 10 倍。">
-          <strong>02</strong>
-          <span>計算機效能評估<small>Computer Performance Evaluation: CPU Time, Clock Rate, and CPI</small></span>
-        </a>
-        <a class="week-button week-link " href="weeks/week-03.html" data-search="數值表示法與資料儲存 data representation and information storage in computers binary two&#039;s complement endianness 熟悉二進位、十六進位與位元運算。 能用 two&#039;s complement 表示有號整數。 理解 byte addressing 與 endianness。 二進位與十六進位轉換是後續看 instruction encoding、cache address breakdown 的基本功。十六進位每一位剛好對應 4 bits，適合表達 32-bit 指令與位址。 overflow 只對固定寬度的有號運算有意義。兩個正數相加得到負數、或兩個負數相加得到正數，就是 two&#039;s complement overflow 的典型跡象。 資料對齊（alignment）會影響硬體存取效率。mips word 通常要求 4-byte alignment，位址最低兩個 bit 應為 00。">
-          <strong>03</strong>
-          <span>數值表示法與資料儲存<small>Data Representation and Information Storage in Computers</small></span>
-        </a>
-        <a class="week-button week-link " href="weeks/week-04.html" data-search="mips 組合語言與暫存器架構 introduction to mips assembly language and register organization mips registers assembly 認識 mips register convention。 理解 load-store architecture。 能讀懂基本 arithmetic 指令。 組合語言的價值不是取代 c，而是讓我們看見編譯器和硬體中間的指令層。理解 mips 後，學習 risc-v、arm 或其他 risc isa 會容易很多。 暫存器數量有限，所以編譯器需要做 register allocation。當暫存器不夠時，資料會 spill 到 memory，效能通常下降。 良好的組合語言閱讀習慣：先標出變數放在哪些暫存器，再追蹤每行指令改變了哪些狀態。">
-          <strong>04</strong>
-          <span>MIPS 組合語言與暫存器架構<small>Introduction to MIPS Assembly Language and Register Organization</small></span>
-        </a>
-        <a class="week-button week-link " href="weeks/week-05.html" data-search="mips 基本指令與記憶體存取 mips instructions and memory access operations lw sw branch addressing 熟悉 lw/sw base+offset addressing。 能撰寫 if/else 與 loop。 理解 branch target 與 pc 更新。 mips memory 是 byte-addressed，但 `lw` 一次讀 4 bytes。若處理 int 陣列，index 要乘以 4；若處理 char 陣列，index 不需乘以 4。 組合語言沒有高階語言的區塊結構，只有 label 與 branch/jump。閱讀 loop 時，先找 label、條件跳出點與回跳指令。 pseudo-instructions 如 `move`、`li`、`blt` 方便書寫，但硬體真正執行的是 assembler 展開後的基本指令。">
-          <strong>05</strong>
-          <span>MIPS 基本指令與記憶體存取<small>MIPS Instructions and Memory Access Operations</small></span>
-        </a>
-        <a class="week-button week-link " href="weeks/week-06.html" data-search="mips 程式設計與指令執行流程 mips programming and instruction execution process procedure stack calling convention 理解函式呼叫與 stack frame。 能追蹤 jal/jr 與 $ra。 能將小型 c 函式翻成 mips。 函式呼叫是最能串起軟硬體的例子：高階語言看起來是一個 function call，isa 層面是 `jal`、參數暫存器與 stack 操作，硬體層面則是 pc 改變與暫存器寫入。 遞迴函式必須特別注意 `$ra` 與參數保存，否則下一次呼叫會覆蓋上一層返回位置。 追蹤 stack 時畫表格最清楚：列出位址、內容、何時 push、何時 pop。">
-          <strong>06</strong>
-          <span>MIPS 程式設計與指令執行流程<small>MIPS Programming and Instruction Execution Process</small></span>
-        </a>
-        <a class="week-button week-link " href="weeks/week-07.html" data-search="整數算術運算與浮點數表示法 integer arithmetic and floating-point representation alu overflow ieee 754 理解加減乘除的硬體概念。 能判斷 signed overflow。 理解 ieee 754 floating-point 的 sign/exponent/fraction。 整數 overflow 是位元寬度有限造成的結果。硬體可以用 operand sign 與 result sign 判斷加法 overflow。 浮點數用科學記號的想法換取範圍，但犧牲精確度。越大的數，相鄰可表示數之間的間距也越大。 學會辨認 special values：zero、subnormal、infinity、nan。這些設計讓浮點運算能處理 underflow、overflow 與未定義結果。">
-          <strong>07</strong>
-          <span>整數算術運算與浮點數表示法<small>Integer Arithmetic and Floating-Point Representation</small></span>
-        </a>
-        <a class="week-button week-link " href="weeks/week-08.html" data-search="指令編碼與 cpu 執行指令的基本流程 instruction encoding and cpu instruction execution cycle instruction encoding r/i/j format control 能辨識 mips r/i/j format。 理解 opcode、rs、rt、rd、shamt、funct。 銜接指令格式到 datapath 控制訊號。 指令編碼不是單純背欄位，而是理解硬體如何從 bit pattern 產生控制訊號。opcode 進入 control unit 後，決定 regwrite、memread、memwrite、alusrc、branch 等訊號。 branch offset 通常以 word 為單位並相對於 pc+4，這讓短距離迴圈可用較少 bits 表示。 期中考前請能手算：給一行 mips 指令，指出格式與主要欄位；給欄位，判斷它大致會啟動哪些資料路徑。">
-          <strong>08</strong>
-          <span>指令編碼與 CPU 執行指令的基本流程<small>Instruction Encoding and CPU Instruction Execution Cycle</small></span>
-        </a>
-        <a class="week-button week-link " href="weeks/week-09.html" data-search="期中考試週 midterm examination review exam 整合第 1-8 週觀念。 熟練效能公式、mips 指令、數值表示與指令格式。 能用文字解釋而非只代公式。 準備期中考時，不要只看答案。請把每題的假設寫清楚，例如單位是 ghz 還是 ns、offset 是 byte 還是 word、數值被解讀為 signed 還是 unsigned。 組合語言題目可逐行加註解，尤其是 branch 的條件與跳躍方向。畫出暫存器內容變化表，錯誤會少很多。 考前最後一輪複習可用三張紙：效能公式表、mips 指令表、數值表示規則表。">
-          <strong>09</strong>
-          <span>期中考試週<small>Midterm Examination</small></span>
-        </a>
-        <a class="week-button week-link " href="weeks/week-10.html" data-search="cpu 資料路徑與單週期處理器架構 cpu datapath and single-cycle processor architecture datapath single-cycle control signals 能追蹤單週期 datapath。 理解 control signals 的角色。 分析單週期設計的 clock period 限制。 分析 datapath 最重要的是問三個問題：資料從哪裡來？經過哪些元件？最後寫到哪裡？控制訊號如何讓這條路成立？ `lw` 會使用 instruction memory、register file、alu、data memory、write back mux。`add` 不用 data memory。`beq` 會使用 alu 做比較並可能改變 pc。 單週期處理器不是高效設計，但它把每個指令需要的硬體路徑攤在一張圖上，因此很適合作為處理器資料路徑的入門模型。">
-          <strong>10</strong>
-          <span>CPU 資料路徑與單週期處理器架構<small>CPU Datapath and Single-Cycle Processor Architecture</small></span>
-        </a>
-        <a class="week-button week-link " href="weeks/week-11.html" data-search="pipeline 處理器的概念與效能分析 pipelined processor concepts and performance analysis pipeline if id ex mem wb speedup 理解五階段 pipeline。 能分辨 latency 與 throughput。 估算 pipeline speedup 與限制。 pipeline 不會讓單一指令的 latency 變短；它讓多個指令像生產線一樣重疊，因此完成一批指令的平均時間降低。 pipeline clock period 由最慢 stage 加上 pipeline register overhead 決定。若各 stage 延遲差距很大，切更多階段不一定划算。 分析 pipeline 題目時，畫 cycle-by-cycle table 是最穩的方式。列是指令，欄是 cycle，填 if/id/ex/mem/wb。">
-          <strong>11</strong>
-          <span>Pipeline 處理器的概念與效能分析<small>Pipelined Processor Concepts and Performance Analysis</small></span>
-        </a>
-        <a class="week-button week-link " href="weeks/week-12.html" data-search="pipeline hazard 的種類與基本解決方法 pipeline hazards and basic resolution techniques data hazard control hazard forwarding stall 辨識 structural、data、control hazards。 理解 forwarding 與 stall。 能處理 load-use hazard 與 branch penalty。 data hazard 的核心是 producer-consumer distance。alu 結果通常 ex 後可 forward；load 的資料要到 mem 後才可用，因此緊接使用通常需要一個 stall。 forwarding 不等於不用 hazard detection。硬體仍需比較 pipeline registers 中的 rs/rt/rd，判斷是否改 alu input mux。 branch 越頻繁、prediction 越差，pipeline 效益越容易被 penalty 吃掉。">
-          <strong>12</strong>
-          <span>Pipeline Hazard 的種類與基本解決方法<small>Pipeline Hazards and Basic Resolution Techniques</small></span>
-        </a>
-        <a class="week-button week-link " href="weeks/week-13.html" data-search="記憶體階層架構與區域性原理 memory hierarchy and the principle of locality memory hierarchy locality amat 理解 memory hierarchy 的成本/速度/容量折衷。 能說明 temporal 與 spatial locality。 能計算 average memory access time。 memory wall 是處理器速度提升遠快於主記憶體延遲改善造成的落差。cache 是緩解 memory wall 的核心技術。 區域性不是硬體保證，而是程式行為。資料結構與迴圈順序會大幅影響 cache 表現。 amat 題目要小心單位。hit time 可能是 cycles，miss penalty 也可能是 ns；計算前先統一。">
-          <strong>13</strong>
-          <span>記憶體階層架構與區域性原理<small>Memory Hierarchy and the Principle of Locality</small></span>
-        </a>
-        <a class="week-button week-link " href="weeks/week-14.html" data-search="cache memory 的基本運作原理 fundamentals of cache memory operation cache tag valid bit write policy 理解 cache block、tag、index、offset。 能判斷 hit/miss。 理解 write-through 與 write-back。 判斷 hit/miss 的標準流程：用 index 找 line/set，檢查 valid，拿 tag 比對。若 tag match 且 valid=1 才是 hit。 cache 設計沒有單一最佳答案。block size、capacity、associativity、replacement、write policy 都會影響 hit time、miss rate、miss penalty 與硬體成本。 direct-mapped cache 簡單快速，但容易發生 conflict miss。associative cache 較彈性，但 tag comparison 和 replacement 較複雜。">
-          <strong>14</strong>
-          <span>Cache Memory 的基本運作原理<small>Fundamentals of Cache Memory Operation</small></span>
-        </a>
-        <a class="week-button week-link " href="weeks/week-15.html" data-search="cache mapping 方法介紹 cache mapping techniques: direct-mapped, set-associative, and fully associative direct mapped set associative fully associative 能比較三種 mapping。 能計算 set、way、index、tag bits。 理解 conflict miss 與 associativity 的關係。 n-way set associative cache 的 sets = cache size / (block size × n)。index bits = log2(sets)，offset bits = log2(block size)。 associativity 提高通常可降低 conflict miss，但也可能增加 hit time 與能耗。真實設計常以實驗工作負載評估。 手算題請先寫出 cache size、block size、ways，再推 lines、sets、offset/index/tag，不要跳步。">
-          <strong>15</strong>
-          <span>Cache Mapping 方法介紹<small>Cache Mapping Techniques: Direct-Mapped, Set-Associative, and Fully Associative</small></span>
-        </a>
-        <a class="week-button week-link " href="weeks/week-16.html" data-search="cache replacement policy 與效能分析 cache replacement policies and performance analysis lru fifo random cache performance 理解 replacement policy。 能模擬 lru/fifo。 以 amat 評估 cache 參數變化。 考題常給位址序列與 cache 組態，要求模擬 replacement。請維護每個 set 的內容、valid、tag、最近使用順序或進入順序。 multi-level cache 的 amat 可展開：amat = l1 hit time + l1 miss rate × (l2 hit time + l2 miss rate × memory penalty)。 write-back cache 在替換 dirty block 時會增加額外寫回成本；分析 miss penalty 時不要漏掉。">
-          <strong>16</strong>
-          <span>Cache Replacement Policy 與效能分析<small>Cache Replacement Policies and Performance Analysis</small></span>
-        </a>
-        <a class="week-button week-link " href="weeks/week-17.html" data-search="計算機組織整體架構總整理與應用案例 computer organization overview and practical applications integration case study optimization 整合 isa、datapath、pipeline、cache。 能用完整路徑解釋程式效能瓶頸。 準備期末專題報告。 期末專題可選擇一段程式或一個硬體主題，分析它與本課程概念的連結。好的專題不是堆名詞，而是能清楚展示問題、假設、方法、結果與限制。 真實系統中效能分析常用 profiling。先知道時間花在哪裡，再選擇從演算法、編譯、isa 或記憶體行為下手。 本週可把所有公式與圖整合成一頁總表：cpu time、pipeline speedup、amat、address breakdown、hazard 類型。">
-          <strong>17</strong>
-          <span>計算機組織整體架構總整理與應用案例<small>Computer Organization Overview and Practical Applications</small></span>
-        </a>
-        <a class="week-button week-link " href="weeks/week-18.html" data-search="期末測驗 final examination final project review 完成全學期整合複習。 展示期末專題或完成期末測驗。 能從硬體/軟體介面角度解釋系統行為。 期末題目通常要求跨章節整合。例如一段 loop 的效能可能同時牽涉指令數、branch、load-use hazard 與 cache miss。 請避免只寫結論。每一步推導、每個控制訊號、每個 cache 位址切割都要有理由，這比背答案更可靠。 完成本課程後，應能用精確但不神秘的語言說明：程式為什麼快或慢，cpu 為什麼需要 pipeline，記憶體階層為什麼不可或缺。">
-          <strong>18</strong>
-          <span>期末測驗<small>Final Examination</small></span>
-        </a>
-      </div>
-    </aside>
+  <nav class="chapter-nav" aria-label="課程章節導覽">
+    <div class="chapter-nav-inner">
+      <a class="chapter-nav-home active" href="index.html" aria-current="page">首頁</a>
+      <a class="chapter-nav-link" href="chapters/chapter-01.html" title="第 1 章 導論">
+        <strong>01</strong><span>導論</span>
+      </a><a class="chapter-nav-link" href="fourth-edition-map.html#chapter-2" title="第 2 章 計算機系統的資料表示">
+        <strong>02</strong><span>資料表示</span>
+      </a><a class="chapter-nav-link" href="fourth-edition-map.html#chapter-3" title="第 3 章 布林代數與數位邏輯">
+        <strong>03</strong><span>數位邏輯</span>
+      </a><a class="chapter-nav-link" href="fourth-edition-map.html#chapter-4" title="第 4 章 MARIE：簡易計算機導論">
+        <strong>04</strong><span>MARIE</span>
+      </a><a class="chapter-nav-link" href="fourth-edition-map.html#chapter-5" title="第 5 章 深入指令集架構">
+        <strong>05</strong><span>ISA</span>
+      </a><a class="chapter-nav-link" href="fourth-edition-map.html#chapter-6" title="第 6 章 記憶體">
+        <strong>06</strong><span>記憶體</span>
+      </a><a class="chapter-nav-link" href="fourth-edition-map.html#chapter-7" title="第 7 章 輸出入與儲存系統">
+        <strong>07</strong><span>I/O</span>
+      </a><a class="chapter-nav-link" href="fourth-edition-map.html#chapter-8" title="第 8 章 系統軟體">
+        <strong>08</strong><span>系統軟體</span>
+      </a><a class="chapter-nav-link" href="fourth-edition-map.html#chapter-9" title="第 9 章 替代型計算機架構">
+        <strong>09</strong><span>替代架構</span>
+      </a><a class="chapter-nav-link" href="fourth-edition-map.html#chapter-10" title="第 10 章 嵌入式系統專題">
+        <strong>10</strong><span>嵌入式</span>
+      </a><a class="chapter-nav-link" href="fourth-edition-map.html#chapter-11" title="第 11 章 效能量測與分析">
+        <strong>11</strong><span>效能</span>
+      </a><a class="chapter-nav-link" href="fourth-edition-map.html#chapter-12" title="第 12 章 網路組織與架構">
+        <strong>12</strong><span>網路</span>
+      </a><a class="chapter-nav-link" href="fourth-edition-map.html#chapter-13" title="第 13 章 儲存系統與介面選論">
+        <strong>13</strong><span>儲存介面</span>
+      </a>
+      <a class="chapter-nav-weeks" href="index.html#weeks">18 週</a>
+    </div>
+  </nav>
+  <main class="page-main">
     <section id="content" class="content" tabindex="-1">
       <article class="edition-page">
         <nav class="breadcrumb" aria-label="麵包屑"><a href="index.html">課程首頁</a><span>第 4 版章節對照</span></nav>
