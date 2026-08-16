@@ -60,19 +60,15 @@
       <article class="chapter-overview-page">
       <nav class="breadcrumb" aria-label="麵包屑"><a href="../index.html">課程首頁</a><a href="../fourth-edition-map.html">第 4 版對照</a><span>第 13 章</span></nav>
       <header class="chapter-overview-hero">
-        <p class="eyebrow">Chapter 13 · Independent page</p>
+        <p class="eyebrow">Chapter 13</p>
         <h2>第 13 章<br>儲存系統與介面選論</h2>
         <p class="chapter-english">Selected Storage Systems and Interfaces</p>
         <p>比較 SCSI、iSCSI、SAN、SATA、SAS、PCI、USB 與 cloud storage，重點是介面如何規範命令、資料傳輸與裝置互通。</p>
       </header>
-      <section class="chapter-overview-focus">
-        <p class="eyebrow">Chapter guide</p>
-        <h3>本章內容</h3>
-        <p>本章直接整合核心概念、原創圖表、推導、例題與自我檢核。所有內容都在同一章內連續閱讀，不需要切換到另一套分類頁面。</p>
-      </section>
       <div class="chapter-integrated-reading"><section class="standalone-chapter-content">
-    <section class="chapter-topic-block"><p class="eyebrow">Core topic 01</p><h2>儲存介面的角色</h2><p>儲存介面規範主機如何描述命令、定位資料、回報完成狀態與處理錯誤。裝置內部可以採用不同媒體與控制器，只要遵守介面契約，作業系統就能透過一致的驅動模型存取。</p></section><section class="chapter-topic-block"><p class="eyebrow">Core topic 02</p><h2>命令、佇列與資料搬移</h2><p>現代儲存路徑通常把控制命令與大量資料傳輸分開。CPU 建立描述子與命令佇列，控制器再透過 DMA 搬移資料；佇列深度與並行度會影響吞吐量，也可能增加單一請求的等待時間。</p></section><section class="chapter-topic-block"><p class="eyebrow">Core topic 03</p><h2>直連、網路與共享儲存</h2><p>直連介面讓裝置靠近單一主機；網路型儲存則把 block 或 file 服務放到可共享的網路端點。比較架構時應同時檢查延遲、頻寬、可用性、一致性、管理成本與故障範圍。</p></section>
-    <section class="self-check chapter-topic-check"><h2>自我檢核</h2><details><summary>1. 為何 DMA 適合大量儲存資料傳輸？</summary><p>CPU 只需設定傳輸描述，控制器即可直接在裝置與主記憶體間搬移資料，減少逐字搬移所需的指令與中斷。</p></details><details><summary>2. 較深的命令佇列一定能降低延遲嗎？</summary><p>不一定。較深佇列可以提高裝置利用率與吞吐量，但請求也可能等待更久，因此吞吐量與尾端延遲必須分別量測。</p></details></section>
+    <section class="chapter-topic-block"><p class="eyebrow">Core topic 01</p><h2>儲存介面的角色</h2><p>儲存介面規範主機如何描述命令、定位資料、回報完成狀態與處理錯誤。裝置內部可以採用不同媒體與控制器，只要遵守介面契約，作業系統就能透過一致的驅動模型存取。</p><p>一次讀取會穿過 system call、file system、block layer、device driver、controller 與實體媒體。每一層都可能切分、合併、重新排序或快取請求，所以應用觀察到的延遲不是單一媒體的原始存取時間。</p></section><section class="chapter-topic-block"><p class="eyebrow">Core topic 02</p><h2>命令、佇列與 DMA</h2><p>現代儲存路徑通常把控制命令與大量資料傳輸分開。CPU 建立描述子與 submission queue，控制器取得命令後透過 DMA 搬移資料，再把結果寫入 completion queue 或觸發中斷。</p><p>佇列讓主機在前一請求尚未完成時繼續提交工作，控制器便能利用內部平行性。較深佇列通常提高 throughput，但請求在佇列中停留更久，tail latency 也可能上升；因此 queue depth 應依服務目標調整。</p></section><section class="chapter-topic-block"><p class="eyebrow">Core topic 03</p><h2>Block、File 與 Object 抽象</h2><p>Block storage 提供固定大小、可定址的區塊，檔案系統負責把檔名、目錄與權限映射到區塊。File storage 直接提供共享檔案與目錄命名空間；object storage 則以 object identifier、metadata 與整體物件操作為主要介面。</p><p>三種抽象不能只用快慢排序。Block 介面讓主機控制資料布局，file 介面便於多用戶共享，object 介面易於跨節點擴充與保存大量非結構資料。選擇取決於更新粒度、共享方式、一致性需求與管理規模。</p></section><section class="chapter-topic-block"><p class="eyebrow">Core topic 04</p><h2>直連、網路與共享儲存</h2><p>直連介面讓裝置靠近單一主機，路徑短且故障邊界清楚；網路型儲存則把 block、file 或 object 服務放到可共享的網路端點，允許集中管理與多主機存取。</p><p>網路儲存把 network latency、packet loss 與交換器壅塞加入儲存路徑，也能透過多路徑、複寫與故障移轉提高可用性。比較架構時應同時檢查 latency、bandwidth、availability、consistency、管理成本與 failure domain。</p></section><section class="chapter-topic-block"><p class="eyebrow">Core topic 05</p><h2>持久性、順序與故障復原</h2><p>寫入完成可能只代表資料到達作業系統 cache、控制器 volatile buffer，或真正落到 nonvolatile media；這些語意不能混用。Flush、force-unit-access 或 barrier 類命令用來建立必要的持久化與順序邊界。</p><p>檔案系統可透過 write-ahead logging、journaling 或 copy-on-write，確保當電源在多步更新中間中斷時仍能恢復一致狀態。RAID、replication 與 erasure coding 則處理裝置或節點故障，但它們不能取代備份，因為誤刪與軟體錯誤可能同步破壞所有副本。</p></section>
+    <section class="self-check chapter-topic-check"><h2>自我檢核</h2><details><summary>1. 為何 DMA 適合大量儲存資料傳輸？</summary><p>CPU 只需設定傳輸描述，控制器即可直接在裝置與主記憶體間搬移資料，減少逐字搬移所需的指令與中斷。</p></details><details><summary>2. Block storage 與 file storage 的責任界線有何不同？</summary><p>Block storage 暴露可定址區塊，由主機檔案系統管理命名與布局；file storage 直接暴露檔名、目錄與檔案操作。</p></details><details><summary>3. 較深的命令佇列一定能降低延遲嗎？</summary><p>不一定。較深佇列可以提高裝置利用率與吞吐量，但請求也可能等待更久，因此吞吐量與尾端延遲必須分別量測。</p></details><details><summary>4. 為何 RAID 或 replication 不能取代備份？</summary><p>它們主要維持硬體故障下的可用性；誤刪、惡意修改或軟體錯誤仍可能同步到所有副本，備份需要獨立版本與故障邊界。</p></details></section>
+    <section class="chapter-sources"><h2>技術來源與延伸閱讀</h2><ol><li><a href="https://nvmexpress.org/wp-content/uploads/NVM-Express-Base-Specification-Revision-2.2-2025.03.11-Ratified-1.pdf" rel="noreferrer">NVM Express · Base Specification Revision 2.2</a></li><li><a href="https://nvmexpress.org/nvm-express-specification-archives/" rel="noreferrer">NVM Express · Specification Archives</a></li></ol></section>
   </section></div>
       <nav class="chapter-adjacent" aria-label="相鄰章節">
         <a href="chapter-12.html"><span>第 12 章</span><strong>網路組織與架構</strong></a>
@@ -81,7 +77,7 @@
     </section>
   </main>
   <footer class="footer">
-    <p>計算機組織線上講義 · 多頁式靜態網站 · 適用 GitHub Pages</p>
+    <p>計算機組織 · Computer Organization · YunTech 115-1</p>
   </footer>
   <script src="../site.js"></script>
 </body>

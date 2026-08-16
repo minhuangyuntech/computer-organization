@@ -60,16 +60,11 @@
       <article class="chapter-overview-page">
       <nav class="breadcrumb" aria-label="麵包屑"><a href="../index.html">課程首頁</a><a href="../fourth-edition-map.html">第 4 版對照</a><span>第 10 章</span></nav>
       <header class="chapter-overview-hero">
-        <p class="eyebrow">Chapter 10 · Independent page</p>
+        <p class="eyebrow">Chapter 10</p>
         <h2>第 10 章<br>嵌入式系統專題</h2>
         <p class="chapter-english">Topics in Embedded Systems</p>
         <p>比較現成、可組態與客製硬體，並討論受限記憶體、嵌入式作業系統與軟體開發。資源限制會讓效能、功耗與容量成為同時存在的設計條件。</p>
       </header>
-      <section class="chapter-overview-focus">
-        <p class="eyebrow">Chapter guide</p>
-        <h3>本章內容</h3>
-        <p>本章直接整合核心概念、原創圖表、推導、例題與自我檢核。所有內容都在同一章內連續閱讀，不需要切換到另一套分類頁面。</p>
-      </section>
       <div class="chapter-integrated-reading"><section class="chapter-topic" id="topic-1">
     <header class="chapter-topic-head">
       <p class="eyebrow">Core topic 01</p>
@@ -121,6 +116,10 @@
       <h3>自我檢核</h3>
       <details><summary>1. Loop blocking 主要改善哪一種行為？</summary><p>讓一小塊資料在被替換前重複使用，提升 temporal locality，也常改善 spatial locality。</p></details><details><summary>2. Instruction count 降低是否保證 CPU time 降低？</summary><p>不保證；CPI 或 clock cycle time 可能同時增加。</p></details>
     </section>
+  </section><section class="standalone-chapter-content">
+    <section class="chapter-topic-block"><p class="eyebrow">Core topic 01</p><h2>MCU、MPU 與 SoC</h2><p>微控制器（MCU）通常把 CPU core、SRAM、nonvolatile memory、timer、GPIO 與通訊周邊整合在單一晶片，適合成本、功耗與空間受限的控制工作。微處理器（MPU）常依賴外部 DRAM 與儲存裝置，能支援更完整的虛擬記憶體與作業系統。SoC 是更廣義的整合方式，可同時包含多核心 CPU、GPU、DSP、NPU 與專用 I/O。</p><p>判斷平台時不應只比較時脈。記憶體容量、啟動時間、周邊數量、即時反應、能源預算、軟體生態與單位成本都可能成為主要限制。相同 ISA 的兩個處理器，也可能因快取、bus、accelerator 與 power state 不同而適合完全不同的產品。</p></section><section class="chapter-topic-block"><p class="eyebrow">Core topic 02</p><h2>Memory-mapped peripheral 與韌體控制</h2><p>嵌入式周邊通常以 memory-mapped register 暴露功能。韌體先設定 clock、pin mux 與方向，再依規格寫入 control register，最後以 polling 或 interrupt 觀察狀態。每個位元欄位可能代表 read-only、write-one-to-clear 或保留位元，寫錯值會造成無法由一般程式邏輯推測的硬體行為。</p><p>volatile 只能告訴編譯器每次都要真的發出存取，不能自動保證多核心同步或完整的裝置順序。當 CPU、DMA 與周邊共同存取 buffer 時，還要處理 memory barrier、cache coherence、ownership 與完成通知。</p></section><section class="chapter-topic-block"><p class="eyebrow">Core topic 03</p><h2>Interrupt、Timer 與即時期限</h2><p>即時系統的正確性同時取決於計算結果與完成時間。Hard real-time 工作一旦錯過 deadline 就可能造成不可接受的失效；soft real-time 工作偶爾逾期會降低品質，但系統仍能運作。Timer 提供週期性 tick、one-shot deadline 與輸入捕捉，是排程、逾時與精確控制的時間基準。</p><p>最壞情況反應時間可分解為 blocking time、等待更高優先權工作的 interference、自己的 worst-case execution time，以及中斷與切換成本。平均執行很快不足以證明 deadline 一定達成；分析必須覆蓋最不利的到達組合與資源競爭。</p></section><section class="chapter-topic-block"><p class="eyebrow">Core topic 04</p><h2>功耗、能量與效能</h2><p>動態功耗可用 P_dynamic ≈ αCV²f 建立心智模型：切換活動 α、負載電容 C、供應電壓 V 與頻率 f 都會影響功耗，其中電壓是平方關係。降低頻率可減少單位時間功耗，但程式執行更久，因此總能量不一定同比例下降。</p><p>Race to sleep 策略讓核心快速完成工作後進入低功耗狀態；另一種策略則以較低電壓與頻率持續執行。哪一種較省能取決於工作負載、漏電、喚醒成本與 deadline。比較設計時要區分 instantaneous power、energy per task 與電池可用時間。</p></section><section class="chapter-topic-block"><p class="eyebrow">Core topic 05</p><h2>資源限制、看門狗與故障復原</h2><p>嵌入式系統常沒有充裕的 DRAM、swap 或人工維護，因此 stack 深度、heap fragmentation、buffer 上限與 worst-case path 都需要明確界線。靜態配置可提高可預測性，動態配置則提供彈性；選擇取決於生命週期、碎片風險與失敗處理能力。</p><p>Watchdog timer 要求軟體在期限內證明自己仍正常運作；若控制流程卡死，watchdog 觸發重設或進入安全狀態。完善的復原還包括 brownout detection、錯誤記錄、雙映像韌體與回滾機制，使更新中斷或電源異常不致讓設備永久失效。</p></section>
+    <section class="self-check chapter-topic-check"><h2>自我檢核</h2><details><summary>1. MCU 與 MPU 最重要的差異是否只是時脈？</summary><p>不是。整合的記憶體與周邊、虛擬記憶體能力、功耗、成本、啟動時間與軟體環境通常更具決定性。</p></details><details><summary>2. volatile 能否取代 memory barrier？</summary><p>不能。volatile 處理編譯器是否省略存取；memory barrier 處理 CPU 與互連可觀察到的存取順序。</p></details><details><summary>3. 平均執行時間低於 deadline，能否證明 hard real-time 工作正確？</summary><p>不能。必須檢查最壞情況執行時間、阻塞、中斷與高優先權工作的干擾。</p></details><details><summary>4. 降低時脈為何不一定讓每項工作更省能？</summary><p>功率雖可能下降，但執行時間會增加；總能量是功率對時間的累積，還受到電壓、漏電與睡眠狀態影響。</p></details></section>
+    <section class="chapter-sources"><h2>技術來源與延伸閱讀</h2><ol><li><a href="https://arm-software.github.io/CMSIS_6/latest/RTOS2/index.html" rel="noreferrer">Arm CMSIS-RTOS2 · Overview</a></li><li><a href="https://arm-software.github.io/CMSIS_6/latest/RTOS2/group__CMSIS__RTOS__TickAPI.html" rel="noreferrer">Arm CMSIS-RTOS2 · OS Tick API</a></li><li><a href="https://arm-software.github.io/CMSIS_6/main/RTOS2/rtos_process_isolation_thread_wdt.html" rel="noreferrer">Arm CMSIS-RTOS2 · Thread Watchdogs</a></li></ol></section>
   </section></div>
       <nav class="chapter-adjacent" aria-label="相鄰章節">
         <a href="chapter-09.html"><span>第 9 章</span><strong>替代型計算機架構</strong></a><a href="chapter-11.html"><span>第 11 章</span><strong>效能量測與分析</strong></a>
@@ -129,7 +128,7 @@
     </section>
   </main>
   <footer class="footer">
-    <p>計算機組織線上講義 · 多頁式靜態網站 · 適用 GitHub Pages</p>
+    <p>計算機組織 · Computer Organization · YunTech 115-1</p>
   </footer>
   <script src="../site.js"></script>
 </body>

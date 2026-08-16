@@ -60,16 +60,11 @@
       <article class="chapter-overview-page">
       <nav class="breadcrumb" aria-label="麵包屑"><a href="../index.html">課程首頁</a><a href="../fourth-edition-map.html">第 4 版對照</a><span>第 7 章</span></nav>
       <header class="chapter-overview-hero">
-        <p class="eyebrow">Chapter 7 · Independent page</p>
+        <p class="eyebrow">Chapter 7</p>
         <h2>第 7 章<br>輸出入與儲存系統</h2>
         <p class="chapter-english">Input/Output and Storage Systems</p>
         <p>從 I/O 對效能的影響出發，比較控制方式、傳輸模式、磁碟、SSD、光碟、磁帶與 RAID。I/O 延遲與可平行比例也能用 Amdahl&#039;s Law 分析。</p>
       </header>
-      <section class="chapter-overview-focus">
-        <p class="eyebrow">Chapter guide</p>
-        <h3>本章內容</h3>
-        <p>本章直接整合核心概念、原創圖表、推導、例題與自我檢核。所有內容都在同一章內連續閱讀，不需要切換到另一套分類頁面。</p>
-      </section>
       <div class="chapter-integrated-reading"><section class="chapter-topic" id="topic-1">
     <header class="chapter-topic-head">
       <p class="eyebrow">Core topic 01</p>
@@ -119,6 +114,10 @@ CPU time = 2.0e9 × 1.5 / 3.0e9 = 1.0 s</code></pre>
       <h3>自我檢核</h3>
       <details><summary>1. 一段程式變成原來的 2 倍快，新時間是多少？</summary><p>Speedup = Told/Tnew = 2，所以 Tnew = Told/2，時間減少 50%。</p></details><details><summary>2. 若可改善部分 F=0.8，即使它無限快，最大 speedup 是多少？</summary><p>1/(1-0.8)=5。剩下 20% 的不可改善時間形成上限。</p></details>
     </section>
+  </section><section class="standalone-chapter-content">
+    <section class="chapter-topic-block"><p class="eyebrow">Core topic 01</p><h2>I/O 模組與裝置暫存器</h2><p>處理器不直接理解鍵盤、網路卡或儲存裝置的物理細節，而是透過 I/O 模組讀寫一組定義良好的暫存器。常見暫存器包含 data、status 與 control：data 保存要傳送或剛收到的資料，status 呈現 ready、busy、error 等狀態，control 則指定啟動、重設或傳輸模式。</p><p>在 memory-mapped I/O 中，裝置暫存器占用一般位址空間，CPU 可用 load/store 指令存取；這能重用既有指令與位址計算電路，但快取與亂序執行必須尊重裝置存取的副作用與順序。程式不能把讀取 status 當成可任意刪除的普通記憶體讀取，因為一次讀取可能同時清除事件旗標。</p></section><section class="chapter-topic-block"><p class="eyebrow">Core topic 02</p><h2>Programmed I/O、Interrupt 與 DMA</h2><p>Programmed I/O 由 CPU 反覆輪詢 status，裝置就緒後再由 CPU 搬移資料。它的控制流程簡單、反應時間容易估計，卻會在慢速裝置等待期間消耗大量處理器週期。Interrupt-driven I/O 允許 CPU 先執行其他工作，事件到達後再保存現場、進入中斷服務常式並處理資料。</p><p>DMA 適合區塊資料傳輸。CPU 先設定來源、目的、長度與方向，DMA controller 再成為 bus master，直接在裝置與主記憶體間搬移資料，完成後才通知 CPU。例如傳送 4096 bytes，若 CPU 每次搬 4 bytes，需要執行 1024 次資料搬移；DMA 則把 CPU 工作縮減為建立描述子、啟動傳輸與處理完成事件。</p></section><section class="chapter-topic-block"><p class="eyebrow">Core topic 03</p><h2>中斷處理與優先權</h2><p>中斷發生時，處理器必須保留足以恢復程式的 architectural state，辨認來源，再跳到 interrupt service routine。中斷延遲包含完成或暫停目前指令、保存狀態、仲裁優先權、取得向量以及執行服務常式前置碼；因此裝置送出中斷到真正處理資料之間並非零時間。</p><p>多個裝置同時請求服務時，需要 priority、mask 與 nesting 規則。高優先權事件可搶先處理，但若高優先權事件持續到達，低優先權事件可能長期得不到服務。設計時必須同時檢查最壞情況延遲、服務常式執行時間與事件到達率，而不是只檢查平均情況。</p></section><section class="chapter-topic-block"><p class="eyebrow">Core topic 04</p><h2>吞吐量、延遲與佇列</h2><p>I/O 效能至少包含 latency 與 throughput。Latency 是單一請求從提交到完成的時間；throughput 是單位時間內完成的資料量或請求數。批次、較深佇列與較大傳輸通常能攤平固定成本並提高吞吐量，卻可能讓單一請求等待更久。</p><p>當平均到達率逐漸接近裝置服務率時，佇列長度與等待時間會迅速上升。系統即使仍能處理所有請求，互動體感也可能先因 tail latency 惡化。評估 I/O 時應分開量測平均延遲、百分位延遲、持續吞吐量與 CPU overhead。</p></section><section class="chapter-topic-block"><p class="eyebrow">Core topic 05</p><h2>可靠性與錯誤邊界</h2><p>I/O 路徑跨越應用程式、作業系統、驅動程式、控制器、連線與裝置媒體，每一層都可能產生 timeout、資料毀損或部分完成。Parity、CRC 與 error-correcting code 用來偵測或修正位元錯誤；timeout 與 retry 則處理未收到完成回應的情況。</p><p>重試並非永遠安全。讀取通常可重送，但具有副作用的寫入或控制命令若不具 idempotence，重送可能執行兩次。可靠的介面必須讓軟體分辨尚未執行、已完成與結果未知三種狀態，並明確定義錯誤回報與復原責任。</p></section>
+    <section class="self-check chapter-topic-check"><h2>自我檢核</h2><details><summary>1. 為何 memory-mapped I/O 讀取不能一律當成普通記憶體讀取？</summary><p>裝置暫存器可能具有副作用、不可快取，且讀寫順序具有外部可觀察意義；編譯器與處理器必須遵守介面要求的順序。</p></details><details><summary>2. 4096-byte 區塊若由 CPU 每次搬 4 bytes，需要幾次資料搬移？</summary><p>4096 / 4 = 1024 次。DMA 可把大量逐字搬移交給控制器，CPU 只處理設定與完成事件。</p></details><details><summary>3. Interrupt-driven I/O 為何不代表沒有 CPU 成本？</summary><p>CPU 仍要保存與恢復狀態、執行中斷服務常式，頻繁中斷也會破壞快取區域性並增加排程成本。</p></details><details><summary>4. 較大的批次為何可能同時提高吞吐量並增加延遲？</summary><p>批次可攤平每次命令的固定成本，但早到的請求必須等待批次湊齊或等待前方更多工作完成。</p></details></section>
+    <section class="chapter-sources"><h2>技術來源與延伸閱讀</h2><ol><li><a href="https://docs.kernel.org/core-api/dma-api-howto.html" rel="noreferrer">Linux Kernel · Dynamic DMA Mapping Guide</a></li><li><a href="https://developer.arm.com/community/arm-community-blogs/b/architectures-and-processors-blog/posts/memory-access-ordering-part-2---barriers-and-the-linux-kernel" rel="noreferrer">Arm · Memory access ordering, barriers and the Linux kernel</a></li></ol></section>
   </section></div>
       <nav class="chapter-adjacent" aria-label="相鄰章節">
         <a href="chapter-06.html"><span>第 6 章</span><strong>記憶體</strong></a><a href="chapter-08.html"><span>第 8 章</span><strong>系統軟體</strong></a>
@@ -127,7 +126,7 @@ CPU time = 2.0e9 × 1.5 / 3.0e9 = 1.0 s</code></pre>
     </section>
   </main>
   <footer class="footer">
-    <p>計算機組織線上講義 · 多頁式靜態網站 · 適用 GitHub Pages</p>
+    <p>計算機組織 · Computer Organization · YunTech 115-1</p>
   </footer>
   <script src="../site.js"></script>
 </body>

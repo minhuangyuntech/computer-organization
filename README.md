@@ -1,20 +1,19 @@
 # 計算機組織線上講義
 
-這個資料夾是一個多頁式純靜態網站，可直接部署到 GitHub Pages。
+這個資料夾是以章節為主的純靜態教材網站，可直接部署到 GitHub Pages。
 
 ## 網站結構
 
-- `index.html`：課程首頁與 18 週索引
-- `fourth-edition-map.html`：第 4 版 13 章、18 週節次與 MARIE–MIPS 對照
-- `chapters/chapter-01.html`：逐章建置的完整自學教材，目前已完成第 1 章
-- `weeks/week-01.html` 到 `weeks/week-18.html`：每週獨立講義頁面
+- `index.html`：現代 CPU 概念圖與 13 章教材索引
+- `fourth-edition-map.html`：第 4 版 13 章與 MARIE–MIPS 對照
+- `chapters/chapter-01.html` 到 `chapters/chapter-13.html`：各章完整教材
 - `styles.css`：全站樣式與列印樣式
-- `site.js`：明暗模式、列印與搜尋週次
+- `site.js`：明暗模式與列印功能
 - `app.js`：目前的課程內容資料來源
-- `content/supplements.js`：18 週專屬自學導讀、圖表、推導例題與自我檢核
+- `content/supplements.js`：各主題圖表、推導例題與自我檢核
 - `content/fourth-edition.js`：第 4 版書目、章節摘要、週次對照與 MARIE 資料
 - `content/chapters.js`：完整章節教材、圖表、例題、練習詳解、術語與研究來源
-- `tools/build-pages.js`：從內容資料產生首頁與各週 HTML
+- `tools/build-pages.js`：從內容資料產生首頁與 13 個章節頁面
 - `tools/validate-content.js`：檢查圖表欄位、例題計算、頁面結構與內部連結
 
 ## 本機預覽
@@ -37,7 +36,7 @@ node tools/build-pages.js
 node tools/validate-content.js
 ```
 
-3. 檢查 `index.html` 與 `weeks/` 內頁是否更新。
+3. 檢查 `index.html` 與 `chapters/` 內頁是否更新。
 
 ## GitHub Pages 部署
 

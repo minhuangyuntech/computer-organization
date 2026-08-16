@@ -60,19 +60,15 @@
       <article class="chapter-overview-page">
       <nav class="breadcrumb" aria-label="麵包屑"><a href="../index.html">課程首頁</a><a href="../fourth-edition-map.html">第 4 版對照</a><span>第 12 章</span></nav>
       <header class="chapter-overview-hero">
-        <p class="eyebrow">Chapter 12 · Independent page</p>
+        <p class="eyebrow">Chapter 12</p>
         <h2>第 12 章<br>網路組織與架構</h2>
         <p class="chapter-english">Network Organization and Architecture</p>
         <p>從 OSI 與 TCP/IP 分層進入傳輸媒介、switch、bridge、gateway 與 router。網路分層再次呈現 interface 隱藏實作細節的抽象方法。</p>
       </header>
-      <section class="chapter-overview-focus">
-        <p class="eyebrow">Chapter guide</p>
-        <h3>本章內容</h3>
-        <p>本章直接整合核心概念、原創圖表、推導、例題與自我檢核。所有內容都在同一章內連續閱讀，不需要切換到另一套分類頁面。</p>
-      </section>
       <div class="chapter-integrated-reading"><section class="standalone-chapter-content">
-    <section class="chapter-topic-block"><p class="eyebrow">Core topic 01</p><h2>分層與封裝</h2><p>網路分層把複雜通訊拆成具有明確介面的服務。應用資料向下傳遞時，各層加入自己的控制資訊；接收端再依相反順序解除封裝。這和 ISA 隱藏微架構細節的做法相同：上層依賴介面，不必知道所有實作。</p></section><section class="chapter-topic-block"><p class="eyebrow">Core topic 02</p><h2>交換與路由</h2><p>交換器主要依區域網路中的鏈路層位址轉送 frame，路由器則依網路層位址在不同網路間選擇 packet 路徑。兩者都使用表格進行查找，但所處層次、位址語意與更新機制不同。</p></section><section class="chapter-topic-block"><p class="eyebrow">Core topic 03</p><h2>延遲、頻寬與佇列</h2><p>總通訊時間不能只看鏈路頻寬。傳播延遲、傳輸延遲、處理延遲與排隊延遲會共同決定完成時間；當封包到達率接近服務率時，排隊延遲會快速增加。</p></section>
-    <section class="self-check chapter-topic-check"><h2>自我檢核</h2><details><summary>1. 為何分層介面能降低系統複雜度？</summary><p>每一層只承諾可觀察的服務與資料格式，下層實作可以改變而不迫使所有上層一起修改。</p></details><details><summary>2. 頻寬提高是否必然等比例縮短回應時間？</summary><p>不一定。若主要成本來自傳播、處理或排隊延遲，只提高傳輸頻寬的改善幅度會受到限制。</p></details></section>
+    <section class="chapter-topic-block"><p class="eyebrow">Core topic 01</p><h2>分層、服務與封裝</h2><p>網路分層把複雜通訊拆成具有明確介面的服務。應用資料向下傳遞時，各層加入自己的控制資訊；接收端再依相反順序解除封裝。這和 ISA 隱藏微架構細節的做法相同：上層依賴介面，不必知道所有實作。</p><p>封裝後的每個 header 只對相應層次有意義。鏈路層處理同一鏈路上的 frame 傳送，網路層處理跨網路的 packet 轉送，傳輸層則在端點程序間提供可靠 byte stream 或 message delivery。除錯時必須先辨認問題發生在哪一層。</p></section><section class="chapter-topic-block"><p class="eyebrow">Core topic 02</p><h2>交換、路由與位址</h2><p>交換器主要依區域網路中的鏈路層位址轉送 frame，路由器則依網路層位址在不同網路間選擇 packet 路徑。兩者都使用表格進行查找，但所處層次、位址語意與更新機制不同。</p><p>交換器學習來源 MAC address 與輸入埠的關係；路由器使用 prefix matching 選擇下一跳。IP address 描述可路由的網路位置，port number 則辨認同一主機上的程序端點。完整連線因此需要同時考慮來源與目的 IP、傳輸協定及來源與目的 port。</p></section><section class="chapter-topic-block"><p class="eyebrow">Core topic 03</p><h2>延遲、頻寬與頻寬延遲積</h2><p>總通訊時間不能只看鏈路頻寬。傳播延遲、傳輸延遲、處理延遲與排隊延遲會共同決定完成時間。長度 L bit 的封包通過速率 R bit/s 的鏈路，傳輸延遲為 L/R；傳播延遲則約為距離除以訊號在媒介中的傳播速度。</p><p>頻寬延遲積等於 bandwidth 乘以 round-trip time，代表在收到確認前可同時位於路徑上的資料量。高速長距離連線若 window 太小，發送端會在鏈路尚可承載更多資料時停下等待，因此實際吞吐量仍可能遠低於額定頻寬。</p></section><section class="chapter-topic-block"><p class="eyebrow">Core topic 04</p><h2>可靠傳輸、錯誤偵測與重傳</h2><p>鏈路可能遺失、重複、毀損或重新排序封包。Checksum 或 CRC 用來偵測資料是否改變；sequence number 辨認順序與重複；acknowledgment 與 timeout 則讓發送端決定何時重傳。這些機制共同把不可靠通道轉換成較可靠的端到端服務。</p><p>Timeout 太短會對只是延遲的封包進行不必要重傳，太長則讓真正遺失的復原變慢。可靠協定因而需要根據觀察到的 round-trip time 調整估計，並使用 duplicate acknowledgment 等訊號加快部分遺失的偵測。</p></section><section class="chapter-topic-block"><p class="eyebrow">Core topic 05</p><h2>壅塞、流量控制與端到端效能</h2><p>Flow control 保護接收端，避免發送速度超過接收 buffer 的處理能力；congestion control 保護網路路徑，避免過多流量讓中間佇列溢位。兩者限制來源不同，卻都會改變發送端當下允許傳送的資料量。</p><p>當封包到達率接近服務率時，排隊延遲會快速增加，buffer 填滿後則開始丟包。端到端效能要同時檢查應用產生資料的速度、傳輸視窗、每段鏈路容量、router queue、丟包重傳與接收端處理速度；最慢或最受限的一段形成瓶頸。</p></section>
+    <section class="self-check chapter-topic-check"><h2>自我檢核</h2><details><summary>1. 為何分層介面能降低系統複雜度？</summary><p>每一層只承諾可觀察的服務與資料格式，下層實作可以改變而不迫使所有上層一起修改。</p></details><details><summary>2. 1500-byte frame 通過 100 Mbit/s 鏈路的傳輸延遲是多少？</summary><p>1500 × 8 / 100,000,000 = 120 microseconds。這不包含傳播、排隊與處理延遲。</p></details><details><summary>3. 頻寬提高是否必然等比例縮短回應時間？</summary><p>不一定。若主要成本來自傳播、處理或排隊延遲，只提高傳輸頻寬的改善幅度會受到限制。</p></details><details><summary>4. Flow control 與 congestion control 分別保護誰？</summary><p>Flow control 保護接收端不被淹沒；congestion control 保護共享網路路徑不因過載而排隊或丟包。</p></details></section>
+    <section class="chapter-sources"><h2>技術來源與延伸閱讀</h2><ol><li><a href="https://www.rfc-editor.org/rfc/rfc9293.html" rel="noreferrer">RFC 9293 · Transmission Control Protocol</a></li><li><a href="https://www.rfc-editor.org/info/rfc5681/" rel="noreferrer">RFC 5681 · TCP Congestion Control</a></li><li><a href="https://www.rfc-editor.org/info/rfc2914/" rel="noreferrer">RFC 2914 · Congestion Control Principles</a></li></ol></section>
   </section></div>
       <nav class="chapter-adjacent" aria-label="相鄰章節">
         <a href="chapter-11.html"><span>第 11 章</span><strong>效能量測與分析</strong></a><a href="chapter-13.html"><span>第 13 章</span><strong>儲存系統與介面選論</strong></a>
@@ -81,7 +77,7 @@
     </section>
   </main>
   <footer class="footer">
-    <p>計算機組織線上講義 · 多頁式靜態網站 · 適用 GitHub Pages</p>
+    <p>計算機組織 · Computer Organization · YunTech 115-1</p>
   </footer>
   <script src="../site.js"></script>
 </body>

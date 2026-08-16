@@ -128,11 +128,13 @@ const chapterFiles = fourthEdition.chapters.map((chapter) => path.join(root, "ch
 const detailedChapterFiles = chapterDetails.map((chapter) => path.join(root, "chapters", `chapter-${String(chapter.chapter).padStart(2, "0")}.html`));
 const htmlFiles = [homepage, editionPage, ...chapterFiles];
 const prohibited = /教學建議|授課|請學生|讓學生|給學生|要求學生/;
+const siteGuidance = /獨立頁面|獨立 URL|多頁式靜態網站|適用 GitHub Pages|不需要切換|如何使用|使用方法|網站特色|內容範圍與編寫原則|本站文字|本站只使用/;
 const visibleWeekClassification = /Week\s*\d|第\s*\d+\s*週|週次|weeks\//;
 
 for (const file of htmlFiles) {
   const html = fs.readFileSync(file, "utf8");
   assert(!prohibited.test(html), `Teacher-facing wording found in ${path.relative(root, file)}`);
+  assert(!siteGuidance.test(html), `Website usage guidance found in ${path.relative(root, file)}`);
   assert(html.includes("class=\"chapter-nav\""), `Missing chapter navigation in ${path.relative(root, file)}`);
   assert((html.match(/class=\"chapter-nav-link/g) || []).length === 13, `Chapter navigation must contain 13 chapters in ${path.relative(root, file)}`);
   assert(!html.includes("<aside"), `Sidebar markup found in ${path.relative(root, file)}`);
@@ -148,6 +150,7 @@ for (const file of htmlFiles) {
     assert(html.includes("class=\"chapter-overview-page\""), `Missing independent chapter overview in ${path.relative(root, file)}`);
     assert((html.match(/class=\"chapter-nav-link active\"/g) || []).length === 1, `Chapter overview must activate exactly one chapter navigation item in ${path.relative(root, file)}`);
     assert(html.includes("class=\"chapter-topic\"") || html.includes("class=\"standalone-chapter-content\""), `Missing integrated chapter content in ${path.relative(root, file)}`);
+    assert(!html.includes("class=\"chapter-overview-focus\""), `Website guide block found in ${path.relative(root, file)}`);
     assert(!visibleWeekClassification.test(html), `Week classification found outside the introduction in ${path.relative(root, file)}`);
   }
 
@@ -161,10 +164,12 @@ for (const file of htmlFiles) {
 
 const homepageHtml = fs.readFileSync(homepage, "utf8");
 const editionHtml = fs.readFileSync(editionPage, "utf8");
-assert(homepageHtml.includes("第 4 版（2015，ISBN 9781284033144）"), "Homepage fourth edition metadata is missing");
+assert(editionHtml.includes("2015，ISBN 9781284033144"), "Fourth edition metadata is missing");
 assert(!homepageHtml.includes("第六版"), "Homepage still references the sixth edition");
 assert(homepageHtml.includes("class=\"modern-cpu-diagram\""), "Homepage modern CPU diagram is missing");
 assert(!homepageHtml.includes("class=\"chip-visual\""), "Homepage still contains the legacy CPU image");
+assert(!homepageHtml.includes("class=\"course-facts\""), "Homepage still contains administrative course facts");
+assert(!homepageHtml.includes("class=\"reference-note\""), "Homepage still contains editorial website guidance");
 assert((homepageHtml.match(/class=\"home-chapter-card\"/g) || []).length === 13, "Homepage must show 13 chapter entry cards");
 assert(!homepageHtml.includes("class=\"week-card\""), "Homepage still contains week cards");
 assert(!visibleWeekClassification.test(homepageHtml), "Homepage still exposes week classification");
@@ -182,6 +187,15 @@ assert(!visibleWeekClassification.test(editionHtml), "Fourth edition page still 
 assert((editionHtml.match(/class=\"chapter-card\"/g) || []).length === 13, "Fourth edition page must show 13 chapter cards");
 assert((editionHtml.match(/<details>/g) || []).length === 3, "Fourth edition page must show three MARIE self-checks");
 assert(chapterFiles.every((file) => fs.existsSync(file)), "Every chapter navigation item needs an independent HTML page");
+for (const chapterNumber of [7, 10, 12, 13]) {
+  const chapterHtml = fs.readFileSync(chapterFiles[chapterNumber - 1], "utf8");
+  const standaloneStart = chapterHtml.indexOf("class=\"standalone-chapter-content\"");
+  const standaloneEnd = chapterHtml.indexOf("class=\"chapter-adjacent\"", standaloneStart);
+  const standaloneHtml = chapterHtml.slice(standaloneStart, standaloneEnd);
+  assert(standaloneStart >= 0, `Chapter ${chapterNumber} needs extended standalone content`);
+  assert((standaloneHtml.match(/class=\"chapter-topic-block\"/g) || []).length >= 5, `Chapter ${chapterNumber} needs at least five extended core topics`);
+  assert((standaloneHtml.match(/<details>/g) || []).length >= 4, `Chapter ${chapterNumber} needs at least four extended self-checks`);
+}
 const introductionHtml = fs.readFileSync(chapterFiles[0], "utf8");
 assert(introductionHtml.includes("class=\"chapter-schedule\""), "Introduction must contain the course schedule");
 assert((introductionHtml.match(/<tr><th>第 \d+ 週<\/th>/g) || []).length === 18, "Introduction course schedule must contain 18 weeks");

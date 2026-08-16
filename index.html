@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>計算機組織線上講義 | 115-1 YunTech</title>
-  <meta name="description" content="國立雲林科技大學 115 學年度第 1 學期計算機組織多頁式線上講義。">
+  <meta name="description" content="國立雲林科技大學 115 學年度第 1 學期計算機組織完整章節教材。">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23006d77'/%3E%3Cpath d='M14 18h36v28H14z' fill='%23f6bd60' stroke='%2320231f' stroke-width='4'/%3E%3Cpath d='M22 28h20M22 36h14' stroke='%2320231f' stroke-width='4'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -61,7 +61,7 @@
         <header class="cpu-hero-copy">
           <p class="eyebrow">從程式到硬體的可追蹤路徑</p>
           <h2>看懂一行指令如何穿過暫存器、ALU、Pipeline 與 Cache</h2>
-          <p>本講義以 13 個章節建立完整學習路徑。每章都有獨立 URL，可依序閱讀、反覆推導、完成練習，並可列印成 PDF 離線使用。</p>
+          <p>程式執行始於指令取出與解碼，經過暫存器重新命名、排程與執行單元，再由快取與主記憶體供應資料。ISA、pipeline、hazard、CPI 與 memory hierarchy 都能沿著這條路徑放入同一個分析模型。</p>
         </header>
         <figure class="modern-cpu-diagram">
           <div class="diagram-heading">
@@ -117,17 +117,10 @@
           <figcaption>這是用於建立心智模型的通用示意圖，不代表特定晶片的實體 floorplan。不同處理器會改變管線寬度、佇列大小、快取層級與共享方式；圖中的 front end、out-of-order execution 與記憶體階層已依 <a href="https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html" rel="noreferrer">Intel 官方架構手冊</a>、<a href="https://developer.arm.com/community/arm-community-blogs/b/announcements/posts/cortex-x4-cpu-performance" rel="noreferrer">Arm Cortex-X4 說明</a>與 <a href="https://www.amd.com/en/technologies/zen-core.html" rel="noreferrer">AMD Zen 核心資料</a>交叉核對。</figcaption>
         </figure>
       </section>
-      <section class="course-facts" aria-label="課程資訊">
-        <div><span>班級</span><strong>四電子三</strong></div>
-        <div><span>時間</span><strong>週一 BCD</strong></div>
-        <div><span>教室</span><strong>ES004</strong></div>
-        <div><span>學分</span><strong>3-0-3</strong></div>
-        <div><span>評量</span><strong>平時 30% · 期中 30% · 期末專題 40%</strong></div>
-      </section>
       <section class="chapter-index" id="chapters">
         <header class="index-heading">
           <div><p class="eyebrow">Chapter-based materials</p><h2>13 章教材</h2></div>
-          <p>章次依《The Essentials of Computer Organization and Architecture》第 4 版編排；此處與頂部 CH 01–13 導覽前往完全相同的章節頁。</p>
+          <p>章次依《The Essentials of Computer Organization and Architecture》第 4 版編排，從資料表示、數位邏輯與 ISA，逐步進入處理器、記憶體、I/O、效能與系統介面。</p>
         </header>
         <div class="home-chapter-grid">
     <a class="home-chapter-card" href="chapters/chapter-01.html">
@@ -209,17 +202,11 @@
       <small>Selected Storage Systems and Interfaces</small>
     </a></div>
       </section>
-      <section class="reference-note">
-        <p class="eyebrow">Independent study edition</p>
-        <h2>內容範圍與編寫原則</h2>
-        <p>本站依課程大綱撰寫，並對照 Linda Null 與 Julia Lobur《The Essentials of Computer Organization and Architecture》第 4 版（2015，ISBN 9781284033144）的章節架構。所有中文敘述、例題、推導與圖表均為本站獨立編寫，不重製書中文字或原圖。</p>
-        <div class="reference-actions"><a href="#chapters">前往 13 章教材</a><a href="fourth-edition-map.html">第 4 版章節對照</a><a href="https://samples.jblearning.com/9781284123036/Transition_Guide_FinalforPubHub.pdf" rel="noreferrer">出版社章節資料</a></div>
-      </section>
 
     </section>
   </main>
   <footer class="footer">
-    <p>計算機組織線上講義 · 多頁式靜態網站 · 適用 GitHub Pages</p>
+    <p>計算機組織 · Computer Organization · YunTech 115-1</p>
   </footer>
   <script src="site.js"></script>
 </body>
