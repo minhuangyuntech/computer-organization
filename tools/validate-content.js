@@ -33,7 +33,7 @@ assert(fourthEdition.chapters.length === 13, "Fourth edition must contain 13 map
 assert(new Set(fourthEdition.chapters.map((item) => item.chapter)).size === 13, "Fourth edition chapter numbers must be unique");
 assert(fourthEdition.weekMap.length === 18, "Every course week needs a fourth edition mapping");
 assert(new Set(fourthEdition.weekMap.map((item) => item.week)).size === 18, "Fourth edition week mappings must be unique");
-assert(chapterDetails.length >= 2, "At least two detailed self-study chapters are required");
+assert(chapterDetails.length >= 3, "At least three detailed self-study chapters are required");
 assert(new Set(chapterDetails.map((item) => item.chapter)).size === chapterDetails.length, "Detailed chapter numbers must be unique");
 
 for (const chapter of chapterDetails) {
@@ -47,6 +47,7 @@ for (const chapter of chapterDetails) {
   assert(chapter.workedExamples.every((item) => item.steps.length >= 5), `Chapter ${chapter.chapter} worked examples need at least five steps`);
   assert(chapter.misconceptions.length >= 5, `Chapter ${chapter.chapter} needs at least five misconception corrections`);
   assert(chapter.exercises.length >= 10, `Chapter ${chapter.chapter} needs at least ten exercises with solutions`);
+  assert(chapter.exercises.every((item) => item.question && item.question.length >= 12), `Chapter ${chapter.chapter} exercise questions are missing or too short`);
   assert(chapter.exercises.every((item) => item.solution.length >= 2), `Chapter ${chapter.chapter} exercise solutions are incomplete`);
   assert(chapter.glossary.length >= 12, `Chapter ${chapter.chapter} glossary is too short`);
   assert(chapter.sources.length >= 4, `Chapter ${chapter.chapter} needs at least four authoritative sources`);
@@ -65,6 +66,14 @@ assert(chapterTwo.sections.filter((item) => item.figure).length >= 9, "Chapter 2
 assert(chapterTwo.workedExamples.length >= 5, "Chapter 2 needs at least five worked examples");
 assert(chapterTwo.exercises.length >= 13, "Chapter 2 needs at least thirteen exercises with solutions");
 assert(chapterTwo.sources.length >= 8, "Chapter 2 needs broad authoritative source coverage");
+
+const chapterThree = chapterDetails.find((chapter) => chapter.chapter === 3);
+assert(chapterThree, "Chapter 3 detailed digital-logic material is missing");
+assert(chapterThree.sections.length >= 10, "Chapter 3 needs at least ten complete concept sections");
+assert(chapterThree.sections.filter((item) => item.figure).length >= 9, "Chapter 3 needs at least nine verifiable diagrams");
+assert(chapterThree.workedExamples.length >= 5, "Chapter 3 needs at least five worked examples");
+assert(chapterThree.exercises.length >= 13, "Chapter 3 needs at least thirteen exercises with solutions");
+assert(chapterThree.sources.length >= 8, "Chapter 3 needs broad authoritative source coverage");
 
 for (const mapping of fourthEdition.weekMap) {
   assert(mapping.chapters.length >= 1, `Week ${mapping.week} needs at least one fourth edition chapter`);
@@ -140,6 +149,22 @@ binary32.writeFloatBE(13.25, 0);
 assert(binary32.readUInt32BE(0) === 0x41540000, "Chapter 2 IEEE 754 encoding for 13.25 failed");
 assert(Buffer.from("中", "utf8").toString("hex") === "e4b8ad", "Chapter 2 UTF-8 encoding for U+4E2D failed");
 assert((2 ** 3) < (8 + 3 + 1) && (2 ** 4) >= (8 + 4 + 1), "Chapter 2 Hamming parity-bit bound failed");
+
+for (let inputs = 0; inputs < 8; inputs += 1) {
+  const a = (inputs >>> 2) & 1;
+  const b = (inputs >>> 1) & 1;
+  const c = inputs & 1;
+  const majority = Number(a + b + c >= 2);
+  assert(Number(Boolean((a && b) || (a && c) || (b && c))) === majority, "Chapter 3 majority simplification failed");
+  assert((a ^ b ^ c) === ((a + b + c) & 1), "Chapter 3 full-adder sum failed");
+  assert(majority === Number(a + b + c >= 2), "Chapter 3 full-adder carry failed");
+}
+assert(0b1011 + 0b0110 === 0b10001, "Chapter 3 ripple-carry example failed");
+const chapterThreePeriodPs = 80 + 620 + 100 + 50;
+assert(chapterThreePeriodPs === 850, "Chapter 3 setup period failed");
+assert(Math.abs((1e3 / chapterThreePeriodPs) - 1.1764705882352942) < 1e-12, "Chapter 3 maximum frequency failed");
+assert((60 + 40 - 70) === 30, "Chapter 3 hold slack failed");
+assert(Math.ceil(Math.log2(5)) === 3, "Chapter 3 FSM state encoding failed");
 
 const homepage = path.join(root, "index.html");
 const editionPage = path.join(root, "fourth-edition-map.html");

@@ -50,4 +50,5 @@ Repository 根目錄就是這個 `lectures/` 資料夾。GitHub Pages 目前從 
 
 ## 修訂紀錄
 
+- 2026-08-17：完成第 3 章「布林代數、數位邏輯與同步狀態」深度教材，新增 10 個概念單元、10 幅原創圖表、5 個逐步例題、14 題分級練習、20 個術語，以及 MIT、Berkeley、IEEE、Intel／Altera 權威來源；另加入 majority、full adder、timing 與 FSM 可重算驗證。
 - 2026-08-16：完成第 2 章「位元模式、數值與文字的表示」深度教材，新增 10 個概念單元、5 個逐步例題、13 題分級練習、圖表、術語與 IEEE、Unicode、RFC、MIT、Berkeley、RISC-V、NIST 一手來源。

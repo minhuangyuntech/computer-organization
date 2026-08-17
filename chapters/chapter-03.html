@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>第 3 章 布林代數與數位邏輯 | 計算機組織</title>
-  <meta name="description" content="計算機組織第 3 章 布林代數與數位邏輯完整章節教材。">
+  <title>第 3 章 布林代數、數位邏輯與同步狀態 | 計算機組織完整自學教材</title>
+  <meta name="description" content="計算機組織第 3 章完整自學教材：布林代數、數位邏輯與同步狀態，包含推導、圖表、例題、練習與詳解。">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23006d77'/%3E%3Cpath d='M14 18h36v28H14z' fill='%23f6bd60' stroke='%2320231f' stroke-width='4'/%3E%3Cpath d='M22 28h20M22 36h14' stroke='%2320231f' stroke-width='4'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="../styles.css">
 </head>
@@ -57,123 +57,190 @@
   </nav>
   <main class="page-main">
     <section id="content" class="content" tabindex="-1">
-      <article class="chapter-overview-page">
-      <nav class="breadcrumb" aria-label="麵包屑"><a href="../index.html">課程首頁</a><a href="../fourth-edition-map.html">第 4 版對照</a><span>第 3 章</span></nav>
-      <header class="chapter-overview-hero">
-        <p class="eyebrow">Chapter 3</p>
-        <h2>第 3 章<br>布林代數與數位邏輯</h2>
-        <p class="chapter-english">Boolean Algebra and Digital Logic</p>
-        <p>由布林函數、邏輯閘與化簡進入組合電路和循序電路。資料路徑中的加法器與多工器屬於組合邏輯，暫存器與狀態機則依時脈保存狀態。</p>
-      </header>
-      <div class="chapter-integrated-reading"><section class="chapter-topic" id="topic-1">
-    <header class="chapter-topic-head">
-      <p class="eyebrow">Core topic 01</p>
-      <h2>整數算術運算與浮點數表示法</h2>
-      <p>固定寬度整數追求精確但範圍有限；浮點數以有限有效位數換取極大動態範圍。理解兩者的錯誤條件，才能知道硬體旗標與程式數值何時可信。</p>
-    </header>
-    <figure class="learning-figure">
-    <h4>IEEE 754 single precision</h4>
-    <div class="bit-diagram" style="--total-bits:32"><div class="bit-field" style="--field-bits:1"><strong>Sign</strong><span>1 bit</span><small>正負</small></div><div class="bit-field" style="--field-bits:8"><strong>Exponent</strong><span>8 bits</span><small>bias 127</small></div><div class="bit-field" style="--field-bits:23"><strong>Fraction</strong><span>23 bits</span><small>有效位數</small></div></div>
-    <figcaption>Normalized value = (-1)^sign × 1.fraction × 2^(exponent-127)。</figcaption>
+      <article class="chapter-page">
+        <nav class="breadcrumb" aria-label="麵包屑"><a href="../index.html">課程首頁</a><a href="../fourth-edition-map.html">第 4 版對照</a><span>第 3 章</span></nav>
+        <header class="chapter-hero">
+          <p class="eyebrow">Chapter 3 · Revised 2026-08-17</p>
+          <h2>第 3 章<br>布林代數、數位邏輯與同步狀態</h2>
+          <p class="chapter-english">Boolean Algebra, Digital Logic, and Synchronous State</p>
+          <p>處理器最終必須把指令語意化成可實作的位元運算與狀態轉移。組合邏輯回答『目前輸入決定什麼輸出』，循序邏輯回答『系統如何記住過去並在時脈邊緣更新』；布林代數、真值表與有限狀態機則是兩者之間可驗證的描述語言。本章從實際電壓的數位抽象開始，依序推導 canonical form、化簡、multiplexer、decoder、full adder、register、時序限制與 FSM，最後連到 ALU 與 RTL。每一個方程式都能回到真值表，每一條同步路徑都能回到 setup 與 hold 不等式，因此圖形、代數與時間三種證據可以互相核對。</p>
+          <dl class="chapter-meta"><div><dt>教材對照</dt><dd>第 3 章 Boolean Algebra and Digital Logic</dd></div><div><dt>預估時間</dt><dd>約 150–180 分鐘</dd></div><div><dt>更新日期</dt><dd>2026-08-17</dd></div></dl>
+        </header>
+        <section class="chapter-outcomes">
+          <h3>完成本章後應能做到</h3>
+          <ol><li>能區分實際電壓、邏輯準位與抽象 bit，並說明 noise margin 與 propagation delay 的作用。</li><li>能由文字規格建立真值表，再寫出 canonical SOP 或 POS，並以布林定律或 Karnaugh map 化簡。</li><li>能用 multiplexer、decoder、comparator 與 full adder 組成較大的組合電路。</li><li>能由 full-adder 方程式推導 ripple-carry adder 的功能與 critical path。</li><li>能區分 latch、edge-triggered register 與 combinational feedback，並追蹤同步狀態更新。</li><li>能計算 setup slack、hold slack、critical-path delay 與最高時脈頻率。</li><li>能把序列規格轉成 Moore 或 Mealy FSM 的狀態、轉移、輸出與編碼。</li><li>能說明 clock-domain crossing 的亞穩態風險，以及 RTL、synthesis 與 timing verification 的關係。</li></ol>
+        </section>
+
+        <nav class="chapter-toc" aria-label="本章目錄"><h3>本章路徑</h3><a href="#section-1">1. 從連續電壓建立 0 與 1 的數位抽象</a><a href="#section-2">2. Gate、真值表與 Boolean function</a><a href="#section-3">3. 布林代數：等價變形必須保持每列輸出</a><a href="#section-4">4. 從真值表到 canonical SOP、POS 與 Karnaugh map</a><a href="#section-5">5. Multiplexer、decoder 與 comparator 是可重用的組合模組</a><a href="#section-6">6. Half adder、full adder 與 ALU slice</a><a href="#section-7">7. State、latch 與 edge-triggered register</a><a href="#section-8">8. Setup、hold、critical path 與最高時脈</a><a href="#section-9">9. 有限狀態機：把時間行為化成有限圖</a><a href="#section-10">10. 亞穩態、clock-domain crossing 與 RTL 驗證</a><a href="#worked-examples">逐步例題</a><a href="#exercises">分級練習與詳解</a><a href="#glossary">術語表</a></nav>
+        <div class="chapter-reading"><section class="chapter-section" id="section-1">
+      <h3>1. 從連續電壓建立 0 與 1 的數位抽象</h3>
+      <p>導線上的訊號是連續電壓，不是物理世界中天然存在的 0 或 1。數位電路把一段低電壓範圍解讀為邏輯 0，把一段高電壓範圍解讀為邏輯 1，中間區域則不保證解讀結果。只要前一級輸出的保證範圍比下一級輸入的判定範圍更嚴格，兩級之間就保留可容忍雜訊的空間，稱為 noise margin。</p><p>數位抽象的力量在於把振幅細節壓縮成有限符號，讓後續推理只處理 Boolean value。它不是宣稱電壓永遠完美，而是訂出一份 electrical contract：合法輸入必須落在可辨識區域，合法輸出必須提供足夠的高低電位，負載與扇出也不能超過元件規格。若訊號停在未定義區，Boolean 模型便失去保證。</p><p>邏輯閘也不會瞬間反應。輸入改變後，輸出要經過 propagation delay 才穩定；不同路徑延遲不一，短暫的 glitch 即使最後真值正確仍可能出現。同步系統以 register 隔開組合邏輯，要求資料在取樣邊緣前後穩定，將連續時間問題收斂成可以檢查的 timing constraints。</p>
+      <figure class="learning-figure">
+    <h4>電壓、邏輯準位與保證</h4>
+    <div class="diagram-table-wrap"><table class="diagram-table"><thead><tr><th>觀察層次</th><th>描述</th><th>必須檢查的限制</th></tr></thead><tbody><tr><td>電路</td><td>連續電壓、電流、電容</td><td>threshold、load、noise、delay</td></tr><tr><td>邏輯</td><td>0、1，以及模擬中的 unknown</td><td>合法準位與穩定時間</td></tr><tr><td>系統</td><td>word、instruction、state</td><td>功能與 clock-to-clock 行為</td></tr></tbody></table></div>
+    <figcaption>Boolean 值是建立在電氣保證上的抽象；延遲與未定義區域沒有消失，只是由介面規則集中管理。</figcaption>
   </figure>
-    <section class="chapter-topic-block">
-      <h3>學習成果</h3>
-      <ul><li>理解加減乘除的硬體概念。</li><li>能判斷 signed overflow。</li><li>理解 IEEE 754 floating-point 的 sign/exponent/fraction。</li></ul>
-    </section>
-    <section class="chapter-topic-block">
-      <h3>核心概念</h3>
-      <ul class="concept-list"><li><strong>加減法器：</strong>Two&#039;s complement 讓加法與減法可用同一加法器完成。減法 A - B 可轉成 A + (~B + 1)。</li><li><strong>乘除法：</strong>硬體乘法可視為 shift-and-add；除法可視為 shift-and-subtract。速度與面積常需折衷，因此高效處理器會使用更複雜的乘法器。</li><li><strong>IEEE 754：</strong>Single precision 由 1-bit sign、8-bit exponent、23-bit fraction 組成。Exponent 使用 bias 表示，能同時表示極大與極小數。</li><li><strong>浮點誤差：</strong>浮點數不是實數；許多十進位小數無法用有限二進位精確表示。運算順序可能改變 rounding error。</li></ul>
-    </section>
-    <section class="chapter-topic-block">
-      <h3>概念推導</h3>
-      <div class="deep-dive-grid"><section class="deep-dive"><h4>Adder、Carry 與 Overflow</h4><p>A-B 可由 A+(~B)+1 完成，因此加法器只需用控制訊號決定是否反相 B 並設定初始 carry-in。Unsigned overflow 看最高位 carry out；signed overflow 看同號 operands 是否產生異號結果。</p><p>乘法的完整結果可能需要兩倍位元寬度。若只保留低 n bits，程式必須知道高位是否被捨棄；除法則同時產生 quotient 與 remainder。</p></section><section class="deep-dive"><h4>IEEE 754 的範圍與精度</h4><p>Normalized single precision 的值為 (-1)^s × 1.f × 2^(E-127)。隱藏的 leading 1 不佔 fraction 欄位，因此 23-bit fraction 提供 24 bits 的有效精度。</p><p>Exponent 全 0 用於 zero 與 subnormal；全 1 用於 infinity 與 NaN。浮點加法前必須對齊 exponent，較小數的 significand 右移後可能失去低位，這是吸收與 rounding error 的來源。</p></section></div>
-    </section>
-    <section class="chapter-topic-block">
-      <h3>補充說明</h3>
-      <p>整數 overflow 是位元寬度有限造成的結果。硬體可以用 operand sign 與 result sign 判斷加法 overflow。</p><p>浮點數用科學記號的想法換取範圍，但犧牲精確度。越大的數，相鄰可表示數之間的間距也越大。</p><p>學會辨認 special values：zero、subnormal、infinity、NaN。這些設計讓浮點運算能處理 underflow、overflow 與未定義結果。</p>
-    </section>
-    <section class="worked-example chapter-topic-worked">
-      <p class="eyebrow">Worked example</p>
-      <h3>解讀 0xC1200000</h3>
-      <p>將 IEEE 754 single pattern 0xC1200000 轉為十進位。</p>
-      <ol><li>最高位 sign=1，所以結果為負。</li><li>Exponent bits 對應 130，因此實際 exponent = 130-127 = 3。</li><li>Fraction 形成 significand 1.25。</li><li>值 = -1.25×2^3 = -10.0。</li></ol>
-      <p class="worked-result"><strong>結論：</strong>欄位拆解順序應固定為 sign、biased exponent、significand，最後才合成數值。</p>
-    </section>
-    <section class="chapter-topic-block">
-      <h3>程式與計算例題</h3>
-      <h4>浮點格式拆解</h4>
-      <pre><code>IEEE 754 single:
-value = (-1)^sign × 1.fraction × 2^(exponent - 127)
-0 10000001 01000000000000000000000
-= +1.25 × 2^2 = 5.0</code></pre>
-      <p>Normalized number 的 leading 1 不儲存在 fraction 中，稱為 hidden bit。</p>
-    </section>
-    <section class="misconception-panel chapter-topic-misconceptions">
-      <h3>常見誤解</h3>
-      <ul><li>把 carry out 當 signed overflow。</li><li>忘記 normalized number 的 hidden 1。</li><li>假設浮點加法符合實數的結合律。</li></ul>
-    </section>
-    <section class="self-check chapter-topic-check">
-      <h3>自我檢核</h3>
-      <details><summary>1. 兩個正的 8-bit signed 數相加得到負數，發生什麼事？</summary><p>發生 signed overflow；真實數學結果超過 127。</p></details><details><summary>2. Exponent 全 1 且 fraction 非 0 代表什麼？</summary><p>代表 NaN；若 fraction 為 0 則是正或負 infinity。</p></details>
-    </section>
-  </section><section class="chapter-topic" id="topic-2">
-    <header class="chapter-topic-head">
-      <p class="eyebrow">Core topic 02</p>
-      <h2>CPU 資料路徑與單週期處理器架構</h2>
-      <p>單週期 datapath 是一張因果圖：指令欄位提供位址與控制輸入，資料穿過 register file、ALU 與 memory，mux 在每個分岔點選擇正確來源。追蹤一條指令時，只保留它真正使用的路徑。</p>
-    </header>
-    <figure class="learning-figure">
-    <h4>lw 在單週期資料路徑中的主路徑</h4>
-    <div class="flow-diagram"><span class="flow-node">PC</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Instruction Memory</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Register File</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">ALU 算位址</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Data Memory</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">MemtoReg Mux</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Register File 寫回</span></div>
-    <figcaption>PC+4 與控制訊號在旁路同步產生；此圖只畫 lw 的資料主路徑。</figcaption>
+      <p class="source-ref">資料基礎：<a href="#source-S1">S1</a>、<a href="#source-S2">S2</a></p>
+    </section><section class="chapter-section" id="section-2">
+      <h3>2. Gate、真值表與 Boolean function</h3>
+      <p>Boolean variable 只有 0 與 1。NOT 取反單一輸入；AND 只有在所有輸入為 1 時輸出 1；OR 只要至少一個輸入為 1 就輸出 1；XOR 在輸入不同時輸出 1。NAND 與 NOR 是反相後的 AND、OR，兩者各自都是 functionally complete：只使用其中一種閘仍能表示任意 Boolean function。</p><p>n 個輸入共有 2^n 種 input combinations，因此完整真值表有 2^n 列。真值表不依賴方程式寫法，是功能規格最直接的基準。例如三輸入 majority function M(A,B,C) 在至少兩個輸入為 1 時輸出 1，八列中恰有 011、101、110、111 四列為 1。</p><p>Boolean 方程式要明確處理優先順序。常用慣例是 NOT 先於 AND，AND 先於 OR；但複雜式子應加括號。XOR 不是一般 OR：當 A=B=1 時，A+B 為 1，而 A XOR B 為 0。硬體中的加號、乘號常分別代表 OR、AND，不是整數算術。</p>
+      <figure class="learning-figure">
+    <h4>基本二輸入邏輯閘真值表</h4>
+    <div class="diagram-table-wrap"><table class="diagram-table"><thead><tr><th>A</th><th>B</th><th>A AND B</th><th>A OR B</th><th>A XOR B</th><th>A NAND B</th></tr></thead><tbody><tr><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td></tr><tr><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td></tr><tr><td>1</td><td>0</td><td>0</td><td>1</td><td>1</td><td>1</td></tr><tr><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>0</td></tr></tbody></table></div>
+    <figcaption>逐列比較可看出 OR 與 XOR 只在 A=B=1 時不同；NAND 是 AND 的逐列反相。</figcaption>
   </figure>
-    <section class="chapter-topic-block">
-      <h3>學習成果</h3>
-      <ul><li>能追蹤單週期 datapath。</li><li>理解 control signals 的角色。</li><li>分析單週期設計的 clock period 限制。</li></ul>
-    </section>
-    <section class="chapter-topic-block">
-      <h3>核心概念</h3>
-      <ul class="concept-list"><li><strong>Datapath：</strong>資料路徑是資料流經的硬體元件與連線，包括 PC、instruction memory、register file、ALU、data memory、sign extend、shift-left、adder 與 multiplexers。</li><li><strong>Control：</strong>控制單元根據 opcode/funct 產生控制訊號，決定 mux 選哪條路、ALU 做什麼、是否讀寫記憶體、是否寫暫存器與是否更新 PC 為 branch target。</li><li><strong>Single-cycle：</strong>每個指令都在一個 clock cycle 完成。設計簡單，但 clock period 必須長到能容納最慢指令，通常是 load 指令。</li></ul>
-    </section>
-    <section class="chapter-topic-block">
-      <h3>概念推導</h3>
-      <div class="deep-dive-grid"><section class="deep-dive"><h4>由 Register Transfer 描述指令</h4><p>R-format 可寫成 R[rd] ← R[rs] op R[rt]；lw 可寫成 R[rt] ← Mem[R[rs]+signext(imm)]；sw 則是 Mem[R[rs]+signext(imm)] ← R[rt]。這些描述直接指出來源、運算與目的。</p><p>Datapath 圖中的每個 mux 都對應一個選擇問題：目的 register 是 rt 或 rd？ALU operand 來自 rt 或 immediate？寫回資料來自 ALU 或 memory？下一個 PC 是 PC+4 或 branch target？</p></section><section class="deep-dive"><h4>關鍵路徑決定 Clock Period</h4><p>單週期設計要求最慢指令也在一個 cycle 內完成。lw 通常依序經 instruction memory、register read、ALU、data memory 與 write-back mux，因此比只經 ALU 的 add 更慢。</p><p>即使 add 提早得到結果，也必須等共同 cycle 結束才能開始下一指令。單週期的簡單控制換來較長 clock period，這正是 pipeline 要改善的限制。</p></section></div>
-    </section>
-    <section class="chapter-topic-block">
-      <h3>補充說明</h3>
-      <p>分析 datapath 最重要的是問三個問題：資料從哪裡來？經過哪些元件？最後寫到哪裡？控制訊號如何讓這條路成立？</p><p>`lw` 會使用 instruction memory、register file、ALU、data memory、write back mux。`add` 不用 data memory。`beq` 會使用 ALU 做比較並可能改變 PC。</p><p>單週期處理器不是高效設計，但它把每個指令需要的硬體路徑攤在一張圖上，因此很適合作為處理器資料路徑的入門模型。</p>
-    </section>
-    <section class="worked-example chapter-topic-worked">
-      <p class="eyebrow">Worked example</p>
-      <h3>為四種指令判斷關鍵控制</h3>
-      <p>比較 add、lw、sw、beq 的 RegWrite、MemRead、MemWrite 與 ALUSrc。</p>
-      <ol><li>add：RegWrite=1、ALUSrc=0，不讀寫 data memory。</li><li>lw：RegWrite=1、MemRead=1、ALUSrc=1，寫回來源為 memory。</li><li>sw：RegWrite=0、MemWrite=1、ALUSrc=1。</li><li>beq：RegWrite=0、ALUSrc=0，ALU 比較兩個 registers，Branch=1。</li></ol>
-      <p class="worked-result"><strong>結論：</strong>控制訊號不是獨立背誦項目，而是由 register-transfer 行為反推。</p>
-    </section>
-    <section class="chapter-topic-block">
-      <h3>程式與計算例題</h3>
-      <h4>`lw $t0, 8($s1)` 的路徑</h4>
-      <pre><code>1. Fetch instruction at PC
-2. Read $s1 from register file
-3. Sign-extend immediate 8
-4. ALU computes $s1 + 8
-5. Data memory reads effective address
-6. Write data back to $t0</code></pre>
-      <p>控制訊號包含 ALUSrc=1、MemRead=1、MemtoReg=1、RegWrite=1。</p>
-    </section>
-    <section class="misconception-panel chapter-topic-misconceptions">
-      <h3>常見誤解</h3>
-      <ul><li>把 instruction memory 與 data memory 的角色混在一起。</li><li>認為 sw 需要 RegWrite。</li><li>忽略 lw 的最長路徑對所有指令 clock period 的影響。</li></ul>
-    </section>
-    <section class="self-check chapter-topic-check">
-      <h3>自我檢核</h3>
-      <details><summary>1. 為何 lw 的 ALUSrc 通常為 1？</summary><p>ALU 第二個 operand 是 sign-extended immediate，用來和 base register 相加。</p></details><details><summary>2. beq 需要 data memory 嗎？</summary><p>不需要。它用 ALU 比較 registers，並以比較結果決定 PC。</p></details>
-    </section>
-  </section></div>
-      <nav class="chapter-adjacent" aria-label="相鄰章節">
-        <a href="chapter-02.html"><span>第 2 章</span><strong>計算機系統的資料表示</strong></a><a href="chapter-04.html"><span>第 4 章</span><strong>MARIE：簡易計算機導論</strong></a>
-      </nav>
-    </article>
+      <p class="source-ref">資料基礎：<a href="#source-S1">S1</a>、<a href="#source-S3">S3</a></p>
+    </section><section class="chapter-section" id="section-3">
+      <h3>3. 布林代數：等價變形必須保持每列輸出</h3>
+      <p>布林代數的化簡目標是找出功能相同、成本可能更低的表示式。identity、null、idempotent、complement、commutative、associative 與 distributive laws 都能逐列由真值表驗證。例如 A+AB=A(1+B)=A，稱為 absorption；它表示 AB 已被 A 覆蓋，可以移除。</p><p>De Morgan 定律連結反相與 AND/OR：NOT(A AND B) 等價於 NOT A OR NOT B；NOT(A OR B) 等價於 NOT A AND NOT B。推廣到多個變數時，反相穿過括號會交換 AND 與 OR，且每個 literal 都要反相。這是 NAND/NOR 實作與 active-low signal 分析的核心。</p><p>代數變形的安全檢查是比較原式與新式的所有輸入列。若變數很多，formal equivalence checker 以相同原理但更有效率地證明等價。化簡後閘數較少不一定延遲最低：fan-in、fan-out、wire delay、可用 cell 與 critical path 都會影響實際 implementation。</p>
+      <figure class="learning-figure">
+    <h4>常用布林定律速查</h4>
+    <div class="diagram-table-wrap"><table class="diagram-table"><thead><tr><th>定律</th><th>形式</th><th>直覺</th></tr></thead><tbody><tr><td>Identity</td><td>A+0=A；A·1=A</td><td>不加入有效條件</td></tr><tr><td>Complement</td><td>A+NOT A=1；A·NOT A=0</td><td>必有一真、不可同真</td></tr><tr><td>Idempotent</td><td>A+A=A；A·A=A</td><td>重複條件不改變結果</td></tr><tr><td>Absorption</td><td>A+A·B=A</td><td>較窄條件已被較寬條件包含</td></tr><tr><td>De Morgan</td><td>NOT(A·B)=NOT A+NOT B</td><td>反相穿越運算並交換 AND/OR</td></tr></tbody></table></div>
+    <figcaption>每一條定律都是 Boolean functions 的等價關係，可由真值表逐列驗證。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S1">S1</a>、<a href="#source-S3">S3</a></p>
+    </section><section class="chapter-section" id="section-4">
+      <h3>4. 從真值表到 canonical SOP、POS 與 Karnaugh map</h3>
+      <p>canonical sum of products（SOP）從輸出為 1 的每一列建立 minterm。該列中輸入為 1 就寫原變數，輸入為 0 就寫反相變數，再把 literals 以 AND 相連；最後將所有 minterms 以 OR 相連。每個 minterm 只會匹配一列，因此必然重建原真值表。</p><p>canonical product of sums（POS）則從輸出為 0 的每列建立 maxterm，再以 AND 連接。SOP 與 POS 都是機械化、可驗證的起點，通常不是最小實作。don&#039;t-care input 可以在化簡時視需要取 0 或 1，但前提是系統規格保證那些 combinations 永遠不發生，或其輸出確實無關。</p><p>Karnaugh map 以 Gray-code 順序排列 cells，使水平或垂直相鄰 cell 只差一個 bit。將 1 以 1、2、4、8 等二次方大小群組，群組內會變動的變數被消去；邊界彼此相鄰，群組也可以重疊。K-map 適合少量變數的人工化簡，較大設計通常交由 synthesis 工具最佳化。</p>
+      <figure class="learning-figure">
+    <h4>三輸入 majority 的 canonical SOP</h4>
+    <div class="diagram-table-wrap"><table class="diagram-table"><thead><tr><th>A B C</th><th>M</th><th>輸出為 1 時的 minterm</th></tr></thead><tbody><tr><td>000</td><td>0</td><td>—</td></tr><tr><td>001</td><td>0</td><td>—</td></tr><tr><td>010</td><td>0</td><td>—</td></tr><tr><td>011</td><td>1</td><td>(NOT A)·B·C</td></tr><tr><td>100</td><td>0</td><td>—</td></tr><tr><td>101</td><td>1</td><td>A·(NOT B)·C</td></tr><tr><td>110</td><td>1</td><td>A·B·(NOT C)</td></tr><tr><td>111</td><td>1</td><td>A·B·C</td></tr></tbody></table></div>
+    <figcaption>四個 minterms 相加得到 canonical SOP，再用相鄰列的共同 literals 化簡為 AB+AC+BC。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S3">S3</a>、<a href="#source-S4">S4</a></p>
+    </section><section class="chapter-section" id="section-5">
+      <h3>5. Multiplexer、decoder 與 comparator 是可重用的組合模組</h3>
+      <p>2-to-1 multiplexer（mux）依 select S 從 D0、D1 選一個輸出：Y=(NOT S)D0+SD1。它不只是在搬資料，也能實作任意 Boolean function：選一個變數當 S，再讓 D0、D1 分別代表該變數為 0、1 時剩餘輸入的子函數。多層 mux 形成 datapath 中的 operand、ALU result 與 next-PC 選擇網路。</p><p>n-to-2^n decoder 將 n-bit code 轉成 one-hot outputs，理想情況下每次只有一條輸出有效。每個輸出就是一個 minterm，因此把指定 decoder outputs 以 OR 相連即可實作 SOP。encoder 執行相反方向；若可能同時有多個輸入有效，就需要 priority encoder 明確定義誰優先。</p><p>equality comparator 可逐 bit 做 XNOR，再將所有結果 AND：每一對 bits 都相同時整個 word 才相等。unsigned magnitude comparator 則由最高有效 bit 開始，第一個不同 bit 決定大小。這種『先找最高優先差異』的結構也說明為何 signed 與 unsigned comparison 不能任意互換。</p>
+      <figure class="learning-figure">
+    <h4>以選擇訊號控制資料路徑</h4>
+    <div class="flow-diagram"><span class="flow-node">D0 / D1 候選值</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Select S</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">2-to-1 MUX</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">唯一輸出 Y</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">送入 ALU 或 register</span></div>
+    <figcaption>控制訊號不必直接修改資料；它經常只決定哪一條既有資料路徑能到達下一級。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S1">S1</a>、<a href="#source-S4">S4</a>、<a href="#source-S6">S6</a></p>
+    </section><section class="chapter-section" id="section-6">
+      <h3>6. Half adder、full adder 與 ALU slice</h3>
+      <p>half adder 加兩個 1-bit operands：Sum=A XOR B，Carry=A AND B。多位元加法還必須接收較低位傳來的 Cin，因此 full adder 有三個輸入。其 Sum=A XOR B XOR Cin；Cout 在三個輸入至少兩個為 1 時成立，所以 Cout=AB+A·Cin+B·Cin。</p><p>把每一位 full adder 的 Cout 接到下一位 Cin，形成 ripple-carry adder。功能上它完全正確，但最高位結果必須等待 carry 逐級傳播；若每級 carry path 延遲為 tcarry，N-bit critical path 約隨 N 線性成長。carry-lookahead 以 generate Gi=AiBi 與 propagate Pi=Ai XOR Bi 預先展開 carry 關係，以更多硬體換取較短深度。</p><p>ALU 可視為多個 bit slices 與輸出選擇器。每個 slice 同時計算 AND、OR、sum 等候選值，operation code 再由 mux 選出結果；subtraction 可利用 A+(NOT B)+1，讓同一 adder 重用於加減。zero、carry、overflow 與 less-than 等 flags 由結果與最高位 carry 關係產生，之後成為 branch 或 status 判斷的輸入。</p>
+      <figure class="learning-figure">
+    <h4>一位 full adder 的八種輸入</h4>
+    <div class="diagram-table-wrap"><table class="diagram-table"><thead><tr><th>A</th><th>B</th><th>Cin</th><th>Sum</th><th>Cout</th></tr></thead><tbody><tr><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr><tr><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td></tr><tr><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td></tr><tr><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td></tr><tr><td>1</td><td>0</td><td>0</td><td>1</td><td>0</td></tr><tr><td>1</td><td>0</td><td>1</td><td>0</td><td>1</td></tr><tr><td>1</td><td>1</td><td>0</td><td>0</td><td>1</td></tr><tr><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td></tr></tbody></table></div>
+    <figcaption>Sum 是三輸入 parity；Cout 是三輸入 majority。兩個方程式都能直接由表格重建。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S1">S1</a>、<a href="#source-S4">S4</a></p>
+    </section><section class="chapter-section" id="section-7">
+      <h3>7. State、latch 與 edge-triggered register</h3>
+      <p>組合電路的輸出只由當下輸入決定；若輸出還取決於先前事件，系統就需要 state。最小的儲存概念可由 feedback 建立兩個穩定狀態，但任意組合邏輯回授可能振盪或落入不可預期狀態，不能把『接回去』當成可靠記憶體設計。</p><p>level-sensitive latch 在 enable 有效期間透明，輸入變化可持續穿過；edge-triggered register 只在指定 clock edge 取樣 D，之後將 Q 保持到下一個 edge。兩者都儲存 bit，但 timing model 不同。同步處理器資料路徑通常以 edge-triggered registers 描述 stage boundary，避免在一個 cycle 內不受控地穿透多級。</p><p>同步狀態更新可以寫成 S(t+1)=F(S(t),X(t))，輸出則為 G(S(t),X(t)) 或只由 S(t) 決定。clock edge 到來時，所有 registers 概念上同時取樣各自 D；每個 D 在 edge 前其實已由舊 Q 經組合邏輯算好。分析時先固定舊 state，再算 next state，最後一次更新，不能逐個 register 就地覆寫。</p>
+      <figure class="learning-figure">
+    <h4>同步狀態的封閉迴路</h4>
+    <div class="flow-diagram"><span class="flow-node">目前 Q = S(t)</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">組合 next-state 邏輯 F</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">D = S(t+1)</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">clock edge 取樣</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">新的 Q</span></div>
+    <figcaption>feedback 穿過 register，讓每次狀態改變只發生在離散 clock edge；cycle 內的組合邏輯負責算好下一狀態。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S1">S1</a>、<a href="#source-S2">S2</a>、<a href="#source-S5">S5</a></p>
+    </section><section class="chapter-section" id="section-8">
+      <h3>8. Setup、hold、critical path 與最高時脈</h3>
+      <p>一條 register-to-register path 從來源 register 的 clock-to-Q delay 開始，經 combinational logic 與 wire delay，到目的 register 的 D。為了在下一個 edge 正確取樣，clock period 至少要涵蓋 tclk-q(max)+tcomb(max)+tsetup，再加上必須保留的 clock skew 或 uncertainty。setup slack 是可用週期減去實際需求；負值表示時脈太快或路徑太慢。</p><p>hold constraint 檢查同一個 edge 之後，新資料不能太早抵達：tclk-q(min)+tcomb(min) 必須不小於 thold，再依 clock skew 定義調整。降低 clock frequency 會拉長下一個 edge 的距離，通常能修 setup violation，卻不會改變同一 edge 附近的最短路徑，因此不能靠降頻修 hold violation。常見 hold 修正是增加最短路徑 delay 或調整 clock distribution。</p><p>整個同步模組的最低合法 clock period 由所有 paths 中需求最大的 critical path 決定，fmax=1/Tmin。增加 pipeline register 可把長組合路徑切短並提高 throughput，但會增加 registers、控制複雜度與 latency。只有在完整 static timing analysis 中同時滿足 setup、hold、clock-domain 與 I/O constraints，功能模擬正確才足以成為可運作的電路。</p>
+      <figure class="learning-figure">
+    <h4>一個 clock period 的最長路徑預算</h4>
+    <div class="factor-diagram"><div><strong>tclk-q(max)</strong><span>來源 register 在 edge 後推出新 Q</span></div><span class="factor-op" aria-hidden="true">×</span><div><strong>tcomb(max)</strong><span>最慢組合邏輯與連線</span></div><span class="factor-op" aria-hidden="true">×</span><div><strong>tsetup</strong><span>目的 register 在下一 edge 前的穩定時間</span></div><span class="factor-op" aria-hidden="true">×</span><div><strong>uncertainty</strong><span>skew、jitter 與保留量</span></div></div>
+    <figcaption>Tclk 必須大於或等於四項總和；最短路徑則另以 hold inequality 檢查。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S2">S2</a>、<a href="#source-S5">S5</a>、<a href="#source-S9">S9</a></p>
+    </section><section class="chapter-section" id="section-9">
+      <h3>9. 有限狀態機：把時間行為化成有限圖</h3>
+      <p>finite state machine（FSM）用有限個 states 摘要所有與未來行為有關的過去資訊。設計時先寫清楚輸入與輸出，再找出為了做出下一次決策必須記住什麼。若兩段 history 對任何未來輸入都會產生相同行為，它們可以合併為同一 state；state 名稱是語意標籤，實作時才映射成 bits。</p><p>Moore machine 的輸出只由 current state 決定，通常在進入某 state 後改變；Mealy machine 的輸出由 current state 與 current input 共同決定，常能較早反應並使用較少 states，但組合輸入變化可能直接影響輸出。兩者能表示相同類型的循序行為，時序與介面需求決定較合適的形式。</p><p>FSM 實作包含 state register、next-state logic 與 output logic。若有 N states，binary encoding 至少需要 ceil(log2 N) bits；one-hot encoding 使用 N bits，解碼較直接但 registers 較多。重設後必須進入已知 state，且所有 input/state combinations 都應有明確轉移，避免 latch inference 或 unreachable-state recovery 不明。</p>
+      <figure class="learning-figure">
+    <h4>可重疊偵測 101 的 Mealy FSM</h4>
+    <div class="diagram-table-wrap"><table class="diagram-table"><thead><tr><th>目前 state</th><th>已記住的 suffix</th><th>input=0 → next/output</th><th>input=1 → next/output</th></tr></thead><tbody><tr><td>S0</td><td>無</td><td>S0 / 0</td><td>S1 / 0</td></tr><tr><td>S1</td><td>1</td><td>S10 / 0</td><td>S1 / 0</td></tr><tr><td>S10</td><td>10</td><td>S0 / 0</td><td>S1 / 1</td></tr></tbody></table></div>
+    <figcaption>在 S10 收到 1 時完成 101，同時新字串末尾的 1 又可成為下一次偵測的開頭，因此回到 S1。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S1">S1</a>、<a href="#source-S5">S5</a>、<a href="#source-S6">S6</a></p>
+    </section><section class="chapter-section" id="section-10">
+      <h3>10. 亞穩態、clock-domain crossing 與 RTL 驗證</h3>
+      <p>若 asynchronous input 或另一 clock domain 的訊號在取樣邊緣附近改變，可能違反 setup/hold，使 flip-flop 進入 metastable state。輸出最後通常會解析成 0 或 1，但解析時間沒有固定上限；若不穩定值立刻扇出到多處，接收邏輯可能在同一事件上得到不一致判斷。</p><p>單 bit control 常用兩級或多級 synchronizer：第一級承受較高亞穩態機率，後續級提供額外解析時間，再把穩定結果送入接收 domain。這會把 failure probability 壓低並提高 MTBF，卻不是數學上的完全消除。multi-bit data 不能把每一位各自同步，因為 bits 可能跨 cycle 不一致；常見方法是 handshake、Gray-code pointer 或 asynchronous FIFO。</p><p>RTL 以 register transfer 描述 clock edge 間的資料與控制，synthesis 將可合成語意映射為 gates、muxes、registers 與 wires。IEEE 1800-2023 同時涵蓋 design、testbench 與 assertions，但 HDL 不是逐行執行的一般軟體：並行硬體會同時存在。完整驗證要把真值表／state transition 的功能證據、simulation、formal checks、CDC analysis 與 static timing analysis 放在一起。</p>
+      <figure class="learning-figure">
+    <h4>從 RTL 規格到可計時的數位電路</h4>
+    <div class="flow-diagram"><span class="flow-node">Boolean / state specification</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">RTL</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Simulation + assertions</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Synthesis</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Gate-level netlist</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">STA + CDC</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">可實作設計</span></div>
+    <figcaption>功能正確與時間正確是兩個檢查維度；任一項失敗都不能保證實體系統依規格運作。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S7">S7</a>、<a href="#source-S8">S8</a>、<a href="#source-S9">S9</a></p>
+    </section></div>
+        <section class="chapter-worked-list" id="worked-examples"><h2>逐步例題</h2><section class="worked-example chapter-worked">
+      <p class="eyebrow">Worked example 1</p>
+      <h3>例題一：由 majority 規格推導最簡 SOP</h3>
+      <p><strong>題目：</strong>三個輸入 A、B、C 中至少兩個為 1 時 M=1。由真值表建立 canonical SOP，再化簡。</p>
+      <ol><li>三個 inputs 共有 2^3=8 列；輸出為 1 的列是 011、101、110、111。</li><li>依序寫出 minterms：(NOT A)BC、A(NOT B)C、AB(NOT C)、ABC。</li><li>canonical SOP 為 M=(NOT A)BC+A(NOT B)C+AB(NOT C)+ABC。</li><li>將 ABC 分別與前三項配對：BC[(NOT A)+A]=BC，AC[(NOT B)+B]=AC，AB[(NOT C)+C]=AB。</li><li>得到 M=AB+AC+BC；任一 pair 同時為 1，就表示至少有兩個 1。</li><li>逐列驗證簡式只在 011、101、110、111 輸出 1，與原規格相同。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>majority function 的化簡式為 AB+AC+BC，也正是 full adder 的 carry-out。</p>
+    </section><section class="worked-example chapter-worked">
+      <p class="eyebrow">Worked example 2</p>
+      <h3>例題二：用 4-to-1 mux 實作三輸入函數</h3>
+      <p><strong>題目：</strong>F(A,B,C)=Σm(1,2,6,7)。以 A、B 作 mux select，求四個 data inputs。</p>
+      <ol><li>固定 AB=00，對應 minterms 0、1；C=0 時 F=0，C=1 時 F=1，所以 D0=C。</li><li>固定 AB=01，對應 minterms 2、3；輸出依序為 1、0，所以 D1=NOT C。</li><li>固定 AB=10，對應 minterms 4、5；兩列輸出皆 0，所以 D2=0。</li><li>固定 AB=11，對應 minterms 6、7；兩列輸出皆 1，所以 D3=1。</li><li>把 A、B 接到 select，把 C、NOT C、0、1 接到 D0..D3。</li><li>mux 對每一組 AB 只選相應子函數，因此八列輸出與 Σm(1,2,6,7) 完全一致。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>D0=C、D1=NOT C、D2=0、D3=1。mux 可用 Shannon expansion 把函數分解成較小子函數。</p>
+    </section><section class="worked-example chapter-worked">
+      <p class="eyebrow">Worked example 3</p>
+      <h3>例題三：逐位追蹤 4-bit ripple-carry addition</h3>
+      <p><strong>題目：</strong>以四個 full adders 計算 1011₂+0110₂，初始 Cin=0。</p>
+      <ol><li>bit 0：1+0+0，S0=1、C1=0。</li><li>bit 1：1+1+0，S1=0、C2=1。</li><li>bit 2：0+1+1，S2=0、C3=1。</li><li>bit 3：1+0+1，S3=0、C4=1。</li><li>由最高 carry 與四個 sum bits 組成 10001₂。</li><li>十進位核對：1011₂=11、0110₂=6，而 11+6=17=10001₂。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>輸出為 C4S3S2S1S0=10001₂；每一級都必須等待前一級 carry，形成 ripple critical path。</p>
+    </section><section class="worked-example chapter-worked">
+      <p class="eyebrow">Worked example 4</p>
+      <h3>例題四：同時檢查 setup 與 hold</h3>
+      <p><strong>題目：</strong>某路徑 tclk-q(max)=80 ps、tcomb(max)=620 ps、tsetup=100 ps、uncertainty=50 ps；最短值 tclk-q(min)=60 ps、tcomb(min)=40 ps、thold=70 ps。求 Tmin、fmax 與 hold slack。</p>
+      <ol><li>setup path 的最低週期 Tmin=80+620+100+50=850 ps。</li><li>fmax=1/(850×10^-12)=1.176×10^9 Hz，約 1.176 GHz。</li><li>若實際 clock period 為 900 ps，setup slack=900-850=50 ps。</li><li>最短資料抵達時間為 60+40=100 ps。</li><li>在忽略額外 skew 的題目模型下，hold slack=100-70=30 ps。</li><li>兩個 slack 都非負，因此此路徑在 900 ps clock 下同時滿足 setup 與 hold。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>最低週期 850 ps、最高頻率約 1.176 GHz；900 ps 週期時 setup slack=50 ps、hold slack=30 ps。</p>
+    </section><section class="worked-example chapter-worked">
+      <p class="eyebrow">Worked example 5</p>
+      <h3>例題五：追蹤可重疊 101 sequence detector</h3>
+      <p><strong>題目：</strong>使用本章 Mealy FSM，初始 S0，依序輸入 110101，列出每一步 state 與 output。</p>
+      <ol><li>input 1：S0→S1，output 0；已記住 suffix 1。</li><li>input 1：S1→S1，output 0；最新 suffix 仍是 1。</li><li>input 0：S1→S10，output 0；已記住 suffix 10。</li><li>input 1：S10→S1，output 1；偵測到第一個 101，結尾 1 同時保留。</li><li>input 0：S1→S10，output 0。</li><li>input 1：S10→S1，output 1；偵測到第二個 101。</li><li>輸出序列為 000101，兩個 1 分別對應輸入位置 4 與 6 結束的 pattern。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>狀態序列 S0,S1,S1,S10,S1,S10,S1；output=000101，重疊能力來自偵測後回到 S1。</p>
+    </section></section>
+        <section class="chapter-misconceptions misconception-panel"><h2>常見誤解與修正</h2><div><article><h4>邏輯 0 就是精確的 0 V，邏輯 1 就是精確的電源電壓。</h4><p>0 與 1 是電壓範圍的抽象；合法範圍與 noise margin 由元件規格決定。</p></article><article><h4>Boolean 的 + 和 · 就是一般加法與乘法。</h4><p>+ 代表 OR、· 代表 AND，所以 1+1=1；只有放進算術電路後才依 binary arithmetic 解讀。</p></article><article><h4>閘數最少的表示式一定最快。</h4><p>實際延遲還受 logic depth、fan-in、fan-out、wire 與 cell library 影響，必須看 critical path。</p></article><article><h4>組合電路輸入一變，輸出立刻得到新值。</h4><p>所有 gates 都有 propagation delay，不同路徑還可能造成短暫 glitch。</p></article><article><h4>Latch 與 register 只是兩個名稱。</h4><p>Latch 在有效電位期間透明；edge-triggered register 在 clock edge 取樣，timing 行為不同。</p></article><article><h4>降低 clock frequency 可以修正所有 timing violations。</h4><p>拉長週期通常能改善 setup，但同一 edge 附近的 hold violation 需要調整最短資料路徑或 clock。</p></article><article><h4>兩級 synchronizer 能完全消除 metastability。</h4><p>它以增加解析時間降低 failure probability、提高 MTBF，不能給出絕對零風險。</p></article><article><h4>HDL 像一般程式一樣由上到下只執行一次。</h4><p>RTL 描述同時存在的硬體與 clocked behavior；simulation scheduling 與 synthesis semantics 都必須符合該模型。</p></article></div></section>
+        <section class="chapter-exercises self-check" id="exercises"><h2>分級練習與完整解答</h2><p>先完成 state、公式或推理，再展開答案核對。每題解答都列出判斷依據。</p><details>
+      <summary><span>基礎</span>1. 四個 Boolean inputs 的完整真值表有幾列？若只有輸出為 1 的列要寫 canonical SOP，最多會有幾個 minterms？</summary>
+      <div><h4>完整解答</h4><ol><li>每個 input 有兩種值，四個 inputs 共有 2^4=16 種 combinations。</li><li>最壞情況所有列輸出皆為 1，因此 canonical SOP 最多有 16 個 minterms。</li></ol></div>
+    </details><details>
+      <summary><span>基礎</span>2. 化簡 F=A+A·B，並以文字說明。</summary>
+      <div><h4>完整解答</h4><ol><li>使用 absorption law：A+A·B=A。</li><li>當 A=1 時 F 已為 1；當 A=0 時 AB 也必為 0，因此 B 不會改變輸出。</li></ol></div>
+    </details><details>
+      <summary><span>基礎</span>3. 將 NOT(A+B·NOT C) 只用 NOT、AND、OR 展開，使最外層不再有括號反相。</summary>
+      <div><h4>完整解答</h4><ol><li>先用 De Morgan：NOT(A+B·NOT C)=NOT A · NOT(B·NOT C)。</li><li>再展開第二項：NOT(B·NOT C)=NOT B+C，所以結果為 (NOT A)·((NOT B)+C)。</li></ol></div>
+    </details><details>
+      <summary><span>基礎</span>4. 寫出 XOR 的 canonical SOP。</summary>
+      <div><h4>完整解答</h4><ol><li>XOR 在 01 與 10 兩列為 1。</li><li>因此 A XOR B=(NOT A)B+A(NOT B)。</li></ol></div>
+    </details><details>
+      <summary><span>核心</span>5. F(A,B,C)=Σm(0,2,4,6)。化簡 F。</summary>
+      <div><h4>完整解答</h4><ol><li>四個 minterms 的 binary indices 都是偶數，因此最低位 C 都為 0。</li><li>A、B 可任意變動而不影響輸出，所以 F=NOT C。</li></ol></div>
+    </details><details>
+      <summary><span>核心</span>6. 用 2-to-1 mux 表示 F(A,B)=A XOR B，選 A 為 S。D0、D1 應接什麼？</summary>
+      <div><h4>完整解答</h4><ol><li>A=0 時 F=B，所以 D0=B。</li><li>A=1 時 F=NOT B，所以 D1=NOT B；代入 mux 方程可得 (NOT A)B+A(NOT B)。</li></ol></div>
+    </details><details>
+      <summary><span>核心</span>7. 3-to-8 decoder 的每條 output 對應什麼？如何做 F=Σm(1,3,6)？</summary>
+      <div><h4>完整解答</h4><ol><li>每條 output 對應三個 inputs 的一個 minterm，任一時刻理想上只有對應 code 的 output 有效。</li><li>將 decoder 的 y1、y3、y6 經 OR 相連，即可在 minterm 1、3、6 時輸出 1。</li></ol></div>
+    </details><details>
+      <summary><span>核心</span>8. full adder 輸入 A=1、B=0、Cin=1 時，Sum 與 Cout 為何？</summary>
+      <div><h4>完整解答</h4><ol><li>Sum=1 XOR 0 XOR 1=0。</li><li>三個 inputs 中有兩個 1，因此 Cout=1；算術核對為 1+0+1=10₂。</li></ol></div>
+    </details><details>
+      <summary><span>核心</span>9. 8-bit ripple adder 每級 carry delay 為 70 ps，最後 sum XOR delay 為 40 ps。以 7 級 carry 傳播加最後 XOR 估計最長 delay。</summary>
+      <div><h4>完整解答</h4><ol><li>carry 從最低位穿過到最高位之前需要 7×70=490 ps。</li><li>再加最高位 sum 的 40 ps，估計 critical-path delay=530 ps。</li></ol></div>
+    </details><details>
+      <summary><span>進階</span>10. 路徑 tclk-q(max)=90 ps、tcomb(max)=710 ps、tsetup=80 ps，沒有額外 uncertainty。最低 clock period 與 fmax 為何？</summary>
+      <div><h4>完整解答</h4><ol><li>Tmin=90+710+80=880 ps。</li><li>fmax=1/(880×10^-12)≈1.136 GHz。</li></ol></div>
+    </details><details>
+      <summary><span>進階</span>11. 某最短路徑 tclk-q(min)=45 ps、tcomb(min)=15 ps、thold=75 ps。求 hold slack 並判斷。</summary>
+      <div><h4>完整解答</h4><ol><li>資料最早在 45+15=60 ps 抵達，hold slack=60-75=-15 ps。</li><li>slack 為負，存在 15 ps hold violation；單純拉長 clock period 不會修正同一 edge 的最早抵達。</li></ol></div>
+    </details><details>
+      <summary><span>進階</span>12. 有 5 個 states 的 binary-encoded FSM 至少需要幾個 state bits？one-hot 又需要幾個？</summary>
+      <div><h4>完整解答</h4><ol><li>ceil(log2 5)=3，所以 binary encoding 至少需要 3 bits，可提供 8 個 codes。</li><li>one-hot 每個 state 使用一個獨立 bit，因此需要 5 bits。</li></ol></div>
+    </details><details>
+      <summary><span>進階</span>13. 對 101 detector，從 S1 收到 0 為何不能回 S0？</summary>
+      <div><h4>完整解答</h4><ol><li>S1 表示已看見 suffix 1；再收到 0 後，最新兩個 bits 是 10。</li><li>10 正是 pattern 101 的前兩位，因此必須進入 S10，保留可能在下一個 1 完成偵測的資訊。</li></ol></div>
+    </details><details>
+      <summary><span>挑戰</span>14. 為何不能用三個獨立兩級 synchronizers 傳送會同時改變的 3-bit binary counter？</summary>
+      <div><h4>完整解答</h4><ol><li>每個 bit 的解析時間與取樣 cycle 可能不同，接收端可能短暫組合出來源端從未存在的 code。</li><li>可改用 handshake 保持整個 word 穩定，或以 Gray code 讓相鄰 count 只改一位，再搭配適當 CDC 結構。</li></ol></div>
+    </details></section>
+        <section class="chapter-glossary" id="glossary"><h2>本章術語表</h2><div class="diagram-table-wrap"><table><tbody><tr><th>Digital abstraction</th><td>把連續電氣訊號依合法範圍解讀為有限邏輯符號的介面。</td></tr><tr><th>Noise margin</th><td>合法輸出與接收端判定門檻之間可容忍雜訊的餘量。</td></tr><tr><th>Propagation delay</th><td>輸入改變到輸出達到對應穩定值所需時間。</td></tr><tr><th>Minterm</th><td>只在真值表某一列為 1、包含每個輸入一次的 AND term。</td></tr><tr><th>Canonical SOP</th><td>將所有輸出為 1 的 minterms 以 OR 相連的標準表示。</td></tr><tr><th>Karnaugh map</th><td>以 Gray-code adjacency 視覺化合併 implicants 的少變數化簡方法。</td></tr><tr><th>Multiplexer</th><td>依 select 從多個 data inputs 選一個送到輸出的組合模組。</td></tr><tr><th>Decoder</th><td>把 n-bit code 展開成最多 2^n 條 one-hot outputs 的模組。</td></tr><tr><th>Full adder</th><td>計算 A、B、Cin 的 Sum 與 Cout 的一位加法器。</td></tr><tr><th>Critical path</th><td>決定最低 clock period 或組合電路最壞延遲的最長 timing path。</td></tr><tr><th>Setup time</th><td>取樣 edge 前，目的 register 的 D 必須保持穩定的時間。</td></tr><tr><th>Hold time</th><td>取樣 edge 後，目的 register 的 D 仍必須保持穩定的時間。</td></tr><tr><th>Clock-to-Q</th><td>clock edge 到來源 register 的 Q 反映新狀態之間的延遲。</td></tr><tr><th>Finite state machine</th><td>以有限 states、inputs、outputs 與 transition function 描述循序行為的模型。</td></tr><tr><th>Moore machine</th><td>輸出只由 current state 決定的 FSM。</td></tr><tr><th>Mealy machine</th><td>輸出由 current state 與 current input 共同決定的 FSM。</td></tr><tr><th>Metastability</th><td>storage element 在違反取樣時間時可能暫時無法解析成穩定 0/1 的狀態。</td></tr><tr><th>Clock-domain crossing</th><td>訊號在非同步或不同 clock relationships 的 domains 之間傳遞。</td></tr><tr><th>RTL</th><td>描述 registers 之間資料轉移與組合運算的硬體抽象層次。</td></tr><tr><th>Static timing analysis</th><td>不依賴特定 simulation vectors，對 timing graph 的最長與最短 paths 檢查 constraints。</td></tr></tbody></table></div></section>
+        <section class="chapter-sources"><h2>技術來源與延伸閱讀</h2><p>各節所引用的架構、規格與技術資料如下。</p><ol><li id="source-S1"><a href="https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/pages/c8/c8s1/" rel="noreferrer">S1 · MIT OpenCourseWare 6.004: Computation Structures, Digital Logic Sequence</a><p>digital abstraction、combinational/sequential logic、FSM、timing、adder 與設計取捨的公開課程基礎。（查閱：2026-08-17）</p></li><li id="source-S2"><a href="https://notes.cs61c.org/content/sds-intro/" rel="noreferrer">S2 · UC Berkeley CS61C Course Notes: Synchronous Digital Systems</a><p>同步數位系統、組合與 stateful circuits 的現行課程脈絡。（查閱：2026-08-17）</p></li><li id="source-S3"><a href="https://notes.cs61c.org/content/sds-combinational-logic/boolean-algebra/" rel="noreferrer">S3 · UC Berkeley CS61C Course Notes: Boolean Algebra</a><p>Boolean operators、真值表、等價與布林定律。（查閱：2026-08-17）</p></li><li id="source-S4"><a href="https://notes.cs61c.org/content/sds-combinational-logic/cl-design/" rel="noreferrer">S4 · UC Berkeley CS61C Course Notes: Canonical Form and Combinational Logic Design</a><p>canonical SOP、truth-table synthesis、mux、adder 與組合設計。（查閱：2026-08-17）</p></li><li id="source-S5"><a href="https://notes.cs61c.org/content/sds-state/summary/" rel="noreferrer">S5 · UC Berkeley CS61C Course Notes: State and Timing Summary</a><p>register timing、critical path、setup 與 hold constraints。（查閱：2026-08-17）</p></li><li id="source-S6"><a href="https://notes.cs61c.org/content/sds-state/fsm/" rel="noreferrer">S6 · UC Berkeley CS61C Course Notes: Finite State Machines</a><p>FSM 的 state、transition、output 與同步實作。（查閱：2026-08-17）</p></li><li id="source-S7"><a href="https://standards.ieee.org/ieee/1800/7743/" rel="noreferrer">S7 · IEEE 1800-2023: SystemVerilog Language Reference Manual</a><p>目前 active 的 SystemVerilog design、verification、assertion 與 testbench 標準。（查閱：2026-08-17）</p></li><li id="source-S8"><a href="https://www.intel.com/content/www/us/en/docs/programmable/683068/18-1/metastability-analysis.html" rel="noreferrer">S8 · Intel Quartus Prime Pro Edition User Guide: Metastability Analysis</a><p>asynchronous transfer、synchronizer chain、metastability 與 MTBF。（查閱：2026-08-17）</p></li><li id="source-S9"><a href="https://docs.altera.com/r/docs/683081/current" rel="noreferrer">S9 · Altera Timing Analyzer Cookbook</a><p>clock constraints、setup/hold analysis 與 timing verification 的官方實務。（查閱：2026-08-17）</p></li></ol></section>
+      </article>
     </section>
   </main>
   <footer class="footer">
