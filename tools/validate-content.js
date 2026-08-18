@@ -33,7 +33,7 @@ assert(fourthEdition.chapters.length === 13, "Fourth edition must contain 13 map
 assert(new Set(fourthEdition.chapters.map((item) => item.chapter)).size === 13, "Fourth edition chapter numbers must be unique");
 assert(fourthEdition.weekMap.length === 18, "Every course week needs a fourth edition mapping");
 assert(new Set(fourthEdition.weekMap.map((item) => item.week)).size === 18, "Fourth edition week mappings must be unique");
-assert(chapterDetails.length >= 3, "At least three detailed self-study chapters are required");
+assert(chapterDetails.length >= 4, "At least four detailed self-study chapters are required");
 assert(new Set(chapterDetails.map((item) => item.chapter)).size === chapterDetails.length, "Detailed chapter numbers must be unique");
 
 for (const chapter of chapterDetails) {
@@ -74,6 +74,14 @@ assert(chapterThree.sections.filter((item) => item.figure).length >= 9, "Chapter
 assert(chapterThree.workedExamples.length >= 5, "Chapter 3 needs at least five worked examples");
 assert(chapterThree.exercises.length >= 13, "Chapter 3 needs at least thirteen exercises with solutions");
 assert(chapterThree.sources.length >= 8, "Chapter 3 needs broad authoritative source coverage");
+
+const chapterFour = chapterDetails.find((chapter) => chapter.chapter === 4);
+assert(chapterFour, "Chapter 4 detailed MARIE material is missing");
+assert(chapterFour.sections.length >= 11, "Chapter 4 needs at least eleven complete concept sections");
+assert(chapterFour.sections.filter((item) => item.figure).length >= 10, "Chapter 4 needs at least ten verifiable diagrams");
+assert(chapterFour.workedExamples.length >= 6, "Chapter 4 needs at least six worked examples");
+assert(chapterFour.exercises.length >= 15, "Chapter 4 needs at least fifteen exercises with solutions");
+assert(chapterFour.sources.length >= 9, "Chapter 4 needs broad authoritative source coverage");
 
 for (const mapping of fourthEdition.weekMap) {
   assert(mapping.chapters.length >= 1, `Week ${mapping.week} needs at least one fourth edition chapter`);
@@ -165,6 +173,18 @@ assert(chapterThreePeriodPs === 850, "Chapter 3 setup period failed");
 assert(Math.abs((1e3 / chapterThreePeriodPs) - 1.1764705882352942) < 1e-12, "Chapter 3 maximum frequency failed");
 assert((60 + 40 - 70) === 30, "Chapter 3 hold slack failed");
 assert(Math.ceil(Math.log2(5)) === 3, "Chapter 3 FSM state encoding failed");
+
+assert((2 ** 12) === 4096 && ((2 ** 12) * 16 / 8) === 8192, "Chapter 4 MARIE memory capacity failed");
+assert(((0x1 << 12) | 0x3a5) === 0x13a5, "Chapter 4 Load encoding failed");
+assert((0xb207 >>> 12) === 0xb && (0xb207 & 0x0fff) === 0x207, "Chapter 4 AddI decoding failed");
+assert(((-5) & 0xffff) === 0xfffb, "Chapter 4 signed Load value failed");
+assert(((7 + (-3)) & 0xffff) === 0x0004, "Chapter 4 add-and-store example failed");
+assert((0 - (-6)) === 6, "Chapter 4 absolute-value example failed");
+assert((4 + (-1) + 6) === 9, "Chapter 4 indirect array sum failed");
+assert((0x102 + 1) === 0x103 && (0x110 + 1) === 0x111, "Chapter 4 JnS call/return addresses failed");
+assert(((0x1 << 12) | 0x104) === 0x1104, "Chapter 4 assembler Load word failed");
+assert(((0x3 << 12) | 0x105) === 0x3105, "Chapter 4 assembler Add word failed");
+assert(((0x2 << 12) | 0x106) === 0x2106, "Chapter 4 assembler Store word failed");
 
 const homepage = path.join(root, "index.html");
 const editionPage = path.join(root, "fourth-edition-map.html");

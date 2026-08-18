@@ -1167,5 +1167,386 @@ const chapterDetails = [
       { key: "S8", title: "Intel Quartus Prime Pro Edition User Guide: Metastability Analysis", url: "https://www.intel.com/content/www/us/en/docs/programmable/683068/18-1/metastability-analysis.html", accessed: "2026-08-17", use: "asynchronous transfer、synchronizer chain、metastability 與 MTBF。" },
       { key: "S9", title: "Altera Timing Analyzer Cookbook", url: "https://docs.altera.com/r/docs/683081/current", accessed: "2026-08-17", use: "clock constraints、setup/hold analysis 與 timing verification 的官方實務。" }
     ]
+  },
+  {
+    chapter: 4,
+    title: "MARIE：從指令位元到完整狀態追蹤",
+    english: "MARIE: From Instruction Bits to Complete State Traces",
+    revised: "2026-08-18",
+    readingTime: "約 180–220 分鐘",
+    intro: "MARIE 是刻意簡化的 accumulator machine，目的不是模擬現代 CPU 的全部複雜度，而是讓一條指令的所有狀態變化都能被看見。16-bit instruction 如何切成 opcode 與 address、PC 如何推進、memory word 如何經 MAR 與 MBR 到達 AC、控制轉移如何改寫 PC，都可以用 register transfer notation 逐步驗證。本章以第 4 版 ISA 為準，從 datapath 與共同 fetch cycle 開始，建立 direct、indirect、branch、subroutine 與 assembler 的完整模型，再用可執行程式追蹤 machine code、register state 與 memory side effect。",
+    outcomes: [
+      "能畫出 MARIE 的 CPU、memory、I/O 與 bus 關係，並說明七個 registers 的寬度與責任。",
+      "能把 16-bit instruction 切成 4-bit opcode 與 12-bit address，完成 assembly 與 machine word 的雙向轉換。",
+      "能逐步寫出 fetch-decode-execute 的 register transfers，並分清 IR、MAR 與 MBR。",
+      "能依第 4 版完整 instruction set 追蹤 AC、PC、memory 與 I/O 的變化。",
+      "能正確使用 Skipcond 與 Jump 表達 if、loop，並說明 skip 與 branch 的差異。",
+      "能追蹤 AddI、LoadI、StoreI、JumpI 的兩層 memory dereference。",
+      "能解釋 JnS 如何把 return address 存在 memory，並以 JumpI 完成返回。",
+      "能建立 symbol table，說明 two-pass assembler 如何解析 forward reference。",
+      "能比較 hardwired 與 microprogrammed control，並辨認 MARIE 與 MIPS 顯露狀態的差異。"
+    ],
+    sections: [
+      {
+        title: "1. MARIE 是可完整觀察的 stored-program machine",
+        paragraphs: [
+          "MARIE 將 instruction 與 data 都放在同一個 word-addressed memory。PC 保存下一個 instruction 的 word address，CPU 依 PC 取出 16-bit word，再把高 4 bits 解讀為 operation、低 12 bits 解讀為 address 或 condition。相同 bits 是 instruction 還是 data，取決於它是否經由 PC 被 fetch，以及目前 operation 對它的解讀。",
+          "這套模型只有一個主要算術狀態 AC。Load 把 memory operand 放進 AC，Add 以 AC 為隱含來源與目的，Store 再把 AC 寫回 memory。程式不必在每條 arithmetic instruction 中編出 destination register，因此 machine word 很短；代價是中間值頻繁經過 AC，平行保留 operands 的能力有限。",
+          "MARIE 的簡化必須和現代 CPU 的實作分開。它沒有一般 register file、cache、pipeline、virtual memory 或 out-of-order machinery，但仍具備 stored program、instruction encoding、datapath、control、I/O 與 state transition 等核心觀念。學會逐步追蹤 MARIE 後，同一套證據方法可套到 MIPS，只是可見 registers 與資料路徑更多。"
+        ],
+        figure: {
+          type: "hierarchy",
+          title: "MARIE 的觀察邊界",
+          items: [
+            { label: "Assembly program", detail: "mnemonics、labels、DEC/HEX directives" },
+            { label: "ISA", detail: "15 個第 4 版 instructions、16-bit encoding" },
+            { label: "Architectural state", detail: "AC、PC、memory、input/output" },
+            { label: "Datapath state", detail: "MAR、MBR、IR、InREG、OutREG" },
+            { label: "Control", detail: "fetch states、opcode decode、control signals" }
+          ],
+          caption: "由上往下追蹤時，每一層都把同一個程式轉成更具體的 bits、register transfers 與 clocked state。"
+        },
+        sourceRefs: ["S1", "S2", "S3"]
+      },
+      {
+        title: "2. 七個 registers、單一 bus 與 memory transaction",
+        paragraphs: [
+          "AC、MBR、IR 是 16 bits，能保存一個完整 data/instruction word；MAR 與 PC 是 12 bits，因為 12-bit address 可選 2^12=4096 個 words。第 4 版模型的 InREG 與 OutREG 為 8 bits，用來隔開外部裝置與 CPU。register width 不是裝飾資訊：把 16-bit IR 全部送進 12-bit MAR 時，只能使用 IR[11:0]。",
+          "MAR 回答『哪一個 memory word』，MBR 回答『該 word 的內容是什麼或準備寫什麼』。memory read 可寫成 MBR←M[MAR]；memory write 可寫成 M[MAR]←MBR。IR 保存正在執行的 instruction，避免 PC 已移到下一個位置後失去目前 opcode。AC 保存 arithmetic operands/results，與 MAR、MBR 的位址／資料角色不同。",
+          "共享 bus 在一個 transfer 中通常只能有一個 source 驅動，但可讓一個或多個合法 destinations 取樣。若 PC 與 AC 同時驅動 bus，資料會衝突；若 control 沒有開啟目的 register 的 load enable，bus 上即使有正確值也不會留下 state。datapath 圖必須搭配 control sequence，才能說明資料在什麼 clock edge 真正被保存。"
+        ],
+        figure: {
+          type: "matrix",
+          title: "MARIE register 責任表",
+          columns: ["Register", "寬度", "保存內容", "典型更新"],
+          rows: [
+            ["AC", "16", "operand / ALU result", "Load、Add、Subt、Input、Clear"],
+            ["MAR", "12", "memory word address", "MAR←PC 或 MAR←IR[11:0]"],
+            ["MBR", "16", "memory read/write buffer", "MBR←M[MAR] 或 MBR←AC"],
+            ["PC", "12", "next instruction address", "PC←PC+1、Jump、Skipcond"],
+            ["IR", "16", "current instruction", "IR←MBR during fetch"],
+            ["InREG", "8", "外部輸入", "input device update"],
+            ["OutREG", "8", "外部輸出", "OutREG←AC low-order data"]
+          ],
+          caption: "位址 registers 為 12 bits，word registers 為 16 bits；每一步先辨認保存的是 address 還是 value。"
+        },
+        sourceRefs: ["S3", "S6"]
+      },
+      {
+        title: "3. 16-bit instruction format 與 word addressing",
+        paragraphs: [
+          "每個 MARIE instruction 固定 16 bits：bits 15..12 是 opcode，bits 11..0 是 address/operand field。4-bit opcode 有 16 種 patterns；第 4 版完整 ISA 使用 0x0 到 0xE，0xF 保留。三個 hexadecimal digits 恰好表示 12-bit field，所以 assembly 與 machine word 的對照特別直接。",
+          "例如 Load 3A5 的 opcode 是 0x1，machine word 因此是 0x13A5；反向解碼 0xB207，最高 hex digit B 表示 AddI，低三 digits 207 表示 pointer 所在 address。Input、Output、Halt、Clear 不需要一般 memory operand，低 12 bits 在第 4 版基本語意中不負責尋址，常以 000 填入。",
+          "MARIE 是 word-addressed：相鄰 addresses 各保存一個 16-bit word，因此 sequential next PC 是 PC+1。4K words 等於 4096×16=65536 bits=8192 bytes 的內容容量，但 architectural address 仍是 0x000 到 0xFFF。這與 byte-addressed MIPS 的固定 4-byte instruction 通常使 PC+4 不同。"
+        ],
+        figure: {
+          type: "bits",
+          title: "MARIE 16-bit instruction field",
+          totalBits: 16,
+          items: [
+            { label: "Opcode [15:12]", bits: 4, detail: "0x0–0xE 選擇第 4 版 operation" },
+            { label: "Address / condition [11:0]", bits: 12, detail: "0x000–0xFFF word address，或 Skipcond condition" }
+          ],
+          caption: "hexadecimal machine word 的第一個 digit 是 opcode，後三個 digits 是 12-bit field。"
+        },
+        sourceRefs: ["S3", "S5", "S6"]
+      },
+      {
+        title: "4. 共同 fetch cycle：先取得 instruction，再決定 execute path",
+        paragraphs: [
+          "所有 instructions 先執行共同 fetch。第一步 MAR←PC，把 next instruction address 放到 memory interface；第二步 MBR←M[MAR] 取得完整 word；第三步 IR←MBR 固定 current instruction；第四步 PC←PC+1，先預設 sequential successor。不同教材或 simulator 可能把可同時發生的 transfers 合併在同一 clock state，但 architectural result 必須一致。",
+          "decode 檢查 IR[15:12]，並在需要 address 時把 IR[11:0] 送入 MAR。decode 本身通常只是 combinational control decision，不等於已取得 operand。例如 Load X 在 decode 後仍要 read M[X]；Clear 不需要 memory operand，可直接 AC←0；Jump X 只要以 X 覆寫 PC。",
+          "追蹤 instruction 時應同時記錄『舊值、transfer、更新後值』。PC 在 fetch 後已指向下一個 word，因此 branch 未成立時自然繼續；Jump 或 JnS 則在 execute phase 覆寫這個預設值。若把 IR 與 PC 混為一談，便會錯把 current instruction address 當成 return address。"
+        ],
+        figure: {
+          type: "flow",
+          title: "MARIE fetch-decode-execute 狀態鏈",
+          items: ["MAR←PC", "MBR←M[MAR]", "IR←MBR", "PC←PC+1", "Decode IR[15:12]", "Execute opcode semantics"],
+          caption: "PC 的遞增屬於共同 fetch；execute 只在控制轉移需要時覆寫 next PC。"
+        },
+        sourceRefs: ["S3", "S4", "S6", "S9", "S10"]
+      },
+      {
+        title: "5. Direct data movement、arithmetic 與 I/O",
+        paragraphs: [
+          "Load X、Store X、Add X、Subt X 都使用 direct addressing，effective address EA=X。Load 的 execute path 是 MAR←X、MBR←M[MAR]、AC←MBR；Store 則是 MAR←X、MBR←AC、M[MAR]←MBR。Add/Subt 先讀出 M[X]，再用 ALU 對 AC 與 MBR 運算並把結果寫回 AC。",
+          "Input 把 InREG 的值送進 AC，Output 把 AC 的可輸出資料送到 OutREG，Halt 停止後續 instruction cycle，Clear 將 AC 歸零。這些 instructions 不需要一般 memory operand；即使 machine word 仍有低 12 bits，也不能把每個 bit field 都自動解讀成 address。",
+          "MARIE 的 arithmetic 以 16-bit two's-complement bit pattern 保存。超過可表示範圍時低 16 bits 留在 AC，但基本 ISA 沒有一般 programmer-visible overflow flag；因此程式若需要偵測 overflow，不能假設 Skipcond 會替它完成。I/O 的外部字元或數值呈現也屬 simulator/interface convention，不能由 AC bits 自動推知型別。"
+        ],
+        figure: {
+          type: "matrix",
+          title: "第 4 版 MARIE 完整 opcode map",
+          columns: ["Hex", "Instruction", "主要 architectural effect"],
+          rows: [
+            ["0", "JnS X", "M[X]←PC；PC←X+1"], ["1", "Load X", "AC←M[X]"],
+            ["2", "Store X", "M[X]←AC"], ["3", "Add X", "AC←AC+M[X]"],
+            ["4", "Subt X", "AC←AC−M[X]"], ["5", "Input", "AC←InREG"],
+            ["6", "Output", "OutREG←AC"], ["7", "Halt", "停止 instruction cycle"],
+            ["8", "Skipcond C", "條件成立時 PC←PC+1"], ["9", "Jump X", "PC←X"],
+            ["A", "Clear", "AC←0"], ["B", "AddI X", "AC←AC+M[M[X]]"],
+            ["C", "JumpI X", "PC←M[X]"], ["D", "LoadI X", "AC←M[M[X]]"],
+            ["E", "StoreI X", "M[M[X]]←AC"]
+          ],
+          caption: "表格列的是 architectural effect；實體 datapath 仍可能需要多個 MAR/MBR microoperations 才完成。"
+        },
+        sourceRefs: ["S3", "S5"]
+      },
+      {
+        title: "6. Skipcond 與 Jump：以 PC 表達 if 與 loop",
+        paragraphs: [
+          "Skipcond 不指定任意 target；它只在條件成立時把已經指向下一個 instruction 的 PC 再加 1，所以恰好略過一個 16-bit word。condition 放在 IR[11:10]：00 檢查 AC<0，01 檢查 AC=0，10 檢查 AC>0，常用 hexadecimal operands 分別寫成 000、400、800。",
+          "if/else 的典型排列是先讓 AC 保存比較結果，再用 Skipcond 跳過緊接著的 Jump。以 X<Y 為例，Load X、Subt Y 後 AC=X−Y；Skipcond 000 為真時略過 Jump Else，順向進入 then block。then block 結尾仍需 Jump End，否則會落入 else block。",
+          "loop 由 backward Jump 形成。每次 iteration 都必須在 AC 中重建 condition，因為 loop body 可能改變 AC。分析時不要只畫箭頭；要列出每次到達 Skipcond 時的 AC、fetch 後 PC、條件是否成立，以及成立後實際略過哪一個 word。"
+        ],
+        figure: {
+          type: "matrix",
+          title: "Skipcond condition field",
+          columns: ["Assembly", "IR[11:10]", "判斷", "true 時效果"],
+          rows: [
+            ["Skipcond 000", "00", "AC<0", "略過下一個 word"],
+            ["Skipcond 400", "01", "AC=0", "略過下一個 word"],
+            ["Skipcond 800", "10", "AC>0", "略過下一個 word"],
+            ["11", "11", "第 4 版未定義", "不可依賴"]
+          ],
+          caption: "C 不是 branch target。Skipcond 只決定是否再增加一次 PC，通常與下一條 Jump 配對。"
+        },
+        sourceRefs: ["S3", "S5", "S7"]
+      },
+      {
+        title: "7. Indirect addressing：memory 中的 value 也可以是 address",
+        paragraphs: [
+          "direct addressing 的 EA=X；indirect addressing 的 EA=M[X] 低 12 bits。LoadI X 要先讀 pointer slot X，再以其中的 address 讀真正 operand：MAR←X、MBR←M[MAR]、MAR←MBR[11:0]、MBR←M[MAR]、AC←MBR。兩次 memory reads 的角色不同，第一次取得 address，第二次取得 data。",
+          "AddI X 使用相同 dereference 再把 operand 加到 AC；StoreI X 把 AC 寫到 M[M[X]]；JumpI X 則把 M[X] 載入 PC。若 M[X] 的 pointer 錯誤，direct slot 本身看起來可能完全正常，真正被讀寫的 distant location 才會出錯。追蹤時要明確寫出 X、M[X]、M[M[X]] 三個量。",
+          "indirect addressing 讓 pointer、array traversal 與 subroutine return 成為可能。pointer 每前進一個 MARIE word，address 加 1，而不是加 2 bytes。它也增加 memory traffic：direct Load 通常需要一次 operand read，LoadI 需要 pointer read 加 data read，因此相同 architectural result 可能有不同執行成本。"
+        ],
+        figure: {
+          type: "flow",
+          title: "LoadI X 的兩層解參照",
+          items: ["instruction field X", "read M[X] = pointer P", "EA←P[11:0]", "read M[P] = data", "AC←data"],
+          caption: "第一個 memory word 保存 address，第二個 memory word 才保存 operand；把 M[X] 直接當 data 會少解參照一層。"
+        },
+        sourceRefs: ["S3", "S5"]
+      },
+      {
+        title: "8. JnS 與 JumpI：把 return address 存在程式旁的 memory",
+        paragraphs: [
+          "執行 JnS X 時，共同 fetch 已把 PC 更新成 call 之後的 address。execute 將這個 PC 保存到 M[X]，再令 PC=X+1。因此 label X 所在 word 不是 subroutine 的第一條 executable instruction，而是 return-address slot；subroutine body 從下一個 word開始。",
+          "return 使用 JumpI X，令 PC←M[X]，回到 JnS 先前保存的 successor。這個配對沒有專用 link register 或 stack。若 subroutine 內再次 JnS 到同一個 return slot，原 return address 會被覆蓋，所以一般 recursion 與巢狀呼叫需要額外軟體機制保存 return addresses。",
+          "參數與結果通常經 AC 或約定的 memory locations 傳遞。這是 calling convention 的雛形：ISA 只定義 JnS/JumpI 的 state effect，程式還要共同約定 input 在哪裡、哪些 locations 會被修改、result 留在哪裡。MIPS 的 jal 將 return address 放進 $ra，兩者功能相似但 architectural state 不同。"
+        ],
+        figure: {
+          type: "flow",
+          title: "JnS X / JumpI X 的呼叫迴路",
+          items: ["fetch JnS：PC=return", "M[X]←PC", "PC←X+1", "執行 subroutine body", "JumpI X：PC←M[X]", "回到 caller"],
+          caption: "X 是 return-address slot，X+1 才是 subroutine entry；同一 slot 同時承擔 linkage state。"
+        },
+        sourceRefs: ["S3", "S5", "S8"]
+      },
+      {
+        title: "9. Assembler：從 labels 與 directives 產生 memory image",
+        paragraphs: [
+          "assembly source 的 mnemonic 是人可讀的 opcode 名稱，label 是 symbolic address。DEC 與 HEX 不是 CPU instructions，而是要求 assembler 把常數 word 放入 memory；ORG 設定 location counter。每個 instruction 或 data directive 通常占一個 word，所以 assembler 能依序計算每個 label 的 12-bit address。",
+          "forward reference 使 single pass 不夠方便：Jump Done 出現時，Done 可能尚未被看見。two-pass assembler 第一遍更新 location counter 並建立 symbol table；第二遍查 opcode table 與 symbol table，把每一列輸出成 16-bit word。若 label 重複、symbol 未定義或 address 超出 0xFFF，assembler 應報錯而不是猜測。",
+          "例如程式從 ORG 100 開始，四條 instructions 位於 100..103，接著 X、Y、Z labels 便位於 104、105、106。Load X 編成 1104，Add Y 編成 3105，Store Z 編成 2106，Halt 編成 7000。symbol table 是連接 source name 與 machine address 的可驗證證據。"
+        ],
+        figure: {
+          type: "flow",
+          title: "Two-pass assembly pipeline",
+          items: ["Source lines", "Pass 1: location counter", "Symbol table", "Pass 2: opcode + address", "16-bit memory image", "listing / diagnostics"],
+          caption: "第一遍回答 label 在哪裡，第二遍才把 mnemonic 與 symbol 組成 machine word。"
+        },
+        sourceRefs: ["S1", "S5", "S6"]
+      },
+      {
+        title: "10. Clocked control、hardwired control、microprogram 與 interrupts",
+        paragraphs: [
+          "control unit 讀取 current control state、IR opcode 與必要 condition，產生 bus source、register load、memory read/write 與 ALU operation 等 signals。clock edge 使 datapath registers 與 controller state 一起前進。RTN 描述『必須發生什麼 transfer』，control state machine 描述『在哪一個 clock step 啟用哪些 signals』。",
+          "hardwired control 直接以 finite-state logic 產生 signals，通常反應快，但修改 instruction sequence 需要更動 logic。microprogrammed control 把每個 control word 與 next-address rule 放在 control memory，較容易表達複雜 instructions，但要付出 microinstruction fetch 與 control-store 成本。兩者都必須實現相同 ISA-visible result。",
+          "interrupt 讓外部事件在 instruction boundaries 改變正常控制流。完整機制至少要保存 resume state、辨認 handler entry、處理事件並恢復；basic MARIE program trace 通常先假設沒有 pending interrupt。這不是把 interrupt 當作不存在，而是明確固定分析條件；若加入 interrupt，必須把額外 state transitions 放進 instruction cycle。"
+        ],
+        figure: {
+          type: "hierarchy",
+          title: "控制單元把 ISA 語意展開成 clock steps",
+          items: [
+            { label: "ISA instruction", detail: "例如 AC←AC+M[X]" },
+            { label: "RTN sequence", detail: "MAR←X；MBR←M[MAR]；AC←AC+MBR" },
+            { label: "Control states", detail: "fetch、decode、operand read、ALU write" },
+            { label: "Control signals", detail: "bus select、load enable、read/write、ALU op" },
+            { label: "Clocked result", detail: "registers 與 memory 更新" }
+          ],
+          caption: "hardwired 與 microprogrammed control 的內部方法不同，最終都要產生正確的 transfer sequence。"
+        },
+        sourceRefs: ["S1", "S4", "S6"]
+      },
+      {
+        title: "11. 第 4 版 MARIE、現行 MARIE.js 與 MIPS 的邊界",
+        paragraphs: [
+          "本章 machine words 依第 4 版：opcode A 是 Clear，A000 使 AC←0。現行 MARIE.js 自 v2.1 起把 opcode A 一般化為 LoadImmi X，並把 Clear 當成 LoadImmi 0 的 alias；它還接受 Skipcond 0C00 作 nonzero extension。這些 simulator extensions 不能反向寫進第 4 版 ISA 題目的答案。",
+          "MARIE 與 MIPS 都以 PC、instruction bits、datapath 與 memory operations 執行 stored program，但 MIPS 對 programmers 顯露多個 general-purpose registers、三個 register operands、byte addressing 與固定 32-bit instruction。MARIE 的 PC+1 是下一個 16-bit word；MIPS sequential PC 通常+4 是下一個 4-byte instruction。",
+          "比較兩者時，應先固定同一層次。Load X 與 lw 都造成 memory-to-register transfer，但前者 destination 隱含為 AC 且 address 直接在 12-bit field，後者 destination/base registers 與 signed offset 都在 instruction 中。MARIE 的價值是把 state chain縮短到可手算；MIPS 則讓相同原理接近實際 RISC datapath。"
+        ],
+        figure: {
+          type: "matrix",
+          title: "MARIE 與 MIPS 的同層比較",
+          columns: ["面向", "MARIE 第 4 版", "MIPS32 基礎模型"],
+          rows: [
+            ["instruction", "16 bits；4-bit opcode+12-bit field", "32 bits；依 format 分欄"],
+            ["arithmetic state", "AC 為隱含 operand/result", "general-purpose register file"],
+            ["addressing", "word-addressed；PC+1", "byte-addressed；sequential PC+4"],
+            ["load", "Load X：AC←M[X]", "lw rt,offset(base)"],
+            ["call linkage", "JnS 將 return address 寫入 M[X]", "jal 通常寫入 $ra"],
+            ["分析重點", "完整 RTN 與 control steps", "fields、datapath、pipeline 與 hazards"]
+          ],
+          caption: "ISA 顯露的 state 不同，但都可用 fetch、decode、operand、execute、state update 的證據鏈分析。"
+        },
+        sourceRefs: ["S7", "S9"]
+      }
+    ],
+    workedExamples: [
+      {
+        title: "例題一：MARIE instruction 的編碼與反解",
+        prompt: "將 Load 3A5 編成 machine word，並反向解碼 B207。",
+        steps: [
+          "Load 的第 4 版 hexadecimal opcode 是 1，形成高 4 bits 0001。",
+          "address 3A5 已是三個 hex digits，等於 12-bit pattern 0011 1010 0101。",
+          "串接 opcode 與 address 得 0001 0011 1010 0101，即 0x13A5。",
+          "反解 0xB207 時先取最高 digit B，opcode B 對應 AddI。",
+          "低三 digits 是 0x207，表示 pointer slot 位於 word address 207。",
+          "architectural effect 是 AC←AC+M[M[0x207]]，不能少掉其中一層 memory dereference。"
+        ],
+        result: "Load 3A5→0x13A5；0xB207→AddI 207。固定欄位使 hex digit 可直接對應 opcode/address。"
+      },
+      {
+        title: "例題二：逐步追蹤 fetch 與 Load execute",
+        prompt: "初始 PC=100、AC=0000，M[100]=1300，M[300]=FFFB。追蹤一條 instruction 後的 state。",
+        steps: [
+          "MAR←PC，使 MAR=100；此時 PC 仍是 100。",
+          "MBR←M[MAR]，讀得 MBR=1300。",
+          "IR←MBR 得 IR=1300，PC←PC+1 得 PC=101。",
+          "decode IR[15:12]=1 為 Load，IR[11:0]=300 為 X。",
+          "execute：MAR←300，MBR←M[300]=FFFB。",
+          "AC←MBR，使 AC=FFFB；以 16-bit two's complement 解讀為 −5。",
+          "memory 沒有被寫入，next instruction address 保持 PC=101。"
+        ],
+        result: "完成後 IR=1300、PC=101、AC=FFFB；fetch 與 operand read 是兩次目的不同的 memory access。"
+      },
+      {
+        title: "例題三：由 assembly、machine words 到 X+Y",
+        prompt: "程式從 100 開始：Load X；Add Y；Store Z；Halt；X=7、Y=−3、Z=0。建立 addresses、編碼並追蹤結果。",
+        steps: [
+          "四條 instructions 占 100..103，因此 X=104、Y=105、Z=106。",
+          "machine words 依序為 1104、3105、2106、7000；data words 為 0007、FFFD、0000。",
+          "Load X 後 AC=M[104]=0007，PC 指向 101。",
+          "Add Y 後 AC=0007+FFFD=0004；低 16 bits 表示十進位 4。",
+          "Store Z 將 M[106] 由 0000 更新為 0004，AC 仍為 0004。",
+          "Halt 終止 instruction cycle，Z 的最終值為 4。"
+        ],
+        result: "symbol placement、machine encoding 與 state trace 三者一致：7+(−3)=4，M[106]=0004。"
+      },
+      {
+        title: "例題四：以 Skipcond 計算絕對值",
+        prompt: "追蹤 Input=-6 的程式：Input；Store X；Skipcond 000；Jump Done；Clear；Subt X；Done, Output；Halt。",
+        steps: [
+          "Input 後 AC=FFFA，也就是 −6；Store X 令 M[X]=FFFA。",
+          "fetch Skipcond 後 PC 已指向緊接的 Jump Done。",
+          "AC<0 成立，因此 Skipcond 再令 PC←PC+1，略過 Jump Done。",
+          "Clear 令 AC=0。",
+          "Subt X 計算 0−(−6)=6，使 AC=0006。",
+          "Output 將 6 送到 OutREG，Halt 結束。",
+          "若 input 非負，condition 不成立，Jump Done 會略過 Clear/Subt，直接輸出原值。"
+        ],
+        result: "Skipcond 本身只略過下一條 Jump；負數路徑執行 0−X，非負路徑直接前往 Done。"
+      },
+      {
+        title: "例題五：以 LoadI/AddI 走訪三個 array words",
+        prompt: "Ptr 初值為 120，M[120..122] 分別為 4、−1、6。每次 AddI Ptr 後把 Ptr 加 1，共執行三次，求 Sum 與 memory reads。",
+        steps: [
+          "初始化 Sum=0、Ptr=120、Ctr=3。第一次 AddI 先讀 M[Ptr]=120，再讀 M[120]=4，Sum=4。",
+          "將 Ptr 更新為 121，Ctr 更新為 2；Skipcond 400 不成立，回到 loop。",
+          "第二次 AddI 讀 M[121]=−1，Sum=4+(−1)=3。",
+          "Ptr 更新為 122、Ctr=1，繼續 loop。",
+          "第三次 AddI 讀 M[122]=6，Sum=3+6=9。",
+          "Ctr 降為 0，Skipcond 400 略過 backward Jump，離開 loop。",
+          "三次 AddI 各有 pointer read 與 operand read，因此僅 indirect operands 就產生 6 次 memory reads。"
+        ],
+        result: "最終 Sum=9、Ptr=123、Ctr=0；每個 AddI 的證據鏈都是 X→M[X]→M[M[X]]。"
+      },
+      {
+        title: "例題六：用 JnS/JumpI 呼叫 Double",
+        prompt: "caller 在 102 執行 JnS Double，Double label 位於 110，return slot 初值 0000；body 自 111 開始，最後 JumpI Double。追蹤 call 與 return。",
+        steps: [
+          "fetch address 102 的 JnS 後，PC 已由 102 增為 103，這就是 return address。",
+          "execute JnS：M[110]←103，把 return address 寫入 Double label 所在 word。",
+          "接著 PC←110+1=111，開始執行 subroutine body。",
+          "body 可 Load Arg、Add Arg、Store Result，把 input 加倍；此處假設 result 已寫好。",
+          "fetch JumpI Double 後，JumpI 讀 M[110]=103。",
+          "PC←103，下一次 fetch 回到 caller 的 JnS 後一條 instruction。",
+          "若在返回前再次用同一 slot M[110] 儲存其他 return address，原 caller linkage 就會遺失。"
+        ],
+        result: "call 後 M[110]=103、PC=111；return 後 PC=103。MARIE 以 memory slot 保存 linkage。"
+      }
+    ],
+    misconceptions: [
+      ["MAR、MBR 都和 memory 有關，所以可以互換。", "MAR 保存 12-bit address，MBR 保存 16-bit data/instruction word；角色與寬度都不同。"],
+      ["PC 保存目前正在執行的 instruction。", "IR 保存 current instruction；fetch 後 PC 通常已指向 sequential next instruction。"],
+      ["Skipcond C 的 C 是 branch target。", "C 編碼 negative/zero/positive condition；true 時只略過緊接的一個 word。"],
+      ["LoadI X 就是把 M[X] 放進 AC。", "那是 Load X；LoadI 要再把 M[X] 當 address，結果是 AC←M[M[X]]。"],
+      ["JnS X 直接跳到 X 執行。", "X 是 return-address slot；JnS 將 PC 存入 M[X]，再跳到 X+1。"],
+      ["DEC、HEX、ORG 都是 CPU 會執行的 instructions。", "它們是 assembler directives，用來配置 location 或 data，不會被 opcode decoder 執行。"],
+      ["MARIE 的 PC+1 和 MIPS 的 PC+4 矛盾。", "MARIE 以 word 定址，MIPS 基礎模型以 byte 定址；兩者都前進一個固定長度 instruction。"],
+      ["MARIE.js 能接受的語法一定就是第 4 版 ISA。", "現行 simulator 有 LoadImmi 與額外 Skipcond condition；本章的編碼答案以第 4 版語意為準。"]
+    ],
+    exercises: [
+      { level: "基礎", question: "12-bit MAR 最多可指定多少個 memory words？若每 word 16 bits，內容容量是多少 bytes？", solution: ["2^12=4096 個 word addresses。", "4096×16 bits=65536 bits=8192 bytes；address unit 仍是 word。"] },
+      { level: "基礎", question: "IR=0x43A5 時，opcode、instruction 與 address 分別為何？", solution: ["高 4 bits 是 hex 4，對應 Subt。", "低 12 bits 是 0x3A5，因此解碼為 Subt 3A5。"] },
+      { level: "基礎", question: "將 Store 2F0 與 Halt 編成 16-bit hexadecimal machine words。", solution: ["Store opcode=2，串接 address 2F0 得 22F0。", "Halt opcode=7 且不使用一般 address，慣例填 000，得 7000。"] },
+      { level: "基礎", question: "說明 MAR←PC 與 MBR←M[MAR] 各自搬移的是 address 還是 word。", solution: ["MAR←PC 搬移 12-bit instruction address。", "MBR←M[MAR] 以該 address 讀取一個 16-bit memory word。"] },
+      { level: "核心", question: "PC=2A0、M[2A0]=9105。fetch 完成後 IR、PC 為何？execute 後 PC 為何？", solution: ["fetch 後 IR=9105，PC 先變成 2A1。", "opcode 9 是 Jump，execute 以 address field 105 覆寫 PC，所以最終 PC=105。"] },
+      { level: "核心", question: "AC=0009、M[080]=FFFC。執行 Subt 080 後 AC 為何？", solution: ["FFFC 是 16-bit two's complement 的 −4。", "AC=9−(−4)=13，hex 為 000D。"] },
+      { level: "核心", question: "AC=0 時執行 Skipcond 400。若 fetch 後 PC=205，execute 後 PC 為何？哪個 word 被略過？", solution: ["condition AC=0 成立，因此 PC 再加 1 成為 206。", "address 205 的 instruction 被略過，下一次 fetch 從 206 開始。"] },
+      { level: "核心", question: "M[050]=2C0、M[2C0]=0017。Load 050 與 LoadI 050 各使 AC 得到什麼？", solution: ["Load 050 直接讀 M[050]，所以 AC=02C0。", "LoadI 050 以 M[050]=2C0 為 effective address，再讀 M[2C0]，所以 AC=0017。"] },
+      { level: "核心", question: "AC=0005、M[060]=300、M[300]=0007。AddI 060 後 AC 為何？需要幾次 operand-related memory reads？", solution: ["先讀 pointer M[060]=300，再讀 operand M[300]=7，AC=5+7=12=000C。", "不含 instruction fetch，indirect operand path 需要 2 次 memory reads。"] },
+      { level: "進階", question: "caller 在 address 180 執行 JnS 250。fetch 與 call 完成後，M[250]、PC 各為何？", solution: ["fetch 後 PC=181，所以 JnS 保存 M[250]=181。", "subroutine entry 是 X+1，因此 PC=251。"] },
+      { level: "進階", question: "從 ORG 100 開始依序有 Load A、Jump Done、A DEC 5、Done Halt。建立 symbol table 與 machine words。", solution: ["addresses 為 Load=100、Jump=101、A=102、Done=103，所以 symbols A→102、Done→103。", "machine/data words 為 1102、9103、0005、7000。"] },
+      { level: "進階", question: "為何 Store X 可改變 memory 卻不必改變 AC？列出其 RTN。", solution: ["Store 的 source 是 AC，copy 不會清除來源 register。", "RTN 為 MAR←X、MBR←AC、M[MAR]←MBR；完成後 AC 保持原值。"] },
+      { level: "進階", question: "某 loop 在 Ctr 從 3 每次減 1 後執行 Skipcond 400、Jump Loop。Jump Loop 會執行幾次？", solution: ["Ctr 依序成為 2、1、0。前兩次不為零，因此 Jump Loop 執行 2 次。", "第三次 condition 成立，Skipcond 略過 Jump，離開 loop。loop body 總共執行 3 iterations。"] },
+      { level: "挑戰", question: "為何同一個 return slot 無法直接支援 recursive JnS？", solution: ["每次 JnS 都把新的 return address 寫入 M[X]，下一層呼叫會覆蓋上一層 linkage。", "recursive convention 必須把每一層 return address 移到不同 storage，例如軟體管理的 stack，返回前再恢復。"] },
+      { level: "挑戰", question: "現行 MARIE.js 的 LoadImmi 2A5 編成 A2A5。以第 4 版 ISA 解讀同一 word 時應如何處理？", solution: ["第 4 版把 opcode A 定義為 Clear，低 12 bits 不形成一般 immediate operand。", "因此第 4 版答案應視為 Clear，而不是載入 0x2A5；跨 simulator 比較前必須先固定 ISA version。"] }
+    ],
+    glossary: [
+      ["Accumulator machine", "以單一主要累加器作為 arithmetic 隱含來源與目的的 ISA 模型。"],
+      ["AC", "16-bit accumulator，保存 MARIE 的主要 operand 與 ALU result。"],
+      ["MAR", "12-bit Memory Address Register，指定下一次 memory transaction 的 word address。"],
+      ["MBR", "16-bit Memory Buffer Register，保存讀出的 word 或準備寫入的 word。"],
+      ["PC", "12-bit Program Counter，保存下一個 instruction word 的 address。"],
+      ["IR", "16-bit Instruction Register，保存 current instruction 供 decode/execute 使用。"],
+      ["Word addressing", "每個 address 選取一個完整 word；MARIE sequential instruction address 因此加 1。"],
+      ["Opcode", "instruction 中選擇 operation semantics 的欄位。"],
+      ["Register transfer notation", "以 Rdest←expression 描述 clocked data movement 與 state update 的記號。"],
+      ["Microoperation", "一個 control step 中可完成的基本 register、ALU 或 memory operation。"],
+      ["Fetch cycle", "依 PC 取得 instruction、寫入 IR 並建立 sequential next PC 的共同階段。"],
+      ["Direct addressing", "instruction field X 本身就是 effective address，EA=X。"],
+      ["Indirect addressing", "先讀 M[X] 取得 effective address，EA=M[X]。"],
+      ["Skipcond", "依 AC sign/zero condition 決定是否略過下一個 instruction word。"],
+      ["JnS", "把 fetch 後 PC 存入 M[X] 並跳到 X+1 的 MARIE call instruction。"],
+      ["JumpI", "以 M[X] 更新 PC 的 indirect control transfer，可配合 JnS 返回。"],
+      ["Assembler directive", "控制 address/data 配置但不由 CPU opcode decoder 執行的 ORG、DEC、HEX 等命令。"],
+      ["Symbol table", "assembler 建立的 label 到 numeric address 對照。"],
+      ["Hardwired control", "以固定 combinational/sequential logic 直接產生 control signals。"],
+      ["Microprogrammed control", "由 control memory 中的 microinstructions 產生 datapath signals。"],
+      ["Architectural state", "ISA 程式可觀察、會影響後續行為的 registers、memory 與 I/O state。"]
+    ],
+    sources: [
+      { key: "S1", title: "Penn State CMPSC 312: Computer Organization and Architecture", url: "https://h3turing.vmhost.psu.edu/cmpsc312/", accessed: "2026-08-18", use: "作者 Linda Null 公開的第 4 章課程投影片、MARIE simulator、datapath simulator 與 guide 資源入口。" },
+      { key: "S2", title: "Linda Null: The Essentials of Computer Organization and Architecture, Fourth Edition", url: "https://h3turing.vmhost.psu.edu/~null/", accessed: "2026-08-18", use: "作者、第四版與 MARIE simulator 的公開書目脈絡。" },
+      { key: "S3", title: "Brooklyn College CISC 3310: MARIE Registers", url: "https://www.sci.brooklyn.cuny.edu/~briskman/cisc/3310/lecture_notes/topic_06/04.html", accessed: "2026-08-18", use: "MARIE registers 的寬度、功能與 fetch-decode-execute 中的角色。" },
+      { key: "S4", title: "Gordon College CS311: CPU Control, Hardwired Control and Microprogramming", url: "https://www.cs.gordon.edu/courses/cs311/lectures-2003/control.html", accessed: "2026-08-18", use: "MARIE control state machine、control word、hardwired control 與 microprogrammed control。" },
+      { key: "S5", title: "University of Northern Iowa: MARIE Assembly Language Supplement", url: "https://www.cs.uni.edu/~fienup/cs1410s14/lectures/Supplement_MARE_AL.pdf", accessed: "2026-08-18", use: "第 4 版完整 instruction summary、Skipcond、subroutine、if/loop assembly patterns。" },
+      { key: "S6", title: "Gordon College CS311: The Architecture of a Simple Computer", url: "https://www.math-cs.gordon.edu/courses/cs311/lectures-2003/simple_computer.pdf", accessed: "2026-08-18", use: "register widths、word-addressed memory、fetch-decode-execute 與 register-transfer semantics。" },
+      { key: "S7", title: "Brooklyn College CISC 3310: MARIE Skipcond Instruction", url: "https://www.sci.brooklyn.cuny.edu/~briskman/cisc/3310/lecture_notes/topic_06/09.html", accessed: "2026-08-18", use: "IR condition bits 與 Skipcond 的 negative、zero、positive control behavior。" },
+      { key: "S8", title: "MARIE.js Wiki: Subroutines", url: "https://github.com/MARIE-js/MARIE.js/wiki/Subroutines", accessed: "2026-08-18", use: "JnS 與 JumpI 的 call/return 組合及 simulator behavior。" },
+      { key: "S9", title: "MARIE.js Releases", url: "https://github.com/MARIE-js/MARIE.js/releases", accessed: "2026-08-18", use: "現行 simulator 的 datapath visualization 與 v2.1 opcode A、Skipcond extensions，供版本相容性註記。" },
+      { key: "S10", title: "University of Northern Iowa: The Fetch-Decode-Execute Cycle", url: "https://www.cs.uni.edu/~schafer/cohort26/FCCS/lessons/week2/topic2e/t2e_r2_fde.html", accessed: "2026-08-18", use: "以公開教材核對 fetch、decode、execute、register 與 ALU data movement 的通用模型。" }
+    ]
   }
 ];
