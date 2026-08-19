@@ -1536,7 +1536,13 @@ p, li {
 
 .bit-diagram {
   display: flex;
-  min-width: 600px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  contain: inline-size;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-gutter: stable;
   border: 2px solid var(--ink);
   background: var(--ink);
   gap: 2px;

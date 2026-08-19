@@ -33,7 +33,7 @@ assert(fourthEdition.chapters.length === 13, "Fourth edition must contain 13 map
 assert(new Set(fourthEdition.chapters.map((item) => item.chapter)).size === 13, "Fourth edition chapter numbers must be unique");
 assert(fourthEdition.weekMap.length === 18, "Every course week needs a fourth edition mapping");
 assert(new Set(fourthEdition.weekMap.map((item) => item.week)).size === 18, "Fourth edition week mappings must be unique");
-assert(chapterDetails.length >= 4, "At least four detailed self-study chapters are required");
+assert(chapterDetails.length >= 5, "At least five detailed self-study chapters are required");
 assert(new Set(chapterDetails.map((item) => item.chapter)).size === chapterDetails.length, "Detailed chapter numbers must be unique");
 
 for (const chapter of chapterDetails) {
@@ -56,6 +56,18 @@ for (const chapter of chapterDetails) {
   assert(chapter.sources.every((source) => /^https:\/\//.test(source.url)), `Chapter ${chapter.chapter} source URLs must use HTTPS`);
   for (const section of chapter.sections) {
     assert(section.sourceRefs.every((key) => sourceKeys.has(key)), `Chapter ${chapter.chapter} section references an unknown source`);
+    const figure = section.figure;
+    if (!figure) continue;
+    assert(figure.title && figure.caption, `Chapter ${chapter.chapter} figure metadata is incomplete`);
+    if (figure.type === "bits") {
+      assert(figure.items.reduce((sum, item) => sum + item.bits, 0) === figure.totalBits, `Chapter ${chapter.chapter} bit figure fields have the wrong total width`);
+    }
+    if (figure.type === "matrix") {
+      assert(figure.rows.every((row) => row.length === figure.columns.length), `Chapter ${chapter.chapter} matrix figure has an inconsistent row width`);
+    }
+    if (figure.type === "timeline") {
+      assert(figure.rows.every((row) => row.cells.length === figure.columns.length), `Chapter ${chapter.chapter} timeline figure has an inconsistent row width`);
+    }
   }
 }
 
@@ -82,6 +94,14 @@ assert(chapterFour.sections.filter((item) => item.figure).length >= 10, "Chapter
 assert(chapterFour.workedExamples.length >= 6, "Chapter 4 needs at least six worked examples");
 assert(chapterFour.exercises.length >= 15, "Chapter 4 needs at least fifteen exercises with solutions");
 assert(chapterFour.sources.length >= 9, "Chapter 4 needs broad authoritative source coverage");
+
+const chapterFive = chapterDetails.find((chapter) => chapter.chapter === 5);
+assert(chapterFive, "Chapter 5 detailed ISA material is missing");
+assert(chapterFive.sections.length >= 11, "Chapter 5 needs at least eleven complete concept sections");
+assert(chapterFive.sections.filter((item) => item.figure).length >= 11, "Chapter 5 needs at least eleven verifiable diagrams");
+assert(chapterFive.workedExamples.length >= 7, "Chapter 5 needs at least seven worked examples");
+assert(chapterFive.exercises.length >= 16, "Chapter 5 needs at least sixteen exercises with solutions");
+assert(chapterFive.sources.length >= 12, "Chapter 5 needs broad authoritative source coverage");
 
 for (const mapping of fourthEdition.weekMap) {
   assert(mapping.chapters.length >= 1, `Week ${mapping.week} needs at least one fourth edition chapter`);
@@ -185,6 +205,37 @@ assert((0x102 + 1) === 0x103 && (0x110 + 1) === 0x111, "Chapter 4 JnS call/retur
 assert(((0x1 << 12) | 0x104) === 0x1104, "Chapter 4 assembler Load word failed");
 assert(((0x3 << 12) | 0x105) === 0x3105, "Chapter 4 assembler Add word failed");
 assert(((0x2 << 12) | 0x106) === 0x2106, "Chapter 4 assembler Store word failed");
+
+const mipsRAdd = ((0 << 26) | (17 << 21) | (18 << 16) | (8 << 11) | (0 << 6) | 0x20) >>> 0;
+assert(mipsRAdd === 0x02324020, "Chapter 5 R-format add encoding failed");
+const mipsAddiNegative = ((0x08 << 26) | (17 << 21) | (8 << 16) | ((-12) & 0xffff)) >>> 0;
+assert(mipsAddiNegative === 0x2228fff4, "Chapter 5 negative addi encoding failed");
+const mipsLoad = ((0x23 << 26) | (17 << 21) | (8 << 16) | 20) >>> 0;
+assert(mipsLoad === 0x8e280014, "Chapter 5 load encoding failed");
+const mipsStore = ((0x2b << 26) | (29 << 21) | (8 << 16) | ((-8) & 0xffff)) >>> 0;
+assert(mipsStore === 0xafa8fff8, "Chapter 5 store encoding failed");
+const branchPc = 0x00400020;
+const branchTarget = 0x00400010;
+const branchDisplacement = (branchTarget - (branchPc + 4)) / 4;
+assert(branchDisplacement === -5, "Chapter 5 branch displacement failed");
+const mipsBeq = ((0x04 << 26) | (8 << 21) | (9 << 16) | (branchDisplacement & 0xffff)) >>> 0;
+assert(mipsBeq === 0x1109fffb, "Chapter 5 branch encoding failed");
+const jumpPc = 0x00400040;
+const jumpTarget = 0x00401234;
+const jumpIndex = (jumpTarget >>> 2) & 0x03ffffff;
+const mipsJump = ((0x02 << 26) | jumpIndex) >>> 0;
+assert(jumpIndex === 0x0010048d && mipsJump === 0x0810048d, "Chapter 5 jump encoding failed");
+assert(((((jumpPc + 4) & 0xf0000000) | (jumpIndex << 2)) >>> 0) === jumpTarget, "Chapter 5 pseudo-direct target reconstruction failed");
+assert((((0x0f << 26) | (8 << 16) | 0x1234) >>> 0) === 0x3c081234, "Chapter 5 LUI encoding failed");
+assert((((0x0d << 26) | (8 << 21) | (8 << 16) | 0xabcd) >>> 0) === 0x3508abcd, "Chapter 5 ORI encoding failed");
+assert(((0x1234 << 16) | 0xabcd) >>> 0 === 0x1234abcd, "Chapter 5 constant construction failed");
+const chapterFivePipelineClock = Math.max(250, 150, 200, 300, 180) + 20;
+const chapterFivePipelineCycles = 5 + 8 - 1;
+assert(chapterFivePipelineClock === 320 && chapterFivePipelineCycles === 12, "Chapter 5 pipeline clock/cycle calculation failed");
+assert((8 * (250 + 150 + 200 + 300 + 180)) === 8640, "Chapter 5 sequential timing failed");
+assert((chapterFivePipelineClock * chapterFivePipelineCycles) === 3840, "Chapter 5 pipeline timing failed");
+assert(Math.abs(8640 / 3840 - 2.25) < 1e-12, "Chapter 5 pipeline speedup failed");
+assert(Math.abs(1 + 0.20 * 0.30 - 1.06) < 1e-12, "Chapter 5 load-use CPI failed");
 
 const homepage = path.join(root, "index.html");
 const editionPage = path.join(root, "fourth-edition-map.html");

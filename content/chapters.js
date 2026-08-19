@@ -1548,5 +1548,421 @@ const chapterDetails = [
       { key: "S9", title: "MARIE.js Releases", url: "https://github.com/MARIE-js/MARIE.js/releases", accessed: "2026-08-18", use: "現行 simulator 的 datapath visualization 與 v2.1 opcode A、Skipcond extensions，供版本相容性註記。" },
       { key: "S10", title: "University of Northern Iowa: The Fetch-Decode-Execute Cycle", url: "https://www.cs.uni.edu/~schafer/cohort26/FCCS/lessons/week2/topic2e/t2e_r2_fde.html", accessed: "2026-08-18", use: "以公開教材核對 fetch、decode、execute、register 與 ALU data movement 的通用模型。" }
     ]
+  },
+  {
+    chapter: 5,
+    title: "指令集架構：編碼、定址與管線化執行",
+    english: "Instruction Set Architecture: Encoding, Addressing, and Pipelined Execution",
+    revised: "2026-08-19",
+    readingTime: "約 200–240 分鐘",
+    intro: "指令集架構（ISA）是 machine code 與處理器共同遵守的二進位合約。每一個 opcode、register field、immediate、位址計算與控制轉移規則，都必須精確到單一 bit；同一份合約卻能由單週期、多週期、pipeline 或 out-of-order 處理器實作。本章先以 operand 數量與 instruction format 建立設計空間，再以經典 MIPS32 子集完成 assembly、machine word、effective address、branch 與 procedure call 的雙向追蹤。最後把相同 instructions 放入五階段 pipeline，分清 instruction latency、throughput、structural/data/control hazard，以及 forwarding、stall 與 flush 各自解決的問題，並用 RISC-V、A64 與 x86-64 對照哪些特性屬於 RISC 慣例、哪些才是特定 ISA 的規則。",
+    outcomes: [
+      "能把 ISA 與 microarchitecture 分開，列出 ISA 對 instruction、state、memory 與 exception 的承諾。",
+      "能比較 zero-address、one-address、two-address、three-address 與 load-store operand models。",
+      "能依 bit position 編解碼 MIPS R、I、J formats，並檢查 register number、immediate 與 reserved fields。",
+      "能判斷 MIPS immediate 應做 sign extension 或 zero extension，並正確處理 32-bit constants。",
+      "能計算 register、immediate、base-plus-offset、PC-relative 與 pseudo-direct addressing 的 effective value/target。",
+      "能追蹤 load/store 的 byte address、alignment 與 endianness，不把 instruction field order 和 byte order 混為一談。",
+      "能以 calling convention 追蹤 argument、return value、return address、caller-saved、callee-saved 與 stack frame。",
+      "能計算理想 pipeline cycles、clock period、speedup，並畫出含 forwarding、stall 與 flush 的 timeline。",
+      "能比較 MIPS、RISC-V、A64 與 x86-64 的 encoding 選擇，不把 RISC/CISC 名稱當成效能結論。"
+    ],
+    sections: [
+      {
+        title: "1. ISA 是可執行檔與處理器之間的精確合約",
+        paragraphs: [
+          "ISA 規定 programmer-visible state 與每條 instruction 對 state 的效果。這通常包括 general-purpose registers、PC、資料型別、instruction encodings、address space、memory access、control transfer、privilege 與 exception。binary 中的 32 bits 只有在指定 ISA 與版本下才有確定語意；換一套 encoding，同一 bit pattern 可能變成另一條 instruction，也可能是 illegal instruction。",
+          "Microarchitecture 決定合約在晶片內怎麼完成。相同 MIPS machine code 可以由簡單 in-order core 或較深 pipeline 執行；cache 大小、forwarding network、branch predictor 與 execution units 會改變時間與能量，但正常完成時的 architectural state 必須相同。ISA compatibility 因而回答『能否正確執行』，benchmark 才回答『執行多快』。",
+          "assembly language 是 machine encoding 的可讀表示，但一行 assembly 不一定恰好對應一條 hardware instruction。assembler directive 只配置資料或位置；pseudo-instruction 可能展開成一條或多條真正 instructions。分析 machine code 時要依 ISA manual 與 assembler mode，不能只依 mnemonic 的外觀推測 instruction count。"
+        ],
+        figure: {
+          type: "hierarchy",
+          title: "從程式語意到硬體實作的責任邊界",
+          items: [
+            { label: "Source program", detail: "型別、控制流程、函式與資料結構" },
+            { label: "Compiler / Assembler", detail: "instruction selection、register allocation、symbols、relocation" },
+            { label: "ISA contract", detail: "encodings、registers、addresses、exceptions、observable state" },
+            { label: "Microarchitecture", detail: "datapath、control、pipeline、prediction、cache" },
+            { label: "Circuit", detail: "timing、wires、gates、storage elements" }
+          ],
+          caption: "machine code 直接依賴 ISA；pipeline 深度與 cache 組織位於合約之下，可在維持 observable behavior 時改變。"
+        },
+        sourceRefs: ["S1", "S2", "S7"]
+      },
+      {
+        title: "2. Operand model 決定 instruction 必須說出多少資訊",
+        paragraphs: [
+          "一個 expression Z=A+B 可以由不同 operand models 表示。stack machine 的 arithmetic 使用 stack top，add 不需顯式 operands；accumulator machine 隱含 AC，只需指出 memory operand；two-address machine 讓其中一個來源兼作 destination；three-address machine 明確指出兩個 sources 與一個 destination。欄位越多，單條 instruction 能直述的資訊越多，但 encoding space 與 instruction width 也受到壓力。",
+          "register-memory ISA 允許某些 arithmetic instruction 直接讀 memory operand；load-store ISA 則規定 arithmetic 只碰 registers，memory 只能由 load/store 存取。MIPS、RV32I 與 A64 的整數核心都採 load-store 風格：先把資料載入 register，運算後再 store。這增加明確的 data-movement instructions，卻使 ALU datapath 與 pipeline stage 的角色較規則。",
+          "instruction 數少不必然較快。stack expression 可能使用較短 encodings，卻頻繁存取 stack；three-address code 可能需要較多 encoding bits，卻能把中間值留在 registers。真正成本要結合 dynamic instruction count、每類 instruction 的 CPI、memory traffic 與 clock period，而不是只數 assembly 行數。"
+        ],
+        figure: {
+          type: "matrix",
+          title: "同一個 Z=A+B 的 operand 表達",
+          columns: ["模型", "代表序列", "隱含 state", "主要取捨"],
+          rows: [
+            ["Zero-address stack", "push A; push B; add; pop Z", "stack top", "短 arithmetic encoding，資料移動較多"],
+            ["One-address accumulator", "load A; add B; store Z", "AC", "格式簡單，中間值集中於 AC"],
+            ["Two-address", "move Z,A; add Z,B", "destination 兼 source", "少一個 operand field，可能需先 copy"],
+            ["Three-address", "add Z,A,B", "無", "資料流明確，需要多個 register fields"],
+            ["MIPS load-store", "lw; lw; add; sw", "register file", "memory 與 ALU instructions 分離"]
+          ],
+          caption: "operand count 描述 instruction 明寫幾個位置；它與實際 memory accesses、instruction count 必須分開計算。"
+        },
+        sourceRefs: ["S1", "S8", "S9"]
+      },
+      {
+        title: "3. Fixed-length encoding：MIPS R、I、J formats",
+        paragraphs: [
+          "經典 MIPS32 CPU instruction 是一個 aligned 32-bit word。三種基本 formats 都把 6-bit primary opcode 放在 bits 31..26。R format 另含 rs、rt、rd、shamt 與 funct；I format 含 rs、rt 與 16-bit immediate；J format 把其餘 26 bits 作為 instr_index。32 個 general-purpose registers 需要 5-bit index，因為 2^5=32。",
+          "R format 的 primary opcode 常為 SPECIAL=0，真正 operation 由 funct 再區分。例如 add 的 funct=0x20，sll 的 funct=0x00；固定 shift 使用 shamt，普通 add 的 shamt 必須為 0。I format 的 rt 角色依 instruction 改變：addi/lw 的 rt 是 destination，sw/beq 的 rt 是 source。欄位名稱不是永遠等於 data-flow 方向。",
+          "fixed length 讓 next sequential PC 通常是 PC+4，也讓 fetch boundary 與 major decode 規則整齊；代價是常數與 target 必須塞入有限欄位。A64 同樣使用 32-bit fixed-length instructions；RV32I base 也固定 32 bits，但 optional compressed extension 可把 alignment 放寬。x86-64 則使用 variable-length encodings，所以 instruction boundary 需要更複雜的 decode。"
+        ],
+        figure: {
+          type: "matrix",
+          title: "MIPS32 三種基本 instruction formats",
+          columns: ["Format", "bits 31..26", "25..21", "20..16", "15..11", "10..6", "5..0"],
+          rows: [
+            ["R", "opcode 6", "rs 5", "rt 5", "rd 5", "shamt 5", "funct 6"],
+            ["I", "opcode 6", "rs 5", "rt 5", "immediate[15:11]", "immediate[10:6]", "immediate[5:0]"],
+            ["J", "opcode 6", "instr_index[25:21]", "instr_index[20:16]", "instr_index[15:11]", "instr_index[10:6]", "instr_index[5:0]"]
+          ],
+          caption: "I/J 的欄位在表中為了對齊 R format 被切開顯示；實際上 immediate 與 instr_index 都是連續 bit fields。"
+        },
+        sourceRefs: ["S1", "S2", "S3", "S8", "S9", "S10"]
+      },
+      {
+        title: "4. R format 編解碼：從 register data flow 到 32 bits",
+        paragraphs: [
+          "編碼 add $t0,$s1,$s2 時，先把 assembly operands 對應到 data flow：GPR[8]←GPR[17]+GPR[18]，所以 rs=17、rt=18、rd=8。再填 opcode=0、shamt=0、funct=32。把 6/5/5/5/5/6 fields 串接後才轉 hexadecimal，可避免直接心算 hex 時跨欄位錯位。",
+          "反向解碼應先取 primary opcode。若 opcode=0，再依 funct 判斷 arithmetic/logic operation，並檢查 shamt 是否符合該 instruction。machine word 0x02324020 可切為 opcode 0、rs 17、rt 18、rd 8、shamt 0、funct 0x20，因此是 add $t0,$s1,$s2。",
+          "register aliases 是 ABI 名稱，不改變 machine encoding。$t0 與 $8 指向相同 GPR index；$zero 固定讀出 0，對它的寫入不形成一般可見 state。不同 toolchain 可能顯示 numeric names 或 ABI aliases，驗證時應回到 5-bit register number。"
+        ],
+        figure: {
+          type: "bits",
+          title: "add $t0,$s1,$s2 的 R-format fields",
+          totalBits: 32,
+          items: [
+            { label: "opcode=0", bits: 6, detail: "SPECIAL" },
+            { label: "rs=17", bits: 5, detail: "$s1 source" },
+            { label: "rt=18", bits: 5, detail: "$s2 source" },
+            { label: "rd=8", bits: 5, detail: "$t0 destination" },
+            { label: "shamt=0", bits: 5, detail: "not a fixed shift" },
+            { label: "funct=32", bits: 6, detail: "ADD" }
+          ],
+          caption: "串接結果為 000000 10001 10010 01000 00000 100000 = 0x02324020。"
+        },
+        sourceRefs: ["S1", "S2", "S3"]
+      },
+      {
+        title: "5. Immediate semantics：同一個 16-bit field 不只一種擴展規則",
+        paragraphs: [
+          "I format 提供 16-bit immediate，但 ALU 與 address 通常是 32 bits，因此執行前必須擴展。addi、slti、load/store offset 與 branch displacement 把 immediate 視為 signed two's complement 並 sign-extend；andi、ori、xori 則 zero-extend。lui 不做一般低位 operand，而是把 immediate 放到 result 的 bits 31..16，低 16 bits 填 0。",
+          "16-bit signed immediate 範圍是 −32768 到 32767，unsigned bit pattern 範圍是 0 到 65535。0xFFFF 經 sign extension 是 0xFFFFFFFF=−1，經 zero extension 是 0x0000FFFF=65535。operation 決定 interpretation；看到最高 bit 為 1 不能自行決定一定是負數。",
+          "超過單一 immediate 的 32-bit constant 通常由多條 instructions 建立。例如 0x1234ABCD 可用 lui $t0,0x1234 產生 0x12340000，再用 ori $t0,$t0,0xABCD 合併低 16 bits。li 是 assembler pseudo-instruction，常數較小時可能只展開一條，較大時才需要兩條；因此 static instruction count 取決於 expansion。"
+        ],
+        figure: {
+          type: "matrix",
+          title: "MIPS immediate 的解讀規則",
+          columns: ["Instruction 類型", "16-bit field", "32-bit operand/用途", "例子"],
+          rows: [
+            ["addi / slti", "signed", "sign-extend", "0xFFF4 → −12"],
+            ["lw / sw", "signed byte offset", "EA=GPR[rs]+signext(imm)", "−8($sp)"],
+            ["beq / bne", "signed word displacement", "target=PC+4+(signext(imm)<<2)", "0xFFFB → −5 instructions"],
+            ["andi / ori / xori", "bit mask", "zero-extend", "0xFFFF → 0x0000FFFF"],
+            ["lui", "upper half", "imm<<16", "0x1234 → 0x12340000"]
+          ],
+          caption: "欄位寬度相同不代表語意相同；extension 與 scaling 都由 opcode 規定。"
+        },
+        sourceRefs: ["S1", "S2", "S3", "S7"]
+      },
+      {
+        title: "6. Addressing modes：先算 effective address，再做 memory operation",
+        paragraphs: [
+          "register addressing 直接從 GPR 取 operand；immediate addressing 把 instruction field 作為 operand；base-plus-offset addressing 先算 EA=GPR[base]+signext(offset)，再由 load/store 讀寫 memory。MIPS memory 是 byte-addressed，所以 lw 的 offset 單位是 bytes，不是 array index 或 words。若 $s0 是 int array base，A[i] 的位址通常是 $s0+4i。",
+          "lw $t0,20($s1) 的 architectural effect 是 GPR[8]←M32[GPR[17]+20]；sw $t0,−8($sp) 則是 M32[GPR[29]−8]←GPR[8]。自然對齊的 word address 低兩 bits 為 00。MIPS32 的對齊要求作用在最後 EA，而不是只看 offset；base 未對齊時，即使 offset 可被 4 整除，EA 仍可能 misaligned。",
+          "endianness 決定 multi-byte word 的 bytes 如何放到遞增 addresses，不改變 instruction diagram 中 bits 31..26 在抽象 machine word 裡是 opcode。假設 0x12345678 存在 address 0x1000：big-endian 由低址到高址是 12 34 56 78，little-endian 是 78 56 34 12；正確的 aligned word load 在同一 endian mode 下都重建 0x12345678。"
+        ],
+        figure: {
+          type: "flow",
+          title: "lw rt,offset(base) 的位址與資料路徑",
+          items: ["read GPR[base]", "sign-extend offset", "ALU add → EA", "check alignment / access", "read memory word", "write GPR[rt]"],
+          caption: "offset 參與位址計算，不是被載入的資料；memory read 只有在 EA 形成後才能定位。"
+        },
+        sourceRefs: ["S1", "S2", "S3", "S7"]
+      },
+      {
+        title: "7. Branch 與 jump：target 不是把 label 直接塞進欄位",
+        paragraphs: [
+          "MIPS beq/bne 使用 PC-relative addressing。assembler 計算 displacement=(target−(PC+4))/4，檢查 target word-aligned 且商落在 signed 16-bit 範圍，再放入 immediate。執行時 target=PC+4+(signext(immediate)<<2)。以 instruction 數為單位儲存 displacement，可在 16 bits 內涵蓋約 ±128 KiB 的 byte 範圍。",
+          "j/jal 使用 pseudo-direct（PC-region）addressing。26-bit instr_index 左移 2 bits 提供 target[27:0]，高 4 bits 取自 PC+4，因此只能在同一個 256 MiB region 內直接跳轉。這不是 signed PC-relative offset；跨 region 或無法直接編碼的 target 需要先形成完整 address，再用 register-indirect jump。",
+          "經典 MIPS32 定義一個 branch delay slot：緊接 branch/jump 的 instruction 會先執行，再到 target；部分 simulator 可選擇是否模擬，較新的 MIPS Release 6 compact branches 與 RISC-V 則不採傳統 delay slot。machine-code 題目必須先固定 ISA revision 與 simulator mode；branch immediate 的 base PC+4 與是否執行 delay-slot instruction 是兩個不同規則。"
+        ],
+        figure: {
+          type: "matrix",
+          title: "MIPS control target 的三種形成方式",
+          columns: ["類型", "代表 instruction", "target equation", "主要範圍"],
+          rows: [
+            ["PC-relative", "beq / bne", "PC+4+(signext(imm16)<<2)", "約 PC+4 前後 128 KiB"],
+            ["Pseudo-direct", "j / jal", "{(PC+4)[31:28],index26,00}", "目前 256 MiB region"],
+            ["Register indirect", "jr / jalr", "GPR[rs]", "register 可表示的 address"]
+          ],
+          caption: "三種 control transfers 的 target equation 不可互換；先辨認 format，再代入正確基準與 scaling。"
+        },
+        sourceRefs: ["S1", "S2", "S6", "S11"]
+      },
+      {
+        title: "8. Procedure call 是 ISA mechanism 加上 ABI convention",
+        paragraphs: [
+          "jal 同時建立 control transfer 與 return link；在經典 delayed-branch MIPS 中 $ra 保存 branch 之後第二條 instruction 的 address（PC+8），因為 PC+4 是 delay slot。jr $ra 返回 caller。這只提供基本 mechanism；argument、result、哪些 registers 必須保存，以及 stack layout 由 ABI/calling convention 規定。",
+          "常見 MIPS convention 以 $a0–$a3 傳前四個 arguments、$v0–$v1 傳 return values、$t0–$t9 作 caller-saved temporaries、$s0–$s7 作 callee-saved registers、$sp 指向 stack、$ra 保存 return address。caller 若要跨 call 保留 $t register，必須自行保存；callee 若修改 $s register，必須在 entry 保存並在 return 前恢復。",
+          "non-leaf procedure 還會呼叫其他 procedure，因此新的 jal 會覆寫 $ra；它必須在 stack frame 保存原 $ra。stack frame 也可保存 callee-saved registers、local variables、spill slots 與超出 register 數量的 arguments。正確性要在 return 前檢查 $sp 恢復到 entry 值、所有應保留 registers 還原、result 放在約定位置。"
+        ],
+        figure: {
+          type: "matrix",
+          title: "常見 MIPS procedure register convention",
+          columns: ["Registers", "角色", "跨 call 保存責任", "典型動作"],
+          rows: [
+            ["$a0–$a3", "arguments", "caller 視需要保存", "call 前放入參數"],
+            ["$v0–$v1", "return values", "caller 取得結果", "return 前寫入"],
+            ["$t0–$t9", "temporaries", "caller-saved", "caller 在需要時 spill"],
+            ["$s0–$s7", "saved values", "callee-saved", "callee 修改前保存"],
+            ["$sp", "stack pointer", "callee 必須恢復", "配置／釋放 frame"],
+            ["$ra", "return link", "non-leaf callee 通常保存", "jal 寫入、jr 讀取"]
+          ],
+          caption: "ISA 定義 jal/jr 的 state effect；ABI 定義 registers 與 stack 的共同責任。"
+        },
+        sourceRefs: ["S2", "S4", "S11"]
+      },
+      {
+        title: "9. 五階段 pipeline：重疊不同 instructions，而非縮短單條工作",
+        paragraphs: [
+          "經典 RISC pipeline 分為 IF、ID、EX、MEM、WB。IF 取 instruction 並形成 sequential PC，ID decode 並讀 registers，EX 執行 ALU 或算 EA，MEM 存取 data memory，WB 寫回 register。pipeline registers 保存各 stage 邊界的 data/control，使第 n 條在 EX 時，第 n+1 條可在 ID、第 n+2 條可在 IF。",
+          "若 k stages 每 stage 一個 cycle，沒有 hazards 的 n 條 instructions 需要 k+n−1 cycles：前 k−1 cycles 填管線，此後理想上每 cycle 完成一條。單條 instruction latency 約為 k×Tclk，未必比非 pipeline 更短；改善的是 steady-state throughput。clock period 受最慢 stage 加 pipeline-register overhead 限制，而不是所有 stage 延遲平均值。",
+          "理想 speedup 只有在 n 很大、stages 平衡、overhead 小且沒有 stalls 時接近 k。若 stage delays 差異大，最慢 stage 決定 Tclk；hazards、cache miss、branch recovery 與 pipeline fill/drain 都增加 cycles。CPU time 仍應以 instruction count×CPI×clock period 分析。"
+        ],
+        figure: {
+          type: "timeline",
+          title: "五條獨立 instructions 的理想五階段重疊",
+          columns: ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+          rows: [
+            { label: "I1", cells: ["IF", "ID", "EX", "MEM", "WB", "", "", "", ""] },
+            { label: "I2", cells: ["", "IF", "ID", "EX", "MEM", "WB", "", "", ""] },
+            { label: "I3", cells: ["", "", "IF", "ID", "EX", "MEM", "WB", "", ""] },
+            { label: "I4", cells: ["", "", "", "IF", "ID", "EX", "MEM", "WB", ""] },
+            { label: "I5", cells: ["", "", "", "", "IF", "ID", "EX", "MEM", "WB"] }
+          ],
+          caption: "k=5、n=5 時理想 cycles=5+5−1=9；填滿後每 cycle 有一條 instruction 完成 WB。"
+        },
+        sourceRefs: ["S5", "S12"]
+      },
+      {
+        title: "10. Hazards：資源衝突、資料相依與未知 next PC",
+        paragraphs: [
+          "structural hazard 發生在同一 cycle 有多個 stages 需要同一硬體資源。例如 IF 與 MEM 共用單埠 memory 時，load/store 的 data access 會和下一條 instruction fetch 衝突。分離 instruction/data memories、增加 ports 或 stall 可處理；這是 implementation 資源問題，不是 assembly 中的 data dependency。",
+          "data hazard 在較早 instruction 尚未產生／提交值時，較晚 instruction 已要讀它。經典 in-order five-stage 主要面對 RAW（read after write）。ALU result 可由 EX/MEM 或 MEM/WB forwarding 到下一條 EX；但 load data 到 MEM 結尾才可用，緊接的 consumer 通常仍需一個 load-use stall。stall 固定 PC/IF-ID 並向 EX 插入不改 state 的 bubble。",
+          "control hazard 來自 branch/jump 尚未確定 next PC。處理器可 stall、預測方向/target，或先沿某一路徑 fetch；預測錯誤時要 flush 錯誤路徑 instructions，不能讓它們改變 architectural state。delay slot 是 ISA-visible 策略，branch prediction 是 microarchitecture strategy；兩者不可混稱。"
+        ],
+        figure: {
+          type: "timeline",
+          title: "load-use hazard：forwarding 仍需要一個 stall",
+          columns: ["1", "2", "3", "4", "5", "6", "7", "8"],
+          rows: [
+            { label: "lw $t0,0($s0)", cells: ["IF", "ID", "EX", "MEM", "WB", "", "", ""] },
+            { label: "add $t1,$t0,$t2", cells: ["", "IF", "ID", "ST", "EX", "MEM", "WB", ""] },
+            { label: "sub $t3,$t1,$t4", cells: ["", "", "IF", "ST", "ID", "EX", "MEM", "WB"] }
+          ],
+          caption: "lw 的 data 到 cycle 4 MEM 結尾才形成，consumer 的 EX 延到 cycle 5；其後 add result 可 forwarding 給 sub。"
+        },
+        sourceRefs: ["S5", "S12", "S13"]
+      },
+      {
+        title: "11. 跨 ISA 比較：規則要逐項比，不以 RISC/CISC 標籤代替證據",
+        paragraphs: [
+          "MIPS 教學子集以 32-bit fixed length、32 GPRs、三種主要 formats 與 load-store operations 建立清楚模型。RV32I 也採 32-bit base instructions 與 32 integer registers，但以 R/I/S/B/U/J formats 保持 register fields 位置一致，branch immediate 的編排與 MIPS 不同，且 base ISA 沒有 branch delay slot。A64 的 instructions 也是固定 32 bits，提供 31 個 general-purpose registers 的 64/32-bit views。",
+          "x86-64 保留 variable-length instructions、較多 addressing forms 與長期 binary compatibility。這會使 front-end decode 與 instruction boundary 處理較複雜，但現代 x86 implementations 可把 instructions decode 成內部 micro-operations，再由寬廣 pipeline 執行。固定長度不自動保證較快，variable length 也不等於每條都慢。",
+          "比較 ISA 時可逐項量測：code density、decode regularity、register count、immediate range、memory addressing、control-transfer reach、extension mechanism 與 compatibility burden。效能則還要加入 compiler、workload 與 microarchitecture。ISA 的目標是定義可長期維持的 interface，不是單獨決定某顆 CPU 的 IPC、clock 或 energy。"
+        ],
+        figure: {
+          type: "matrix",
+          title: "四種 ISA 的可觀察 encoding 特徵",
+          columns: ["特徵", "MIPS32 經典子集", "RV32I base", "A64", "x86-64"],
+          rows: [
+            ["基本 instruction length", "32 bits", "32 bits", "32 bits", "variable 1–15 bytes"],
+            ["整數 register 規模", "32×32-bit GPR", "32×XLEN", "31×64-bit GPR views", "16×64-bit GPR"],
+            ["memory arithmetic", "load-store", "load-store", "主要為 load-store", "可有 memory operand"],
+            ["branch delay slot", "經典版本有", "無", "無", "無"],
+            ["格式特色", "R/I/J", "R/I/S/B/U/J", "多類 32-bit formats", "prefix/opcode/ModR/M 等可變組合"]
+          ],
+          caption: "表格比較 architectural encoding，不代表特定 implementation 的效能排名。MIPS revision 與 optional extensions 必須另行固定。"
+        },
+        sourceRefs: ["S1", "S7", "S8", "S9", "S10"]
+      }
+    ],
+    workedExamples: [
+      {
+        title: "例題一：編碼與反解 add $t0,$s1,$s2",
+        prompt: "依經典 MIPS32 R format 編碼 add $t0,$s1,$s2，並從結果反向驗證所有 fields。",
+        steps: [
+          "由 register convention 得 $t0=8、$s1=17、$s2=18；data flow 是 GPR[8]←GPR[17]+GPR[18]。",
+          "add 使用 R format：opcode=0、rs=17、rt=18、rd=8、shamt=0、funct=0x20。",
+          "轉成欄位 bits：000000 | 10001 | 10010 | 01000 | 00000 | 100000。",
+          "串接為 00000010001100100100000000100000，每 4 bits 分組為 0 2 3 2 4 0 2 0。",
+          "machine word 是 0x02324020；反解最高 6 bits 為 0，所以再查最低 funct=0x20 得 ADD。",
+          "取出 rs/rt/rd 得 17/18/8，和 assembly operands 的 sources/destination 一致；shamt=0 也符合非 shift instruction。"
+        ],
+        result: "add $t0,$s1,$s2 編碼為 0x02324020，完整 field round-trip 無矛盾。"
+      },
+      {
+        title: "例題二：負 immediate 與 base-plus-offset encoding",
+        prompt: "編碼 addi $t0,$s1,−12 與 sw $t0,−8($sp)，並說明兩個 immediate 的語意。",
+        steps: [
+          "−12 的 16-bit two's complement 是 0xFFF4；addi opcode=8、rs=$s1=17、rt=$t0=8。",
+          "欄位串接為 opcode 001000、rs 10001、rt 01000、imm 1111111111110100，得到 0x2228FFF4。",
+          "執行 addi 時 0xFFF4 sign-extend 成 0xFFFFFFF4，再和 GPR[17] 相加；rt 是 destination。",
+          "sw opcode=43、base rs=$sp=29、data rt=$t0=8、offset −8=0xFFF8。",
+          "sw machine word 為 0xAFA8FFF8；EA=GPR[29]+0xFFFFFFF8=SP−8。",
+          "sw 的 rt 是要寫到 memory 的 source，而 addi 的 rt 是 destination；相同欄位位置可有不同 data-flow role。"
+        ],
+        result: "addi 為 0x2228FFF4；sw 為 0xAFA8FFF8。兩者都 sign-extend immediate，但一個形成 ALU operand，另一個形成 byte address offset。"
+      },
+      {
+        title: "例題三：建立 32-bit constant 並計算 pseudo-instruction expansion",
+        prompt: "把 li $t0,0x1234ABCD 展開為真正 MIPS instructions，列出每一步 register value 與 machine word。",
+        steps: [
+          "常數超出 signed 16-bit，不能由單一 addi 表示；分成 upper=0x1234、lower=0xABCD。",
+          "lui $t0,0x1234 執行 GPR[8]←0x1234<<16=0x12340000。",
+          "lui 的 opcode=0x0F、rs=0、rt=8、imm=0x1234，machine word=0x3C081234。",
+          "ori $t0,$t0,0xABCD 將 lower immediate zero-extend 為 0x0000ABCD。",
+          "0x12340000 OR 0x0000ABCD=0x1234ABCD；ori machine word=0x3508ABCD。",
+          "若誤用會 sign-extend 的 addi 合併 0xABCD，operand 會是負值，可能使 upper half 受 borrow/carry 影響；ori 的 bitwise merge 不會。"
+        ],
+        result: "此 li 展開為兩條 instructions：0x3C081234、0x3508ABCD，最後 $t0=0x1234ABCD。"
+      },
+      {
+        title: "例題四：計算 backward beq 的 PC-relative field",
+        prompt: "beq 位於 0x00400020，target 位於 0x00400010，assembly 為 beq $t0,$t1,target。求 immediate 與 machine word。",
+        steps: [
+          "branch base 是 PC+4=0x00400024，而不是 branch 自己的 0x00400020。",
+          "byte delta=0x00400010−0x00400024=−0x14=−20 bytes。",
+          "instruction displacement=−20/4=−5；target aligned 且整除 4。",
+          "−5 的 16-bit two's complement 是 0xFFFB。",
+          "beq opcode=4、rs=$t0=8、rt=$t1=9，串接得到 0x1109FFFB。",
+          "反驗：signext(0xFFFB)<<2=−20；0x00400024−20=0x00400010。"
+        ],
+        result: "immediate=0xFFFB，machine word=0x1109FFFB；以 target equation 回算得到原 target。"
+      },
+      {
+        title: "例題五：計算 j 的 pseudo-direct target",
+        prompt: "j instruction 位於 0x00400040，要跳到 aligned address 0x00401234。求 instr_index 與 machine word，並驗證 region bits。",
+        steps: [
+          "target 低兩 bits 為 00，符合 4-byte alignment，可由 index 隱含這兩 bits。",
+          "instr_index=(0x00401234>>2)&0x03FFFFFF=0x0010048D。",
+          "j 的 opcode=2，位於 bits 31..26；machine word=(2<<26)|0x0010048D=0x0810048D。",
+          "執行時先取 PC+4=0x00400044，其高 4 bits 是 0x0。",
+          "index<<2=0x00401234，串接高 4 bits 後 target 仍為 0x00401234。",
+          "若 target 與 PC+4 不在相同 256 MiB region，這個 26-bit index 不能單獨表達完整 target。"
+        ],
+        result: "instr_index=0x0010048D，machine word=0x0810048D，重建 target=0x00401234。"
+      },
+      {
+        title: "例題六：non-leaf procedure 的 stack state",
+        prompt: "函式 F 會修改 $s0 並呼叫 G。entry 時 $sp=0x7FFFFFF0、$ra=0x00400108。F 配置 8-byte frame，將 $ra 存 4($sp)、$s0 存 0($sp)。追蹤 prologue 與 epilogue。",
+        steps: [
+          "addiu $sp,$sp,−8 後 $sp=0x7FFFFFE8，frame 範圍為 0x7FFFFFE8..0x7FFFFFEF。",
+          "sw $s0,0($sp) 把 caller 可觀察的原 $s0 保存於 0x7FFFFFE8。",
+          "sw $ra,4($sp) 把 return address 0x00400108 保存於 0x7FFFFFEC。",
+          "jal G 會建立新的 $ra，因此 F 不能依賴 register 中仍保留 0x00400108。",
+          "G 返回後，lw $s0,0($sp) 與 lw $ra,4($sp) 還原兩個 architectural values。",
+          "addiu $sp,$sp,8 恢復 0x7FFFFFF0；jr $ra 以 0x00400108 返回。",
+          "若 restore 順序所用 addresses 都以目前 frame $sp 為 base，必須在回收 frame 前完成 loads。"
+        ],
+        result: "return 前 $s0、$ra、$sp 均恢復 entry state；F 可安全地成為 non-leaf procedure。"
+      },
+      {
+        title: "例題七：由 stage delays 計算 pipeline time 與 speedup",
+        prompt: "IF/ID/EX/MEM/WB combinational delays 分別為 250/150/200/300/180 ps，每個 pipeline register overhead 20 ps。忽略 hazards，比較 8 條 instructions 的非 pipeline sequential time 與五階段 pipeline time。",
+        steps: [
+          "非 pipeline 每條需各階段延遲總和：250+150+200+300+180=1080 ps。",
+          "8 條 sequential time=8×1080=8640 ps。",
+          "pipeline clock 由最慢 MEM 300 ps 加 overhead 20 ps 決定，Tclk=320 ps。",
+          "k=5、n=8，理想 cycles=k+n−1=5+8−1=12。",
+          "pipeline time=12×320=3840 ps。",
+          "speedup=8640/3840=2.25，而不是 5；stage imbalance、register overhead 與 fill/drain 都限制收益。"
+        ],
+        result: "8 條 instructions 的理想 pipeline time 為 3.84 ns，speedup=2.25×。"
+      }
+    ],
+    misconceptions: [
+      ["一行 assembly 永遠就是一條 machine instruction。", "pseudo-instruction 可展開為多條，directive 甚至不會成為 executable instruction；必須查看 assembler output。"],
+      ["R format 的 rt 永遠是 destination。", "add 的 destination 是 rd；I-format addi/lw 才常以 rt 作 destination，而 sw/beq 的 rt 是 source。"],
+      ["所有 16-bit immediates 都要 sign-extend。", "addi、offset、branch 會 sign-extend；andi/ori/xori zero-extend；lui 則放入 upper half。"],
+      ["lw 4($s0) 是載入陣列第 4 個 word。", "offset 單位是 bytes；若 element 為 4 bytes，offset 4 通常是下一個 element。"],
+      ["little-endian 會把 instruction opcode 移到 machine word 的最低 6 bits。", "endianness 排列 memory bytes；解碼後的 32-bit instruction 仍以 bits 31..26 作 primary opcode。"],
+      ["beq immediate 就是 target address。", "它是相對 PC+4、以 4-byte instructions 為單位的 signed displacement。"],
+      ["j 能直接跳到任意 32-bit address。", "pseudo-direct target 的高 4 bits 來自 PC+4，只能直接到同一 256 MiB region。"],
+      ["forwarding 可以消除所有 RAW stalls。", "緊接 load 的 consumer 通常在 data 可用前就需要 EX operand，因此仍有一個 load-use stall。"],
+      ["五階段 pipeline 讓每條 instruction latency 變成五分之一。", "pipeline 主要提高多條 instructions 的 throughput；單條 latency 還包含五個 cycles 與 pipeline-register overhead。"],
+      ["RISC 一定比 CISC 快。", "ISA label 不足以決定 performance；compiler、workload、cache、pipeline、execution width 與製程都會影響結果。"]
+    ],
+    exercises: [
+      { level: "基礎", question: "32 個 general-purpose registers 至少需要幾個 instruction bits 才能指定一個 register？", solution: ["需要 ceil(log2 32)=5 bits。", "5 bits 有 2^5=32 種 patterns，能編出 index 0..31。"] },
+      { level: "基礎", question: "MIPS R format 的六個 fields 依 bits 31..0 順序為何？總寬度是否為 32？", solution: ["順序是 opcode 6、rs 5、rt 5、rd 5、shamt 5、funct 6。", "6+5+5+5+5+6=32 bits。"] },
+      { level: "基礎", question: "0xFFFF 經 sign extension 與 zero extension 到 32 bits 後各為何？", solution: ["sign extension 複製 sign bit 1，得到 0xFFFFFFFF，也就是 −1。", "zero extension 補 16 個 0，得到 0x0000FFFF，也就是 65535。"] },
+      { level: "基礎", question: "若 $s0=0x1000，執行 lw $t0,12($s0) 的 effective address 為何？若存取 word，是否自然對齊？", solution: ["EA=0x1000+12=0x100C。", "0x100C mod 4=0，所以是 4-byte naturally aligned address。"] },
+      { level: "基礎", question: "將 add $t0,$s1,$s2 的 register numbers 與 data-flow equation 寫出。", solution: ["$t0=8、$s1=17、$s2=18。", "GPR[8]←GPR[17]+GPR[18]；rs=17、rt=18、rd=8。"] },
+      { level: "核心", question: "編碼 lw $t0,20($s1)，並列出 opcode、rs、rt、immediate。", solution: ["lw opcode=35=0x23，rs=$s1=17，rt=$t0=8，immediate=20=0x0014。", "串接後 machine word=(35<<26)|(17<<21)|(8<<16)|20=0x8E280014。"] },
+      { level: "核心", question: "反解 machine word 0x2228FFF4，說明 instruction 與 immediate value。", solution: ["opcode=8 是 addi，rs=17=$s1，rt=8=$t0。", "immediate 0xFFF4 sign-extend 為 −12，所以是 addi $t0,$s1,−12。"] },
+      { level: "核心", question: "branch 位於 0x1000、target 位於 0x1040，求 PC-relative immediate。", solution: ["base=PC+4=0x1004，byte delta=0x1040−0x1004=0x3C=60。", "immediate=60/4=15=0x000F；回算 0x1004+(15<<2)=0x1040。"] },
+      { level: "核心", question: "branch 位於 0x2000，immediate=0xFFFC。taken target 為何？", solution: ["0xFFFC sign-extend 是 −4 instructions，左移 2 得 −16 bytes。", "base=0x2004，所以 target=0x2004−0x10=0x1FF4。"] },
+      { level: "核心", question: "解釋 lui $t0,0x89AB 後的 register value，並指出低 16 bits。", solution: ["lui 將 immediate 放入 bits 31..16，得到 $t0=0x89AB0000。", "低 16 bits 由 instruction semantics 填 0，不是 sign extension。"] },
+      { level: "核心", question: "0x12345678 存於 0x1000..0x1003。列出 little-endian 與 big-endian 的四個 memory bytes。", solution: ["little-endian 低址到高址為 78、56、34、12。", "big-endian 低址到高址為 12、34、56、78；word value 在匹配的 load mode 下相同。"] },
+      { level: "進階", question: "編碼 j 0x00401234，並以 PC+4 高位驗證 target；假設 j 位於 0x00400040。", solution: ["index=(0x00401234>>2)&0x03FFFFFF=0x0010048D，opcode=2，所以 word=0x0810048D。", "PC+4=0x00400044 高 4 bits 為 0；{0,index,00}=0x00401234。"] },
+      { level: "進階", question: "caller 在 call 後仍需要 $t0，callee 會任意修改 $t0。依 caller-saved 規則，責任與操作為何？", solution: ["$t0 屬 caller-saved，因此 caller 在 jal 前把 live value 保存到 stack 或其他安全位置。", "callee return 後 caller 再 restore；不能要求 callee 自動保存所有 $t registers。"] },
+      { level: "進階", question: "五階段 pipeline 理想執行 20 條 instructions 需要幾 cycles？若 Tclk=400 ps，總時間為何？", solution: ["cycles=k+n−1=5+20−1=24。", "time=24×400 ps=9600 ps=9.6 ns。"] },
+      { level: "進階", question: "基準 CPI=1，20% instructions 是 load，其中 30% 緊接 dependent consumer 並各 stall 1 cycle。新 CPI 為何？", solution: ["每條 instruction 的 load-use stall contribution=0.20×0.30×1=0.06。", "CPI=1+0.06=1.06；這裡假設其他 hazards 與 misses 都不存在。"] },
+      { level: "挑戰", question: "某 pipeline stage delays 為 180、220、170、260、190 ps，register overhead 30 ps。若可把 260 ps stage 均分成兩個 130 ps stages，原五階段與新六階段的 clock periods 各為何？對大量 instructions 的理想 throughput 改善多少？", solution: ["原 Tclk=max(...)+30=260+30=290 ps；新 Tclk=max(180,220,170,130,130,190)+30=220+30=250 ps。", "大量 instructions 的 throughput 約與 1/Tclk 成正比，改善比=290/250=1.16，也就是約 16%；stage 增加會提高單條 latency 與短序列 fill cost。"] }
+    ],
+    glossary: [
+      ["Instruction set architecture", "software-visible instructions、state、memory、exception 與 encoding 的合約。"],
+      ["Microarchitecture", "實作某 ISA 的 datapath、pipeline、cache、prediction 與 control 組織。"],
+      ["Opcode", "instruction 中選擇 operation 或主要 instruction class 的 bit field。"],
+      ["Operand", "instruction 讀取、計算或寫入的 value/location。"],
+      ["Load-store architecture", "只有 load/store 存取 memory，arithmetic 主要在 registers 間運算的 ISA。"],
+      ["R format", "MIPS 以 opcode、rs、rt、rd、shamt、funct 組成的 register-oriented 32-bit format。"],
+      ["I format", "MIPS 以 opcode、rs、rt 與 16-bit immediate 組成的 format。"],
+      ["J format", "MIPS 以 opcode 與 26-bit instr_index 組成的 direct jump format。"],
+      ["Sign extension", "複製較窄值的最高 sign bit，使 two's-complement 數值在加寬後不變。"],
+      ["Zero extension", "在較窄 bit pattern 高位補 0，使其成為較寬的非負／mask value。"],
+      ["Effective address", "完成 base、offset、index 或 indirection 後，memory operation 真正存取的 address。"],
+      ["PC-relative addressing", "以 PC 附近位置為基準加 signed displacement 形成 target。"],
+      ["Pseudo-direct addressing", "MIPS jump 以 PC+4 高位和 instruction index 低位串接 target 的方式。"],
+      ["Pseudo-instruction", "assembler 接受但可能展開為其他一或多條 machine instructions 的表示。"],
+      ["Calling convention", "procedure 間對 arguments、results、register preservation 與 stack layout 的 ABI 規則。"],
+      ["Pipeline", "把 instruction processing 分 stages，讓多條 instructions 在不同 stages 重疊。"],
+      ["Latency", "單一 operation 從開始到完成經過的時間。"],
+      ["Throughput", "單位時間內可完成的 operations/instructions 數量。"],
+      ["Structural hazard", "多個同時進行的 stages 爭用不足硬體資源的衝突。"],
+      ["RAW hazard", "較晚 instruction 在較早 instruction 寫入前就要讀同一 location 的 true dependency。"],
+      ["Forwarding", "把尚未寫回 register file 的結果直接送到需要它的後續 stage。"],
+      ["Stall", "暫停部分 pipeline state 並插入 bubble，等待 hazard 消失。"],
+      ["Flush", "取消錯誤路徑或不應提交的 pipeline instructions。"],
+      ["Branch delay slot", "經典 MIPS 中位於 branch/jump 後、在 control transfer 生效前執行的一個 ISA-visible instruction position。"]
+    ],
+    sources: [
+      { key: "S1", title: "MIPS32 Architecture for Programmers, Volume I: Introduction", url: "https://www.cs.cornell.edu/people/egs/comp303/resources/MIPS_Vol1.pdf", accessed: "2026-08-19", use: "ISA/implementation 邊界、MIPS32 state、32-bit CPU formats、register 與 encoding tables。" },
+      { key: "S2", title: "MIPS32 Architecture for Programmers, Volume II: Instruction Set", url: "https://people.cs.pitt.edu/~don/coe1502/current/mips32_instr_set.pdf", accessed: "2026-08-19", use: "ADD、load/store、branch、jump 的 fields、operation、alignment、exceptions 與 instruction semantics。" },
+      { key: "S3", title: "UNSW COMP1521 26T2: MIPS Instruction Set", url: "https://cgi.cse.unsw.edu.au/~cs1521/26T2/resources/mips-guide.html", accessed: "2026-08-19", use: "2026 公開課程的 MIPS32/SPIM instruction、register、immediate 與 pseudo-instruction 交叉核對。" },
+      { key: "S4", title: "Cornell CS314: MIPS Calling Conventions", url: "https://www.cs.cornell.edu/courses/cs314/2003fa/handouts/procs2.html", accessed: "2026-08-19", use: "argument/result registers、caller/callee-saved 分工、stack frame 與 return-address convention。" },
+      { key: "S5", title: "Cornell CS5220: Single-Core Architecture and Classic Five-Stage Pipeline", url: "https://www.cs.cornell.edu/courses/cs5220/2024fa/slides/03-single-core.html", accessed: "2026-08-19", use: "IF/ID/EX/MEM/WB、pipeline throughput/latency 與現代 execution context。" },
+      { key: "S6", title: "Cornell CS3410: MIPS Addressing Modes", url: "https://www.cs.cornell.edu/courses/cs3410/2008fa/Lectures/Lec13_linkersMemory_web.pdf", accessed: "2026-08-19", use: "register、base、immediate、PC-relative 與 pseudo-direct addressing 的公開課程圖解。" },
+      { key: "S7", title: "RISC-V Unprivileged ISA Specification, Version 20260120", url: "https://docs.riscv.org/reference/isa/unpriv/rv32.html", accessed: "2026-08-19", use: "RV32I fixed formats、immediate encoding、load-store、branch、alignment 與 endianness 的最新 ratified specification。" },
+      { key: "S8", title: "Arm Learn the Architecture: A64 ISA Guide", url: "https://developer.arm.com/documentation/102374/0103/Registers-in-AArch64---general-purpose-registers", accessed: "2026-08-19", use: "A64 general-purpose register views 與 register-operated instruction model。" },
+      { key: "S9", title: "Intel 64 and IA-32 Architectures Software Developer's Manuals", url: "https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html", accessed: "2026-08-19", use: "x86-64 architectural environment、variable-length instruction references 與跨 ISA encoding 比較。" },
+      { key: "S10", title: "Arm: The A64 ISA and Compilers", url: "https://developer.arm.com/community/arm-community-blogs/b/architectures-and-processors-blog/posts/the-a64-isa-and-compilers", accessed: "2026-08-19", use: "A64 32-bit fixed-length encoding、register fields 與 immediate layout 的官方說明。" },
+      { key: "S11", title: "MIPS32 Architecture for Programmers: Jump and Branch Semantics", url: "https://www.cs.cornell.edu/courses/cs3410/2013sp/MIPS_Vol2.pdf", accessed: "2026-08-19", use: "PC-region jump、PC+4 high bits、delay slot、J/JAL/JR semantics 與 target reconstruction。" },
+      { key: "S12", title: "UC Berkeley CS61C Course Notes: Data Hazards", url: "https://notes.cs61c.org/content/pipeline-hazards/data-hazards/", accessed: "2026-08-19", use: "RAW detection、forwarding paths、load-use stall、bubble 與 pipeline-register control。" },
+      { key: "S13", title: "UC Berkeley CS61C Course Notes: Control Hazards", url: "https://notes.cs61c.org/content/pipeline-hazards/control-hazards/", accessed: "2026-08-19", use: "branch next-PC uncertainty、prediction、stall 與 flush 的五階段 pipeline 行為。" }
+    ]
   }
 ];
