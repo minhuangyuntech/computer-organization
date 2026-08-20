@@ -1964,5 +1964,478 @@ const chapterDetails = [
       { key: "S12", title: "UC Berkeley CS61C Course Notes: Data Hazards", url: "https://notes.cs61c.org/content/pipeline-hazards/data-hazards/", accessed: "2026-08-19", use: "RAW detection、forwarding paths、load-use stall、bubble 與 pipeline-register control。" },
       { key: "S13", title: "UC Berkeley CS61C Course Notes: Control Hazards", url: "https://notes.cs61c.org/content/pipeline-hazards/control-hazards/", accessed: "2026-08-19", use: "branch next-PC uncertainty、prediction、stall 與 flush 的五階段 pipeline 行為。" }
     ]
+  },
+  {
+    chapter: 6,
+    title: "記憶體階層：Cache、虛擬記憶體與位址轉譯",
+    english: "Memory Hierarchy: Caches, Virtual Memory, and Address Translation",
+    revised: "2026-08-20",
+    readingTime: "約 220–270 分鐘",
+    intro: "處理器可以在極短時間內產生 memory request，但容量大的儲存體無法同時具備最低延遲、最高頻寬、最低成本與非揮發性。記憶體系統因此不是單一陣列，而是由 registers、SRAM caches、DRAM、persistent storage 與位址轉譯共同構成的階層。本章以『一次 byte address 最後在哪裡命中、為何命中、付出多少成本』作為共同證據鏈：先從 memory technology 與 locality 推導 cache，再精確計算 tag/index/offset、mapping、replacement、write policy 與多層 AMAT；接著把 virtual address 切成 VPN/page offset，追蹤 page table、TLB、permission 與 page fault。每個模型都明確區分 data copy、address translation 與 architectural state，讓 cache miss、TLB miss 和 page fault 不再混為同一件事。",
+    outcomes: [
+      "能比較 SRAM、DRAM 與 persistent storage 的保存方式、延遲、密度、揮發性與系統角色。",
+      "能由 memory reference trace 辨認 temporal、spatial locality、working set 與 stride 對命中率的影響。",
+      "能說明 cache line 的 data、tag、valid、dirty 與 replacement metadata，並逐步判斷 hit/miss。",
+      "能由 capacity、block size、associativity 與 address width 推導 sets、offset、index、tag 與 metadata overhead。",
+      "能模擬 direct-mapped、set-associative、fully associative cache 與 LRU/FIFO/random replacement。",
+      "能比較 write-through/write-back 與 write-allocate/no-write-allocate，追蹤 dirty eviction 的 memory traffic。",
+      "能計算單層、多層 AMAT、local/global miss rate 與 memory-stall CPI，並檢查條件機率與單位。",
+      "能把 virtual address 轉為 VPN/page offset，經 page table 或 TLB 取得 PPN 並重建 physical address。",
+      "能區分 TLB miss、page fault、protection fault 與 cache miss，並解釋 OS 和 hardware 的分工。",
+      "能比較 paging 與 segmentation，說明 multi-level page table、huge page、sharing 與 protection 的取捨。"
+    ],
+    sections: [
+      {
+        title: "1. 記憶體階層用常見快速路徑包住少數昂貴事件",
+        paragraphs: [
+          "沒有單一 memory technology 能同時做到接近 register 的 latency、接近 storage 的 capacity、低 cost per bit 與斷電保存。系統把小而快的層級放近 CPU，把大而慢的層級放遠；上層保存下層的一部分 copies。一次 request 若在上層 hit，就以低 latency 完成；若 miss，才向下一層取得較大的 transfer unit。",
+          "cache 的管理主要由 hardware 自動完成，cache block 通常為數十 bytes；virtual memory 把 DRAM 視為 address space backing store 的快速層，page 常為數 KiB，mapping 與 page fault 由 MMU 和 operating system 協作。兩者都利用 locality，但成本比例不同：cache miss 常以 cycles 到數百 ns 計，storage-backed page fault 可達微秒或毫秒，因此 VM 更強調避免 fault。",
+          "階層的目標不是讓每次 access 都和 L1 一樣快，而是讓平均成本接近上層。評估時必須同時保留 hit time、miss rate、miss penalty 與 traffic。只報 hit rate 會漏掉 hit path 變慢或 miss penalty 增大的代價；只報 bandwidth 也無法回答單一 dependent load 要等待多久。"
+        ],
+        figure: {
+          type: "hierarchy",
+          title: "典型 memory hierarchy 與管理單位",
+          items: [
+            { label: "Registers", detail: "bytes 到 KiB；instruction 明確指定；最低 latency" },
+            { label: "L1 cache", detail: "KiB；cache lines；每 core、hit path 極短" },
+            { label: "L2 / LLC", detail: "數百 KiB 到數十 MiB；較大但較慢" },
+            { label: "DRAM", detail: "GiB；rows/bursts；memory controller 排程" },
+            { label: "Persistent storage", detail: "GB/TB；pages/blocks；斷電保存" }
+          ],
+          caption: "越往下 capacity 通常增加、cost per bit 降低、latency 上升；相鄰層以不同大小的 transfer unit 搬移。"
+        },
+        sourceRefs: ["S1", "S2", "S3", "S10"]
+      },
+      {
+        title: "2. SRAM、DRAM 與 storage：同樣保存 bits，物理代價不同",
+        paragraphs: [
+          "SRAM cell 以穩定的電路狀態保存 bit，只要供電存在便不需週期 refresh；它速度快但 cell 面積大，因此適合 on-chip cache。DRAM cell 以 capacitor charge 表示 bit，密度較高但 charge 會洩漏，必須 refresh。DRAM read 牽涉 row activate、sense/restore、column transfer 與可能的 precharge，不能用單一『RAM latency』涵蓋所有情況。",
+          "DRAM 被分成 channels、ranks、banks、rows 與 columns。若 request 命中同 bank 已開啟的 row，row-buffer hit 可省去部分 activate/precharge；若要切換 row，memory controller 必須遵守 timing constraints。bank-level parallelism 可重疊不同 banks 的工作，但同 bank 的相依 requests 仍受序列化限制。容量、first-word latency 與 sustained bandwidth 是三個不同指標。",
+          "SSD/flash 提供 nonvolatile storage，erase/program/read granularity 與 DRAM 不同，延遲也高得多。virtual memory 可把未 resident page 的內容放在 executable/file 或 swap backing store，但 storage 不是 CPU load/store 直接同步存取的普通 memory cell；page fault 會陷入 OS，安排 I/O、更新 mapping，再重新執行 faulting instruction。"
+        ],
+        figure: {
+          type: "matrix",
+          title: "Memory technologies 的核心差異",
+          columns: ["層級", "bit 保存方式", "揮發性", "主要系統角色", "關鍵限制"],
+          rows: [
+            ["SRAM", "bistable circuit state", "是", "register file / cache", "面積與 leakage cost"],
+            ["DRAM", "capacitor charge", "是", "main memory", "refresh、row timing、controller queue"],
+            ["NAND flash / SSD", "floating-gate/charge state", "否", "persistent backing", "erase/program、wear、I/O latency"],
+            ["Disk", "magnetic media", "否", "大容量 persistent storage", "mechanical seek/rotation 或 queueing"]
+          ],
+          caption: "Random access 名稱不代表 latency 相同；cell、array、interface 與 controller 都會影響可觀察時間。"
+        },
+        sourceRefs: ["S1", "S10", "S11"]
+      },
+      {
+        title: "3. Locality 是 reference stream 的性質，不是 cache 的保證",
+        paragraphs: [
+          "temporal locality 表示近期使用的 item 可能很快再次使用，例如 loop counter、function body 與累加變數；spatial locality 表示鄰近 addresses 可能很快被使用，例如 sequential instruction fetch 與 row-major array traversal。cache 以整個 block 填入，把一次 miss 的成本攤到同 block 的後續 accesses。",
+          "working set 是某段執行期間實際活躍的 blocks/pages。若 working set 能留在某層，重用會形成 hits；若超過 capacity，block 可能在下次重用前被 evict。stride 決定 reference 間的 address distance：4-byte elements 的 stride 1 依序相差 4 bytes，能利用 line 內多個 elements；大 stride 可能每次落到新 line，甚至反覆撞同一 set。",
+          "locality 要由動態 trace 判斷。相同 source code 在不同 input、layout、compiler transformation 下可能產生不同 addresses。cache capacity 或 associativity 增大也不保證所有 workload 都變快，因為 hit time、energy、replacement 與 data movement 會一起改變。"
+        ],
+        figure: {
+          type: "matrix",
+          title: "64-byte line、4-byte elements 的兩種 traversal",
+          columns: ["Reference pattern", "前四個 byte addresses", "每 line 可利用 elements", "主要 locality"],
+          rows: [
+            ["contiguous", "0, 4, 8, 12", "最多 16", "strong spatial"],
+            ["stride 16 elements", "0, 64, 128, 192", "每次先碰新 line", "line reuse 弱"],
+            ["repeat one element", "128, 128, 128, 128", "同一位置", "strong temporal"],
+            ["random large set", "input-dependent", "通常低", "working set 決定"]
+          ],
+          caption: "block size 只提供利用 spatial locality 的機會；程式若不碰 line 內其餘 bytes，搬入的資料就成為 bandwidth 與 capacity 負擔。"
+        },
+        sourceRefs: ["S1", "S3", "S5", "S12"]
+      },
+      {
+        title: "4. Cache line 命中需要 index、tag、valid 與 offset 共同成立",
+        paragraphs: [
+          "CPU 提供 byte address 後，offset 選 line 內的 byte，index 選一個 set，tag 辨認該 set 中哪個 memory block。N-way set-associative cache 對同 set 的 N 個 valid tags 平行比較；恰有 matching valid line 才是 hit，再由 way-select 與 offset 取出 data。valid=0 時，即使殘留 tag bits 相同也不能命中。",
+          "cache data capacity 通常只算 data arrays，不含 metadata。每 line 至少有 tag 與 valid；write-back cache 還要 dirty；replacement policy 可能需要 per-set state；可靠性設計也可能加入 parity/ECC。宣稱 32 KiB L1 不代表晶片只配置 32 KiB bits，實際 arrays 還包括 metadata、ports 與控制結構。",
+          "hit/miss 是對特定 access size 與 cache state 的判斷。跨越 line boundary 的 unaligned access 可能拆成兩個 cache accesses；instruction cache 與 data cache 也可能有不同 state。分析表格若沒有 initial valid bits、block size、mapping 與 policy，就無法唯一決定結果。"
+        ],
+        figure: {
+          type: "flow",
+          title: "Set-associative cache read 的證據鏈",
+          items: ["byte address", "offset / index / tag", "select one set", "compare N valid tags", "select matching way", "offset selects bytes", "return data"],
+          caption: "index 只縮小搜尋範圍；tag match 還必須和 valid 一起成立，offset 不參與 tag comparison。"
+        },
+        sourceRefs: ["S3", "S5", "S6", "S7"]
+      },
+      {
+        title: "5. 位址切割從 data capacity、block size 與 ways 推導",
+        paragraphs: [
+          "令 data capacity=C bytes、block size=B bytes、associativity=A。line count=C/B，set count=S=C/(B×A)。byte-addressed、power-of-two 設計中，offset bits=log2 B，index bits=log2 S，tag bits=address width−index−offset。ways 不額外占 address bits；它表示同一 index 下有 A 個 candidate lines。",
+          "以 32 KiB、64-byte、4-way、32-bit address 為例，lines=32768/64=512，sets=512/4=128。offset=6 bits，index=7 bits，tag=19 bits。address 0x12345678 的 offset 是 0x38=56，index 是 89，tag 是 0x91A2。重建時 (tag<<13)|(index<<6)|offset 必須回到原 address。",
+          "若題目問總 storage，還要加入 metadata。上述 cache 有 512 lines；若每 line 有 19-bit tag、valid 與 dirty，共 21 bits，另用每 set 3-bit tree pseudo-LRU，metadata=512×21+128×3=11136 bits=1392 bytes。這仍未計 ECC、banking 與 implementation overhead。"
+        ],
+        figure: {
+          type: "bits",
+          title: "32 KiB、64 B block、4-way cache 的 32-bit address",
+          totalBits: 32,
+          items: [
+            { label: "Tag [31:13]", bits: 19, detail: "辨認 memory block" },
+            { label: "Index [12:6]", bits: 7, detail: "選 128 sets 之一" },
+            { label: "Offset [5:0]", bits: 6, detail: "選 64-byte line 內位置" }
+          ],
+          caption: "sets=C/(B×A)=128；address bits 由 tag、index、offset 完整分割，19+7+6=32。"
+        },
+        sourceRefs: ["S5", "S6", "S7"]
+      },
+      {
+        title: "6. Placement 與 replacement：候選位置越多，選擇成本越高",
+        paragraphs: [
+          "direct-mapped cache 是 1-way，每個 block 只有一個 candidate line，hit path 簡單但容易 conflict。fully associative 沒有 index，block 可放任何 line，需比較所有 candidate tags。N-way set-associative 在兩者之間：block 由 index 固定到一個 set，再放入該 set 任一 way。",
+          "當 set 有 invalid way 時不需 evict；全滿後才依 replacement policy 選 victim。LRU 依最近使用順序，FIFO 依進入順序，random 不維護完整歷史。true LRU 在高 associativity 下需較多 state 與更新，實作常採 pseudo-LRU。policy 對某一 trace 較好，不代表對所有 traces 最佳。",
+          "3C model 將 miss 分為 compulsory、capacity、conflict。首次碰 block 是 compulsory；若同容量 fully associative cache 也 miss，且不是首次，就是 capacity；只有受限 mapping 才 miss則是 conflict。multi-core 還可能因 coherence invalidation 產生額外 misses，因此 3C 是基礎分類而非所有現代事件的完整清單。"
+        ],
+        figure: {
+          type: "matrix",
+          title: "Cache placement 與硬體工作",
+          columns: ["Organization", "一個 block 的 candidates", "Tag comparisons", "需要 replacement?", "典型取捨"],
+          rows: [
+            ["Direct-mapped", "1 line", "1", "無選擇", "fast hit、conflict 較多"],
+            ["4-way set associative", "selected set 的 4 ways", "4", "set full 時", "常見折衷"],
+            ["Fully associative", "all lines", "all candidates", "full 時", "conflict 最少、成本最高"]
+          ],
+          caption: "associativity 增加 placement flexibility，但 comparator、way mux、replacement state 與 hit latency 也可能增加。"
+        },
+        sourceRefs: ["S5", "S6", "S7", "S8"]
+      },
+      {
+        title: "7. Write policy 必須分開回答 hit 與 miss",
+        paragraphs: [
+          "write-through 在 write hit 時同時更新 cache 與下一層，lower level 較快保持最新，但每次 store 都產生下層 traffic，通常需要 write buffer 隔開 CPU。write-back 只更新 cache line 並設 dirty；dirty victim 被替換時才整 line 寫回，可合併同 line 多次 stores，但 miss penalty 可能包含 write-back。",
+          "write-allocate 在 write miss 時先把整個 line 載入 cache，再修改 target bytes，適合期待後續 reuse，常和 write-back 配對。no-write-allocate（write-around）讓 miss write 直接送下層，不填入 cache，避免一次性 writes 污染 cache，常和 write-through 配對。這些是常見組合，不是 ISA 強制綁定。",
+          "partial store 需要 byte enables 或 read-modify-write，multi-core 還要取得 coherent ownership。dirty bit 只表示 cache copy 比下一層新，不代表資料已持久化到 storage；store instruction 完成、cache line 寫回 DRAM、persistent device 完成寫入是三個不同完成邊界。"
+        ],
+        figure: {
+          type: "matrix",
+          title: "Write hit / miss 的四個決策",
+          columns: ["Policy", "Write hit", "Write miss", "Traffic 特性", "必要 metadata"],
+          rows: [
+            ["Write-through + no-allocate", "cache 與 lower 更新", "繞過 cache", "每次 store 下送", "write buffer 常見"],
+            ["Write-through + allocate", "兩層更新", "fill 後更新", "miss 多 line fill", "write buffer 常見"],
+            ["Write-back + allocate", "cache 更新、dirty=1", "fill 後更新", "dirty eviction 才整 line 下送", "dirty bit"],
+            ["Write-back + no-allocate", "hit line dirty", "miss 繞過", "可行但較少見", "dirty bit + bypass"]
+          ],
+          caption: "write propagation 與 miss allocation 是兩個正交問題；完整答案要同時描述 hit、miss 與 eviction。"
+        },
+        sourceRefs: ["S1", "S8"]
+      },
+      {
+        title: "8. AMAT 是條件成本的展開，不是只代一條公式",
+        paragraphs: [
+          "單層 AMAT=hit time+miss rate×miss penalty，其中 miss penalty 應明確定義為完成 hit check 之外的額外成本。hit time 每次 access 都支付，miss penalty 只在 miss 路徑支付。若採用『miss total time』而非額外 penalty，公式要改寫為 hit rate×hit time+miss rate×miss total time，不能混用兩種定義。",
+          "兩層 AMAT=T1+m1×(T2+m2×TM)，m2 是以 L1 misses 為分母的 L2 local miss rate。到達 memory 的 global miss rate=m1×m2。若把 L2 local miss rate直接加到 L1 miss rate，會把根本未送到 L2 的 requests 也算進去。",
+          "cache 對 CPU time 的影響可轉為 CPI。instruction miss stall=每條 instruction 的 I-access×I-miss rate×penalty；data miss stall=data accesses per instruction×D-miss rate×penalty。memory-level parallelism 可能重疊部分 miss latency，但基礎 blocking model 先假設每個 penalty 都完全形成 stall，並清楚標示這項假設。"
+        ],
+        figure: {
+          type: "flow",
+          title: "兩層 cache 的條件機率樹",
+          items: ["pay L1 hit time", "L1 miss with m1", "pay L2 hit time", "L2 local miss with m2", "pay memory penalty"],
+          caption: "每向下一層的成本只乘上到達該層的機率；memory path probability 是 m1×m2。"
+        },
+        sourceRefs: ["S4", "S5", "S9"]
+      },
+      {
+        title: "9. 程式存取順序會改變 miss rate，但不改變演算法答案",
+        paragraphs: [
+          "row-major matrix 的同一 row elements 在 memory 中連續。先走 row、再走 column 通常形成 unit stride；反過來走 column 可能每次跨越整個 row，降低 line utilization。兩種 traversal 可計算相同數學結果，卻產生不同 cache trace、TLB footprint 與 DRAM row behavior。",
+          "loop interchange、blocking/tiling 與 structure layout 是常見 locality transformations。matrix multiplication 以 tiles 工作，可讓一小塊 A/B/C 在 cache 中多次重用後再移到下一 tile；收益取決於 tile working set 是否 fits、associativity conflicts、compiler vectorization 與 extra loop overhead。",
+          "prefetch 利用可預測 address stream 提前搬 line，可隱藏 latency 但不降低必須傳輸的 bytes；過早、錯誤或過多 prefetch 會占 bandwidth 並驅逐有用 data。cache-friendly 不等於盲目增加 block size或 prefetch distance，仍要以 miss、traffic、runtime 與 energy measurement 驗證。"
+        ],
+        figure: {
+          type: "matrix",
+          title: "8×8 row-major int matrix、64-byte line 的 traversal",
+          columns: ["Loop order", "相鄰 access distance", "一個 line 涵蓋", "預期行為"],
+          rows: [
+            ["for i, then j", "4 bytes", "兩個完整 rows", "high line utilization"],
+            ["for j, then i", "32 bytes", "每 line 只交錯用部分 elements", "較多 active lines"],
+            ["blocked", "tile 內多為小 stride", "tile working set 重用", "降低 capacity traffic 的機會"]
+          ],
+          caption: "此例一 row=8×4=32 bytes，所以 64-byte line 可含兩 rows；實際 alignment 會影響邊界。"
+        },
+        sourceRefs: ["S5", "S9", "S12"]
+      },
+      {
+        title: "10. Paging 保留 page offset，只重新映射 page number",
+        paragraphs: [
+          "virtual memory 讓每個 process 使用 virtual addresses，再由 MMU 轉成 physical addresses。固定 page size=2^p bytes 時，virtual address 分成 VPN 與 p-bit page offset；page table 將 VPN 映射到 PPN，physical address 由 PPN 與原 offset 串接。offset 不翻譯，因為 virtual page 與 physical frame 大小相同。",
+          "32-bit VA、4 KiB pages 有 12-bit offset 與 20-bit VPN，共 2^20 virtual pages。VA 0x12345ABC 的 VPN=0x12345、offset=0xABC；若 PTE 給 PPN=0x2ABCD，PA=0x2ABCDABC。page size 增大會增加 offset bits、減少 page count 和 TLB pressure，但也可能增加 internal fragmentation 與 fault transfer。",
+          "paging 允許不連續 virtual pages 放到任意 free frames，提供 relocation、isolation、sharing 與 demand allocation。兩個 processes 可把不同 VPN 映到同一 read-only physical frame 共享 library code；也可把相同 VA 映到不同 frames，讓彼此看見獨立 address space。"
+        ],
+        figure: {
+          type: "flow",
+          title: "Virtual address 到 physical address",
+          items: ["VA = VPN | offset", "lookup PTE(VPN)", "check valid / permissions", "obtain PPN", "PA = PPN | same offset", "access cache / memory"],
+          caption: "translation 改變 page number，不改變 page offset；permission check 是形成合法 physical access 的一部分。"
+        },
+        sourceRefs: ["S2", "S6", "S13", "S14"]
+      },
+      {
+        title: "11. Multi-level page table 與 TLB：減少容量與常見翻譯延遲",
+        paragraphs: [
+          "single-level page table 若每個 VPN 都有 PTE，32-bit VA、4 KiB page、4-byte PTE 需要 2^20×4=4 MiB per process，即使大部分 address space 未使用。multi-level page table 把 VPN 分段；只有某個 virtual region 實際使用時才配置下一層 table，讓大洞只需上層 invalid entry。代價是 TLB miss 時可能需要多次 memory reads 完成 page walk。",
+          "TLB 是 address translations 的小型 associative cache，entry 保存 VPN→PPN、permissions、valid，常含 ASID/PCID 區分 address spaces。TLB hit 可直接取得 translation；TLB miss 進行 hardware/software page-table walk，找到 valid PTE 後 refill。TLB miss 不表示 page 不在 DRAM，也不等於 page fault。",
+          "以 RISC-V Sv32 為具體模型，32-bit VA 切成 VPN[1] 10 bits、VPN[0] 10 bits、offset 12 bits；兩層 table 各 1024 個 4-byte PTE，恰為 4 KiB page。PTE 的 V/R/W/X 等 bits 同時描述 validity 與 permissions。specification 定義 translation behavior，但 TLB size/replacement 通常屬 implementation。"
+        ],
+        figure: {
+          type: "bits",
+          title: "RISC-V Sv32 virtual address",
+          totalBits: 32,
+          items: [
+            { label: "VPN[1]", bits: 10, detail: "index root page table" },
+            { label: "VPN[0]", bits: 10, detail: "index next-level table" },
+            { label: "Page offset", bits: 12, detail: "4 KiB page 內 byte" }
+          ],
+          caption: "每層 10-bit index 選 1024 PTEs；offset 在 translation 前後保持不變。"
+        },
+        sourceRefs: ["S13", "S14", "S15"]
+      },
+      {
+        title: "12. Page fault、replacement、protection fault 與 segmentation",
+        paragraphs: [
+          "page-table walk 找到 present/valid mapping 才能形成 PA。若 mapping 合法但 page 尚未 resident，page fault trap 讓 OS 配置 free frame 或選 victim；dirty victim 可能先寫回 storage，再讀入所需 page、更新 PTE/TLB，最後重新執行 faulting instruction。fault service 的巨大 latency 使極低 fault probability 仍可能主宰 average time。",
+          "protection fault 與 not-present fault 都可能由 memory access 觸發 exception，但原因不同。R/W/X permission 不允許目前 operation 時，不能靠把 page 從 storage 載入就修復；OS 通常回報錯誤或依 copy-on-write 等既定機制建立新 mapping。valid/present、dirty、accessed/reference 與 permissions 是不同狀態，不應壓成單一 hit bit。",
+          "segmentation 以 variable-size logical regions 的 base、limit 與 protection 形成 address，能直接表達 code/data/stack 等語意，但外部碎片與 placement 較複雜。paging 使用 fixed-size pages，避免外部碎片但有 page 內浪費。部分歷史系統結合 segmentation 與 paging；現代一般 purpose systems 的主要 address translation 通常以 paging 為核心。"
+        ],
+        figure: {
+          type: "matrix",
+          title: "三種 translation outcome",
+          columns: ["Outcome", "Translation state", "處理路徑", "可否重試 instruction"],
+          rows: [
+            ["TLB miss, page present", "TLB 無 entry；PTE valid", "page walk + TLB refill", "可以"],
+            ["Page fault", "PTE not present / demand state", "OS 配 frame、I/O、更新 mapping", "處理成功後可以"],
+            ["Protection fault", "mapping 存在但 permission 不符", "OS exception policy", "通常不可，除非 COW 等合法機制"],
+            ["Cache miss", "PA 已形成、line 不在 cache", "hardware line fill", "不是 architectural retry trap"]
+          ],
+          caption: "translation、residency、permission 與 data cache state 是四個判斷層次；名稱相似不代表處理成本相同。"
+        },
+        sourceRefs: ["S2", "S6", "S13", "S14", "S15"]
+      },
+      {
+        title: "13. TLB、cache 與多核心一致性形成完整 memory access path",
+        paragraphs: [
+          "一般 physically addressed cache path 先以 VA 查 TLB 得 PA，再以 PA 的 index/tag 查 cache。為縮短 L1 hit path，VIPT cache 可用不經 translation 的 page-offset bits先 index，同時查 TLB，之後以 physical tag 比對；cache geometry 必須避免 virtual aliases 造成不一致。這是 microarchitecture timing optimization，不改變程式的 VA→PA contract。",
+          "TLB 保存 translations，cache 保存 instructions/data copies，page table 保存 authoritative mappings。context switch 可能切換 page-table root；ASID 可讓不同 address spaces 的 TLB entries 共存。當 OS 修改 mapping，需要依 ISA 規則同步 page-table update、translation cache invalidation 與 execution ordering，不能只改 memory 中 PTE 就假設所有 cores 立即看見。",
+          "多核心還需要 cache coherence，確保同一 physical block 的 writable copies 依 protocol 取得 ownership 並傳播 invalidation/update。coherence 不等於 consistency：coherence 處理單一 address 的 copies，memory consistency 規定不同 addresses 的可觀察 ordering。基礎 cache mapping 題可假設單核心，但把結果外推到共享 memory 前必須加入這兩層規則。"
+        ],
+        figure: {
+          type: "flow",
+          title: "一次 load 的整合路徑",
+          items: ["instruction forms VA", "TLB lookup", "permission check / PA", "L1 tag + data", "lower cache levels", "memory controller / DRAM", "return value"],
+          caption: "TLB miss 走 page table；cache miss 走 lower memory hierarchy；page fault 才由 OS 建立 residency，三條 slow path 不同。"
+        },
+        sourceRefs: ["S2", "S9", "S13", "S14", "S15"]
+      }
+    ],
+    workedExamples: [
+      {
+        title: "例題一：完整推導 cache address fields 與 metadata",
+        prompt: "32-bit byte address、32 KiB data cache、64-byte blocks、4-way、write-back。求 lines、sets、tag/index/offset，並切割 address 0x12345678。",
+        steps: [
+          "data capacity C=32 KiB=32768 bytes；block B=64 bytes；ways A=4。",
+          "lines=C/B=32768/64=512；sets=lines/A=512/4=128。",
+          "offset bits=log2 64=6；index bits=log2 128=7；tag bits=32−6−7=19。",
+          "offset=address & 0x3F=0x38=56。",
+          "index=(address>>6)&0x7F=89；tag=address>>13=0x91A2。",
+          "回算 (0x91A2<<13)|(89<<6)|56=0x12345678，欄位切割一致。",
+          "若每 line 有 19-bit tag、valid、dirty，另每 set 3-bit tree PLRU，metadata=512×21+128×3=11136 bits=1392 bytes。"
+        ],
+        result: "512 lines、128 sets、19/7/6-bit tag/index/offset；0x12345678 對應 tag 0x91A2、set 89、offset 56。"
+      },
+      {
+        title: "例題二：逐筆模擬 direct-mapped cache",
+        prompt: "空的 direct-mapped cache 有 4 lines、每 block 4 bytes。依序讀 byte addresses 0,4,8,0,16,4,20,0，求 hit/miss。",
+        steps: [
+          "先除以 block size 得 block numbers：0,1,2,0,4,1,5,0；line index=block mod 4。",
+          "block 0→line0 miss；block 1→line1 miss；block 2→line2 miss，三個 valid tags 建立。",
+          "再次 block 0 查 line0、tag 相同，hit。",
+          "block 4 也映 line0，但 tag 不同，miss 並 evict block 0。",
+          "block 1 仍在 line1，hit。",
+          "block 5 映 line1，miss 並 evict block 1。",
+          "最後 block 0 映 line0，但 line0 現為 block 4，因此 miss。",
+          "總 hits=2、misses=6，hit rate=2/8=25%。"
+        ],
+        result: "M,M,M,H,M,H,M,M；direct mapping 使 blocks 0/4 與 1/5 分別衝突。"
+      },
+      {
+        title: "例題三：同一 trace 比較 LRU 與 FIFO",
+        prompt: "一個 2-way set 已滿／空間可容兩 blocks，依序 access blocks 0,2,0,4,2,0；所有 blocks 映到同 set。比較 LRU 與 FIFO。",
+        steps: [
+          "LRU：0 miss、2 miss，set={0,2}；再 access 0 hit，使 2 成為 least recent。",
+          "access 4 miss，LRU evict 2，set={0,4}；access 2 miss，evict 0；最後 0 miss。LRU 只有 1 hit。",
+          "FIFO：0 miss、2 miss，進入順序 0 oldest、2 newest；access 0 hit 不改 FIFO order。",
+          "access 4 miss，FIFO evict 最早進入的 0，set={2,4}。",
+          "access 2 hit；最後 access 0 miss，evict 2。FIFO 有 2 hits。",
+          "這個短 trace 中 FIFO 比 LRU 多一個 hit，證明 policy 沒有對所有 traces 的固定勝負。"
+        ],
+        result: "LRU hit rate=1/6；FIFO hit rate=2/6。replacement 必須依完整 trace 模擬。"
+      },
+      {
+        title: "例題四：比較 write-through 與 write-back traffic",
+        prompt: "CPU 對 cache-resident 4-byte words 執行 1000 次 stores。write-through 每次下送 4 bytes；write-back 期間發生 40 次 dirty 64-byte line evictions。忽略 write misses 與 protocol overhead，比較下層 data traffic。",
+        steps: [
+          "write-through 每次 store 更新 lower level，traffic=1000×4=4000 bytes。",
+          "write-back 在 hit 時只改 cache 並設 dirty，不因每次 store 立即下送。",
+          "40 個 dirty victims 各寫回完整 64-byte line，traffic=40×64=2560 bytes。",
+          "此假設下 write-back 少 4000−2560=1440 bytes，也就是 36%。",
+          "結果不是普遍比例：若 stores 分散到大量 lines、頻繁 dirty eviction，write-back traffic 可增加。",
+          "write buffer、coherence messages、read-for-ownership 與 final flush 未列入，因此結論只適用題目邊界。"
+        ],
+        result: "指定假設下 write-through 4000 B、write-back 2560 B；write-back 合併了同 line 的多次修改。"
+      },
+      {
+        title: "例題五：兩層 AMAT 與 global miss rate",
+        prompt: "L1 hit time=1 cycle、L1 miss rate=5%；L2 hit time=8 cycles、L2 local miss rate=10%；memory penalty=100 cycles。求 AMAT 與到達 memory 的 global rate。",
+        steps: [
+          "先固定條件：L2 的 10% 只以 L1 misses 為分母。",
+          "發生 L1 miss 後的條件成本=8+0.10×100=18 cycles。",
+          "平均 L1 miss contribution=0.05×18=0.9 cycle。",
+          "AMAT=1+0.9=1.9 cycles。",
+          "memory global access rate=0.05×0.10=0.005=0.5%。",
+          "若把 5%+10% 當 memory rate 會錯，因為 95% L1 hits 根本不查 L2。"
+        ],
+        result: "AMAT=1.9 cycles；每 1000 次 L1 accesses 平均 5 次到達 memory。"
+      },
+      {
+        title: "例題六：把 instruction/data misses 轉成 CPI",
+        prompt: "base CPI=1；每條 instruction 有一次 I-cache access，I-miss rate=2%；平均 data accesses/instruction=0.30，D-miss rate=4%；兩者 penalty 都是 50 cycles。假設 blocking 且無重疊，求 CPI。",
+        steps: [
+          "I-miss stall/instruction=1×0.02×50=1.0 cycle。",
+          "D-miss frequency/instruction=0.30×0.04=0.012。",
+          "D-miss stall/instruction=0.012×50=0.6 cycle。",
+          "total memory stall CPI=1.0+0.6=1.6。",
+          "total CPI=base 1+stall 1.6=2.6。",
+          "CPU time 若 clock 與 instruction count 固定，會相對 base model 增為 2.6 倍；實際 nonblocking cache 可能重疊部分 penalty。"
+        ],
+        result: "blocking model 下 CPI=2.6，其中 I-cache stalls 佔 1.0、D-cache stalls 佔 0.6。"
+      },
+      {
+        title: "例題七：32-bit paging address translation",
+        prompt: "32-bit virtual address 0x12345ABC、4 KiB pages；PTE 將 VPN 映到 PPN 0x2ABCD。求 VPN、offset 與 physical address。",
+        steps: [
+          "4 KiB=2^12 bytes，因此 page offset 是低 12 bits，VPN 是高 20 bits。",
+          "VPN=0x12345ABC>>12=0x12345。",
+          "offset=0x12345ABC&0xFFF=0xABC。",
+          "PTE lookup 以 VPN 0x12345 取得 PPN 0x2ABCD，並先檢查 valid/permissions。",
+          "PA=(0x2ABCD<<12)|0xABC=0x2ABCDABC。",
+          "offset 0xABC 在 VA 與 PA 完全相同，只有 page number 被替換。"
+        ],
+        result: "VPN=0x12345、offset=0xABC、PA=0x2ABCDABC。"
+      },
+      {
+        title: "例題八：Sv32 兩層 page-table indices",
+        prompt: "將 Sv32 virtual address 0xCAFEBABE 切成 VPN[1]、VPN[0] 與 12-bit offset。",
+        steps: [
+          "Sv32 format 是 10-bit VPN[1]、10-bit VPN[0]、12-bit offset。",
+          "offset=VA&0xFFF=0xABE=2750。",
+          "VPN[0]=(VA>>12)&0x3FF=0x3EB=1003。",
+          "VPN[1]=(VA>>22)&0x3FF=0x32B=811。",
+          "root table 先用 index 811 選 PTE；若它指向 next level，再用 index 1003 選 leaf PTE。",
+          "leaf PTE 提供 PPN/permissions，最後和 offset 0xABE 串接；沒有 leaf PTE 資料時不能猜 PA。"
+        ],
+        result: "VPN[1]=0x32B、VPN[0]=0x3EB、offset=0xABE。"
+      },
+      {
+        title: "例題九：TLB miss 與 page fault 的平均成本",
+        prompt: "TLB lookup=1 ns、memory access=100 ns、TLB hit rate=95%；TLB miss 需額外一次 100 ns single-level page-table read。另 page-fault probability=10^-6、extra service penalty=5 ms。分別計算不含 page fault 的 translation+memory EAT，以及加入 fault penalty 後的量級。",
+        steps: [
+          "TLB hit path=1+100=101 ns。",
+          "TLB miss 但 page present path=1+100(PTE)+100(data)=201 ns。",
+          "不含 page fault EAT=0.95×101+0.05×201=106 ns。",
+          "5 ms=5,000,000 ns。",
+          "page-fault average extra=10^-6×5,000,000=5 ns。",
+          "加入題目獨立 fault model 後約為 106+5=111 ns。",
+          "若 fault probability 提高到 10^-4，extra 會變 500 ns，立刻超過正常 translation/access 成本。"
+        ],
+        result: "TLB/page-table EAT=106 ns；加入 10^-6 fault probability 後約 111 ns。低機率事件仍因巨大 penalty 影響平均值。"
+      }
+    ],
+    misconceptions: [
+      ["Cache 容量就是晶片為 cache 配置的全部 bits。", "標示容量通常只算 data；tag、valid、dirty、replacement、ECC 與 ports 都是額外成本。"],
+      ["ways 需要另外從 address 取 log2(ways) 個 bits。", "index 選 set；同 set 的 ways 以 tag comparisons 決定，不由 address 直接選 way。"],
+      ["valid=1 就代表 cache hit。", "還必須 index 到正確 set 並有 matching tag；valid 只表示該 entry 可參與比較。"],
+      ["block 越大一定越能提高 hit rate。", "過大 block 會減少 line count、增加 conflict/capacity pressure、pollution 與 miss penalty。"],
+      ["LRU 對每一個 trace 都優於 FIFO 或 random。", "LRU 利用 temporal locality，但特定 trace 可能讓 FIFO 命中更多；高 ways 的 exact LRU 也有成本。"],
+      ["Write-back 表示資料已寫到 persistent storage。", "它只表示 modified line 延後寫到下一 memory level；持久化還有 memory controller 與 storage 邊界。"],
+      ["L2 miss rate 可直接和 L1 miss rate相加。", "L2 local rate 以 L1 misses 為分母；到 memory 的 global rate通常是兩者相乘。"],
+      ["TLB 保存最近使用的程式資料。", "TLB cache 的是 VPN→PPN translations/permissions；data cache 才保存程式 data copies。"],
+      ["TLB miss 就是 page fault。", "TLB miss 可由 valid page-table entry refill；只有 page 不 resident或 mapping 狀態要求 OS 時才 fault。"],
+      ["Physical address 的 offset 由 page table重新計算。", "同 page size 下 page offset 原樣保留，page table只替換 VPN 為 PPN。"],
+      ["Virtual memory 只用來讓程式超過 DRAM 容量。", "它同時提供 relocation、isolation、permission、sharing、copy-on-write 與 sparse address spaces。"],
+      ["Cache coherence 已經定義所有多執行緒 memory ordering。", "coherence 聚焦單一 block/address 的 copies；consistency model 才規定跨 addresses 的 ordering。"]
+    ],
+    exercises: [
+      { level: "基礎", question: "說明 SRAM 為何常用於 cache、DRAM 為何常用於 main memory。", solution: ["SRAM 不需 refresh、latency 低，但 cell 面積與 cost/bit 較高，適合小而快的 on-chip cache。", "DRAM cell 密度高、capacity/cost 較適合 main memory，但需 refresh 且 access 受 row/bank timing 影響。"] },
+      { level: "基礎", question: "64-byte cache line 可容納多少個 4-byte integers？", solution: ["64/4=16 個 integers。", "只有 address 與 line boundary 對齊時，連續 16 elements 才恰在同一 line；跨界時會分到兩 lines。"] },
+      { level: "基礎", question: "8 KiB direct-mapped cache、32-byte blocks 共有多少 lines？offset 與 index 各幾 bits？", solution: ["lines=8192/32=256。", "offset=log2 32=5 bits；direct-mapped 有 256 sets，index=log2 256=8 bits。"] },
+      { level: "基礎", question: "hit rate=96% 時 miss rate 為何？10000 次 accesses 平均幾次 misses？", solution: ["miss rate=1−0.96=0.04=4%。", "10000×0.04=400 次 misses。"] },
+      { level: "基礎", question: "區分 cache line 的 valid bit 與 dirty bit。", solution: ["valid 表示 line 目前包含可用 mapping/data，可參與 tag hit 判斷。", "dirty 表示 write-back line 已修改、比下一層新，eviction 前需要寫回。"] },
+      { level: "核心", question: "64 KiB cache、64-byte blocks、8-way、36-bit physical addresses，求 lines、sets、offset/index/tag bits。", solution: ["lines=65536/64=1024；sets=1024/8=128。", "offset=6、index=7、tag=36−6−7=23 bits。"] },
+      { level: "核心", question: "direct-mapped cache 有 8 sets、16-byte blocks。byte address 0x12C 的 block number、set index、offset 為何？", solution: ["block number=floor(0x12C/16)=0x12=18；offset=0xC=12。", "set index=18 mod 8=2；tag 若需要則為 floor(18/8)=2。"] },
+      { level: "核心", question: "L1 hit=2 cycles、miss rate=3%、memory extra penalty=80 cycles，求單層 AMAT。", solution: ["miss contribution=0.03×80=2.4 cycles。", "AMAT=2+2.4=4.4 cycles；這裡 80 是 hit check 之外的 extra penalty。"] },
+      { level: "核心", question: "L1 miss rate=8%，L2 local miss rate=25%。求 L2 global access rate 與 memory global rate。", solution: ["所有 L1 accesses 中有 8% 到達 L2，所以 L2 global access rate=8%。", "其中 25% 再 miss，memory global rate=0.08×0.25=0.02=2%。"] },
+      { level: "核心", question: "write-back cache 替換 clean line 與 dirty line 時，下層 traffic 有何不同？", solution: ["clean line 和下一層相同，不需先寫回；miss fill 只需讀入新 line。", "dirty line 必須先或並行安排完整 modified line 寫回，再完成新 line fill；penalty/traffic 較大。"] },
+      { level: "核心", question: "32-bit VA、8 KiB pages 時 VPN 與 offset 各幾 bits？dense page table 有多少 entries？", solution: ["8 KiB=2^13，所以 offset=13 bits、VPN=32−13=19 bits。", "dense table 有 2^19=524288 entries。"] },
+      { level: "核心", question: "VA=0x00ABCDEF、4 KiB pages，求 VPN 與 offset。", solution: ["VPN=VA>>12=0x00ABC；前導零可省略為 0xABC。", "offset=VA&0xFFF=0xDEF。"] },
+      { level: "進階", question: "32-bit VA、4 KiB pages、4-byte PTE 的 single-level dense page table 多大？", solution: ["virtual pages=2^(32−12)=2^20。", "size=2^20×4 bytes=2^22 bytes=4 MiB per page table。"] },
+      { level: "進階", question: "Sv32 address 0xCAFEBABE 的 VPN[1]、VPN[0]、offset 為何？", solution: ["VPN[1]=(VA>>22)&0x3FF=0x32B；VPN[0]=(VA>>12)&0x3FF=0x3EB。", "offset=VA&0xFFF=0xABE；10+10+12=32 bits。"] },
+      { level: "進階", question: "TLB lookup=1 ns、memory=80 ns、TLB hit=90%，miss 時多一次 memory PTE read；page 均 present。求 EAT。", solution: ["hit path=1+80=81 ns；miss path=1+80+80=161 ns。", "EAT=0.9×81+0.1×161=89 ns。"] },
+      { level: "進階", question: "page-fault extra penalty=2 ms、fault probability=10^-5。它對每次 access 的平均額外成本是多少 ns？", solution: ["2 ms=2,000,000 ns。", "average extra=10^-5×2,000,000=20 ns；必須和正常 access latency 相加。"] },
+      { level: "挑戰", question: "32 KiB、64-byte、4-way、32-bit cache，每 line 有 tag/valid/dirty，另每 set 3-bit tree PLRU。metadata 共多少 bytes？", solution: ["sets=128、lines=512、tag=19 bits；per-line metadata=19+1+1=21 bits。", "total=512×21+128×3=11136 bits=1392 bytes；未含 ECC 與實作 overhead。"] },
+      { level: "挑戰", question: "base CPI=0.8；I-miss rate=1%、penalty=40；data accesses/instruction=0.25、D-miss rate=6%、penalty=60。blocking model 的 CPI 為何？", solution: ["I stall=1×0.01×40=0.4；D stall=0.25×0.06×60=0.9。", "total CPI=0.8+0.4+0.9=2.1；若 misses 可重疊，需另給 overlap 模型。"] }
+    ],
+    glossary: [
+      ["Memory hierarchy", "以多層不同 capacity/latency/cost technology 提供接近上層平均速度的系統。"],
+      ["SRAM", "以穩定電路狀態保存 bit、無需 refresh、常用於 cache 的 volatile memory。"],
+      ["DRAM", "以 capacitor charge 保存 bit、需要 refresh、常用於 main memory 的 volatile memory。"],
+      ["Temporal locality", "近期被存取的 item 在不久後再次被使用的傾向。"],
+      ["Spatial locality", "某 address 被存取後，鄰近 addresses 很快被使用的傾向。"],
+      ["Working set", "一段執行期間內持續活躍、需要保留以獲得 reuse 的 blocks/pages 集合。"],
+      ["Cache line", "cache 與下一層間搬移及配置的固定大小 data block。"],
+      ["Tag", "辨認 indexed set 中 cache line 對應哪個 memory block 的 address 高位。"],
+      ["Index", "從 direct/set-associative cache 選出一個 set 的 address bits。"],
+      ["Block offset", "選擇 cache line 內 byte/word 的低位 address bits。"],
+      ["Associativity", "同一 memory block 在 cache 中可選 candidate lines 的數量。"],
+      ["Compulsory miss", "某 block 在 reference history 中第一次被要求而發生的 miss。"],
+      ["Capacity miss", "即使 fully associative，相同總容量仍因 working set 過大而發生的非首次 miss。"],
+      ["Conflict miss", "因受限 mapping 碰撞、但相同容量 fully associative 本可命中的 miss。"],
+      ["Write-through", "cache write 同時更新下一層的 propagation policy。"],
+      ["Write-back", "cache write 只設 dirty，直到 eviction 等事件才把 line 寫回下一層。"],
+      ["Write-allocate", "write miss 時先把 target line fill 到 cache 再修改。"],
+      ["AMAT", "Average Memory Access Time，以各層條件機率加權的平均 access latency。"],
+      ["Local miss rate", "以真正到達該 cache level 的 accesses 為分母計算的 miss rate。"],
+      ["Global miss rate", "以最上層所有 memory accesses 為分母，最後在某層 miss 的比例。"],
+      ["Virtual address", "process/ISA 產生、在存取 physical memory 前需要 translation 的 address。"],
+      ["Physical address", "完成 translation 後用來選 physical cache/memory location 的 address。"],
+      ["Page", "virtual memory 中固定大小的 mapping/transfer unit；physical 對應稱 page frame。"],
+      ["VPN / PPN", "Virtual Page Number 與 Physical Page Number，page table 映射的兩端。"],
+      ["Page table entry", "保存 PPN、valid/present、permissions、accessed/dirty 等 translation state 的 entry。"],
+      ["TLB", "Translation Lookaside Buffer，cache 最近使用的 address translations 與 permissions。"],
+      ["Page fault", "translation/residency 狀態要求 OS 介入處理的 synchronous exception。"],
+      ["Segmentation", "以 variable-size logical segment 的 base、limit、protection 形成 address 的方法。"],
+      ["ASID", "Address Space Identifier，使不同 address spaces 的 translations 可在 TLB 中區分。"],
+      ["Cache coherence", "多核心維持同一 physical block 多份 cache copies 一致性的機制。"]
+    ],
+    sources: [
+      { key: "S1", title: "MIT 6.004: Caches and the Memory Hierarchy", url: "https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/pages/c14/", accessed: "2026-08-20", use: "SRAM/DRAM、locality、direct/associative cache、block size、conflict 與 write strategies 的公開課程基礎。" },
+      { key: "S2", title: "MIT 6.004: Virtual Memory Annotated Slides", url: "https://live.ocw.mit.edu/courses/6-004-computation-structures-spring-2017/pages/c16/c16s1/", accessed: "2026-08-20", use: "paging、page map、TLB、page fault、protection、multi-level translation 與 cache/MMU 整合。" },
+      { key: "S3", title: "UC Berkeley CS61C: Memory Hierarchy, Revisited", url: "https://notes.cs61c.org/content/caches-intro/memory-hierarchy/", accessed: "2026-08-20", use: "memory hierarchy、cache levels、locality 與 block transfer 的現行課程脈絡。" },
+      { key: "S4", title: "UC Berkeley CS61C: Average Memory Access Time", url: "https://notes.cs61c.org/content/caches-intro/amat/", accessed: "2026-08-20", use: "hit time、miss rate、miss penalty 與 multi-level AMAT 定義。" },
+      { key: "S5", title: "Cornell CS3410 Spring 2026: Caches", url: "https://www.cs.cornell.edu/courses/cs3410/2026sp/notes/caches.html", accessed: "2026-08-20", use: "2026 cache mapping、3C classification、replacement、block-size tradeoff 與 AMAT 公開教材。" },
+      { key: "S6", title: "Cornell CS3410 Spring 2026: Virtual Memory", url: "https://www.cs.cornell.edu/courses/cs3410/2026sp/notes/vm.html", accessed: "2026-08-20", use: "2026 paging、4 KiB address split、page tables、replacement、sharing 與 multi-level tables。" },
+      { key: "S7", title: "UC Berkeley CS61C: Direct-Mapped Cache", url: "https://notes.cs61c.org/content/caches-ii/direct-mapped/", accessed: "2026-08-20", use: "block number、tag/index/offset、hit procedure、direct mapping 與 hardware comparisons。" },
+      { key: "S8", title: "UC Berkeley CS61C: Fully Associative Cache and Write Policies", url: "https://notes.cs61c.org/content/caches-ii/fully-associative/", accessed: "2026-08-20", use: "associative placement、write-through、write-back、dirty bit 與 replacement。" },
+      { key: "S9", title: "Intel 64 and IA-32 Architectures Optimization Reference Manual", url: "https://www.intel.com/content/www/us/en/developer/articles/technical/intel64-and-ia32-architectures-optimization.html", accessed: "2026-08-20", use: "現代 cache hierarchy、memory latency/bandwidth、prefetch 與 locality optimization 的官方實務。" },
+      { key: "S10", title: "IBM: What Is Primary Storage?", url: "https://www.ibm.com/think/topics/primary-storage", accessed: "2026-08-20", use: "register、cache、DRAM、SRAM 與 flash 在 primary storage hierarchy 中的速度、容量、揮發性與用途比較。" },
+      { key: "S11", title: "Micron DDR5 SDRAM: New Features", url: "https://www.micron.com/content/dam/micron/global/public/products/white-paper/ddr5-new-features-white-paper.pdf", accessed: "2026-08-20", use: "DRAM banks、burst、refresh 與現代 DDR5 data movement 的官方技術背景。" },
+      { key: "S12", title: "Intel: Loop Optimizations Where Blocks Are Required", url: "https://www.intel.com/content/www/us/en/developer/articles/technical/loop-optimizations-where-blocks-are-required.html", accessed: "2026-08-20", use: "loop blocking/tiling、working-set fit 與 cache reuse 的官方案例。" },
+      { key: "S13", title: "RISC-V Supervisor-Level ISA: Sv32 Virtual Memory", url: "https://docs.riscv.org/reference/isa/priv/supervisor.html", accessed: "2026-08-20", use: "Sv32 10/10/12 address fields、two-level page tables、PTE V/R/W/X permissions 與 page-fault semantics。" },
+      { key: "S14", title: "Linux Kernel Documentation: Page Tables", url: "https://docs.kernel.org/mm/page_tables.html", accessed: "2026-08-20", use: "hierarchical page tables、MMU、TLB/page-walk caches、page faults、dirty/permission state 與 huge pages。" },
+      { key: "S15", title: "UC Berkeley CS61C: Page Table Design", url: "https://notes.cs61c.org/content/vm/page-table/", accessed: "2026-08-20", use: "page placement/replacement/write policy、PTE size、protection、per-process tables 與 hierarchical design。" }
+    ]
   }
 ];

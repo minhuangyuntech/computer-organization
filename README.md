@@ -50,6 +50,7 @@ Repository 根目錄就是這個 `lectures/` 資料夾。GitHub Pages 目前從 
 
 ## 修訂紀錄
 
+- 2026-08-20：完成第 6 章「記憶體階層：Cache、虛擬記憶體與位址轉譯」深度教材，新增 13 個概念單元、13 幅原創圖表、9 個逐步例題、18 題分級練習、30 個術語與 15 項權威來源；另加入 cache address split、metadata、mapping trace、replacement、write traffic、AMAT、CPI、paging、Sv32 與 TLB 可重算驗證。
 - 2026-08-19：完成第 5 章「指令集架構：編碼、定址與管線化執行」深度教材，新增 11 個概念單元、11 幅原創圖表、7 個逐步例題、16 題分級練習、24 個術語與 13 項權威來源；另加入 MIPS R/I/J encoding、immediate extension、effective address、branch/jump target、calling convention 與 pipeline timing 可重算驗證。
 - 2026-08-18：完成第 4 章「MARIE：從指令位元到完整狀態追蹤」深度教材，新增 11 個概念單元、11 幅原創圖表、6 個逐步例題、15 題分級練習、21 個術語與 10 項權威來源；另加入 instruction encoding、signed arithmetic、indirect addressing、assembler 與 JnS/JumpI 可重算驗證。
 - 2026-08-17：完成第 3 章「布林代數、數位邏輯與同步狀態」深度教材，新增 10 個概念單元、10 幅原創圖表、5 個逐步例題、14 題分級練習、20 個術語，以及 MIT、Berkeley、IEEE、Intel／Altera 權威來源；另加入 majority、full adder、timing 與 FSM 可重算驗證。

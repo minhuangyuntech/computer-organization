@@ -33,7 +33,7 @@ assert(fourthEdition.chapters.length === 13, "Fourth edition must contain 13 map
 assert(new Set(fourthEdition.chapters.map((item) => item.chapter)).size === 13, "Fourth edition chapter numbers must be unique");
 assert(fourthEdition.weekMap.length === 18, "Every course week needs a fourth edition mapping");
 assert(new Set(fourthEdition.weekMap.map((item) => item.week)).size === 18, "Fourth edition week mappings must be unique");
-assert(chapterDetails.length >= 5, "At least five detailed self-study chapters are required");
+assert(chapterDetails.length >= 6, "At least six detailed self-study chapters are required");
 assert(new Set(chapterDetails.map((item) => item.chapter)).size === chapterDetails.length, "Detailed chapter numbers must be unique");
 
 for (const chapter of chapterDetails) {
@@ -102,6 +102,14 @@ assert(chapterFive.sections.filter((item) => item.figure).length >= 11, "Chapter
 assert(chapterFive.workedExamples.length >= 7, "Chapter 5 needs at least seven worked examples");
 assert(chapterFive.exercises.length >= 16, "Chapter 5 needs at least sixteen exercises with solutions");
 assert(chapterFive.sources.length >= 12, "Chapter 5 needs broad authoritative source coverage");
+
+const chapterSix = chapterDetails.find((chapter) => chapter.chapter === 6);
+assert(chapterSix, "Chapter 6 detailed memory-hierarchy material is missing");
+assert(chapterSix.sections.length >= 13, "Chapter 6 needs at least thirteen complete concept sections");
+assert(chapterSix.sections.filter((item) => item.figure).length >= 13, "Chapter 6 needs at least thirteen verifiable diagrams");
+assert(chapterSix.workedExamples.length >= 9, "Chapter 6 needs at least nine worked examples");
+assert(chapterSix.exercises.length >= 18, "Chapter 6 needs at least eighteen exercises with solutions");
+assert(chapterSix.sources.length >= 15, "Chapter 6 needs broad authoritative source coverage");
 
 for (const mapping of fourthEdition.weekMap) {
   assert(mapping.chapters.length >= 1, `Week ${mapping.week} needs at least one fourth edition chapter`);
@@ -236,6 +244,69 @@ assert((8 * (250 + 150 + 200 + 300 + 180)) === 8640, "Chapter 5 sequential timin
 assert((chapterFivePipelineClock * chapterFivePipelineCycles) === 3840, "Chapter 5 pipeline timing failed");
 assert(Math.abs(8640 / 3840 - 2.25) < 1e-12, "Chapter 5 pipeline speedup failed");
 assert(Math.abs(1 + 0.20 * 0.30 - 1.06) < 1e-12, "Chapter 5 load-use CPI failed");
+
+const chapterSixCapacity = 32 * 1024;
+const chapterSixBlockSize = 64;
+const chapterSixWays = 4;
+const chapterSixLines = chapterSixCapacity / chapterSixBlockSize;
+const chapterSixSets = chapterSixLines / chapterSixWays;
+const chapterSixOffsetBits = Math.log2(chapterSixBlockSize);
+const chapterSixIndexBits = Math.log2(chapterSixSets);
+const chapterSixTagBits = 32 - chapterSixOffsetBits - chapterSixIndexBits;
+assert(chapterSixLines === 512 && chapterSixSets === 128, "Chapter 6 cache geometry failed");
+assert(chapterSixOffsetBits === 6 && chapterSixIndexBits === 7 && chapterSixTagBits === 19, "Chapter 6 cache address split failed");
+const chapterSixAddress = 0x12345678;
+assert((chapterSixAddress & 0x3f) === 56, "Chapter 6 cache offset extraction failed");
+assert(((chapterSixAddress >>> 6) & 0x7f) === 89, "Chapter 6 cache index extraction failed");
+assert((chapterSixAddress >>> 13) === 0x91a2, "Chapter 6 cache tag extraction failed");
+assert((((0x91a2 << 13) | (89 << 6) | 56) >>> 0) === chapterSixAddress, "Chapter 6 cache address reconstruction failed");
+const chapterSixMetadataBits = chapterSixLines * (chapterSixTagBits + 1 + 1) + chapterSixSets * 3;
+assert(chapterSixMetadataBits === 11136 && chapterSixMetadataBits / 8 === 1392, "Chapter 6 cache metadata calculation failed");
+
+const chapterSixDirectTrace = [0, 4, 8, 0, 16, 4, 20, 0];
+const chapterSixDirectLines = Array(4).fill(null);
+let chapterSixDirectHits = 0;
+for (const traceAddress of chapterSixDirectTrace) {
+  const block = Math.floor(traceAddress / 4);
+  const index = block % chapterSixDirectLines.length;
+  const tag = Math.floor(block / chapterSixDirectLines.length);
+  if (chapterSixDirectLines[index] === tag) chapterSixDirectHits += 1;
+  else chapterSixDirectLines[index] = tag;
+}
+assert(chapterSixDirectHits === 2, "Chapter 6 direct-mapped trace failed");
+
+function replacementHits(policy) {
+  const trace = [0, 2, 0, 4, 2, 0];
+  const resident = [];
+  let hits = 0;
+  for (const block of trace) {
+    const position = resident.indexOf(block);
+    if (position !== -1) {
+      hits += 1;
+      if (policy === "LRU") resident.push(resident.splice(position, 1)[0]);
+      continue;
+    }
+    if (resident.length === 2) resident.shift();
+    resident.push(block);
+  }
+  return hits;
+}
+assert(replacementHits("LRU") === 1 && replacementHits("FIFO") === 2, "Chapter 6 replacement-policy trace failed");
+assert(1000 * 4 === 4000 && 40 * 64 === 2560, "Chapter 6 write-traffic calculation failed");
+assert(Math.abs((1 + 0.05 * (8 + 0.10 * 100)) - 1.9) < 1e-12, "Chapter 6 two-level AMAT failed");
+assert(Math.abs(0.05 * 0.10 - 0.005) < 1e-12, "Chapter 6 global miss rate failed");
+assert(Math.abs((1 + 0.02 * 50 + 0.30 * 0.04 * 50) - 2.6) < 1e-12, "Chapter 6 memory-stall CPI failed");
+
+const chapterSixVirtualAddress = 0x12345abc;
+assert((chapterSixVirtualAddress >>> 12) === 0x12345 && (chapterSixVirtualAddress & 0xfff) === 0xabc, "Chapter 6 virtual-address split failed");
+assert((((0x2abcd << 12) | 0xabc) >>> 0) === 0x2abcdabc, "Chapter 6 physical-address reconstruction failed");
+const chapterSixSv32Address = 0xcafebabe >>> 0;
+assert(((chapterSixSv32Address >>> 22) & 0x3ff) === 0x32b, "Chapter 6 Sv32 VPN[1] failed");
+assert(((chapterSixSv32Address >>> 12) & 0x3ff) === 0x3eb, "Chapter 6 Sv32 VPN[0] failed");
+assert((chapterSixSv32Address & 0xfff) === 0xabe, "Chapter 6 Sv32 page offset failed");
+assert(Math.abs((0.95 * 101 + 0.05 * 201) - 106) < 1e-12, "Chapter 6 TLB effective access time failed");
+assert((1e-6 * 5_000_000) === 5, "Chapter 6 page-fault expected penalty failed");
+assert((2 ** 20) * 4 === 4 * 1024 * 1024, "Chapter 6 dense page-table size failed");
 
 const homepage = path.join(root, "index.html");
 const editionPage = path.join(root, "fourth-edition-map.html");
