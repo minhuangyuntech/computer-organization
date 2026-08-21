@@ -2437,5 +2437,486 @@ const chapterDetails = [
       { key: "S14", title: "Linux Kernel Documentation: Page Tables", url: "https://docs.kernel.org/mm/page_tables.html", accessed: "2026-08-20", use: "hierarchical page tables、MMU、TLB/page-walk caches、page faults、dirty/permission state 與 huge pages。" },
       { key: "S15", title: "UC Berkeley CS61C: Page Table Design", url: "https://notes.cs61c.org/content/vm/page-table/", accessed: "2026-08-20", use: "page placement/replacement/write policy、PTE size、protection、per-process tables 與 hierarchical design。" }
     ]
+  },
+  {
+    chapter: 7,
+    title: "輸出入、儲存與現代裝置介面",
+    english: "Input/Output, Storage, and Modern Device Interfaces",
+    revised: "2026-08-21",
+    readingTime: "約 230–280 分鐘",
+    intro: "輸出入系統把處理器的同步指令世界連到速度、資料單位與故障模式各不相同的裝置。一次 I/O request 不是 CPU 對裝置做一次 load 就結束，而是經過 driver、device registers、command queue、interconnect、controller、DMA buffers 與 completion path；儲存 request 還要進入 HDD mechanical positioning 或 SSD flash translation。這條路徑同時牽涉 correctness、ordering、latency、throughput、CPU overhead 與 durability。本章以『誰發出命令、誰搬資料、誰宣告完成、完成到哪一層』追蹤 programmed I/O、interrupt、DMA、PCIe、NVMe、HDD、NAND SSD 與 RAID，並用可重算的模型辨認瓶頸與可靠性邊界。",
+    outcomes: [
+      "能分辨 device、controller、interconnect、driver 與 operating system 在 I/O request 中的責任。",
+      "能追蹤 data、status、control register，並說明 port-mapped 與 memory-mapped I/O 的差異。",
+      "能比較 polling、interrupt-driven I/O 與 DMA 的 CPU overhead、latency 與適用條件。",
+      "能說明 interrupt pending、enable、priority、vector、context save、acknowledge 與 return 的狀態轉移。",
+      "能追蹤 DMA descriptor、buffer ownership、IOVA、cache coherence 與 memory ordering。",
+      "能區分 bus bandwidth、payload efficiency、transaction latency、queue depth、IOPS 與 throughput。",
+      "能分解 HDD access time 為 seek、rotational latency、transfer 與 controller/queueing 成本。",
+      "能說明 NAND page program、block erase、FTL、garbage collection、TRIM、wear 與 write amplification。",
+      "能追蹤 NVMe submission/completion queue 與 doorbell，並說明 multi-queue 如何配合多核心與 SSD parallelism。",
+      "能推導 RAID 0/1/5/6/10 的 usable capacity、fault tolerance、small-write penalty 與 rebuild 風險。",
+      "能用 Little's Law、utilization 與 Amdahl's Law 分析 I/O 系統的平均成本與改善上限。"
+    ],
+    sections: [
+      {
+        title: "1. I/O 是跨越多個責任邊界的非同步交易",
+        paragraphs: [
+          "CPU 執行 load/store 與算術指令，但鍵盤、NIC、GPU 與 storage device 都有自己的時序和內部狀態。device controller 把實體訊號轉成 command、data 與 completion；driver 把 OS 的抽象 request 轉成該 controller 接受的格式；interconnect 則運送 address、payload 與控制訊息。device 與 controller 不是同義詞，同一 controller 也可能管理多個 media units。",
+          "I/O request 通常經過 submit、queue、service、complete 四個階段。submit 只代表命令已被系統接受；controller completion 代表裝置完成到介面定義的邊界；application return 又可能晚於 interrupt、driver cleanup 與 scheduler wakeup。對 write 而言，controller cache、volatile buffer 與 persistent media 之間還有 durability 差異。",
+          "同步 API 可以建立在非同步硬體之上：process 發出 request 後進入 blocked state，CPU 改執行其他 runnable process；completion 到達再喚醒原 process。因而『呼叫者等待』不等於『整顆 CPU 忙等』，而『DMA 自動搬移』也不等於 request 沒有 software cost。"
+        ],
+        figure: {
+          type: "flow",
+          title: "一次 block I/O request 的端到端路徑",
+          items: ["application", "system call", "OS block layer", "device driver", "command queue", "controller", "media", "completion / wakeup"],
+          caption: "每一站都可能加入排隊、轉換與錯誤處理；完成狀態必須說明是 queue、controller、media 或 application 邊界。"
+        },
+        sourceRefs: ["S1", "S3", "S7", "S9"]
+      },
+      {
+        title: "2. Device registers 是軟硬體契約，不是普通變數",
+        paragraphs: [
+          "典型 controller 暴露 data、status 與 control/command registers。data register 保存小量 payload 或 FIFO entry；status 提供 ready、busy、error、interrupt pending；control 指定方向、模式、reset 或啟動。register width、bit semantics、可讀寫性與 side effects 都由 device interface 定義。read-clear status 讀一次便清除事件，write-one-to-clear 則以寫入 1 清除對應 bit。",
+          "port-mapped I/O 使用獨立 I/O address space 與特殊 instructions；memory-mapped I/O（MMIO）把 registers 映射進 CPU address space，沿用一般 load/store。兩者只改變 CPU 如何到達 register，不改變 polling、interrupt 或 DMA 的選擇。MMIO page 通常使用 device memory attributes，避免普通 cache 合併、推測或保留 stale values。",
+          "compiler 與 CPU 都可能重排 ordinary memory accesses，但 device protocol 常要求先填 descriptor/buffer，再寫 doorbell。portable driver 使用 readX/writeX 與 barrier API 建立 ordering。volatile 只能限制特定 compiler transformation，不能單獨保證 CPU memory ordering、cache coherence 或 device completion。"
+        ],
+        figure: {
+          type: "matrix",
+          title: "Device register 的常見語意",
+          columns: ["Register", "典型方向", "範例欄位", "可能副作用", "錯誤用法"],
+          rows: [
+            ["DATA / FIFO", "R/W", "payload bytes", "read 會 pop", "重複讀取當成同一值"],
+            ["STATUS", "多為 R", "ready, busy, error", "read-clear", "快取或刪除讀取"],
+            ["CONTROL", "多為 W/RW", "enable, reset, mode", "立即改變裝置", "任意合併 writes"],
+            ["DOORBELL", "W", "queue tail", "觸發 controller fetch", "descriptor 尚未可見就通知"]
+          ],
+          caption: "register access 的可觀察效果由 device specification 決定；相同位元值在 ordinary RAM 與 MMIO 不具有相同語意。"
+        },
+        sourceRefs: ["S1", "S3", "S5"]
+      },
+      {
+        title: "3. Polling、interrupt 與 DMA 解決的是不同成本",
+        paragraphs: [
+          "polling 由 CPU 反覆讀 status，ready 後再處理。它沒有 interrupt entry/exit，若事件很快且可預測，短暫 polling 可能得到最低 latency；若裝置很慢或事件稀疏，大量 checks 不產生 useful work。poll interval 越長，CPU overhead 越低，但事件額外等待最多接近一個 interval。",
+          "interrupt 讓裝置在事件到達時請求 CPU service，避免持續 polling。成本包括 interrupt delivery、pipeline/privilege transition、必要 state save、handler、acknowledge、return，以及可能的 cache/TLB disturbance。高事件率下，每個 packet 一次 interrupt 可能比批次 polling 更昂貴，因此現代網路與儲存常採 interrupt moderation 或 hybrid polling。",
+          "DMA 解決 bulk data movement 的 CPU copy 問題。CPU/driver 建立 buffer 與 descriptor，controller 直接讀寫 main memory，最後以 interrupt 或 polled completion 回報。interrupt 決定『何時通知 CPU』，DMA 決定『誰搬 payload』；系統可以 DMA 加 polling，也可以 PIO 加 interrupt，兩軸不能混為同一選項。"
+        ],
+        figure: {
+          type: "matrix",
+          title: "三種控制方式的工作分配",
+          columns: ["方式", "等待者", "payload mover", "固定成本", "適合情境"],
+          rows: [
+            ["Polling + PIO", "CPU loop", "CPU", "每次 check/copy", "短等待、小資料、可預測事件"],
+            ["Interrupt + PIO", "device notification", "CPU", "每事件 entry/exit", "稀疏小事件"],
+            ["Interrupt + DMA", "device notification", "controller", "setup + completion", "較大區塊、非同步 I/O"],
+            ["Polling + DMA", "CPU completion loop", "controller", "setup + checks", "高率低延遲 queue"]
+          ],
+          caption: "notification mechanism 與 data movement mechanism 是兩個獨立維度；比較時要分開計算 setup、copy、wait 與 completion。"
+        },
+        sourceRefs: ["S1", "S2", "S4"]
+      },
+      {
+        title: "4. Interrupt 是可恢復的控制轉移",
+        paragraphs: [
+          "external interrupt 在 instruction stream 之外非同步到達；exception 通常由目前 instruction 同步觸發；system call 是程式主動執行 trap instruction。三者都可能進入 privileged handler，但 cause、return PC 與 restart semantics 不同。precise state 要讓 handler 看見等同於某個 instruction boundary 的 architectural state。",
+          "概念步驟為：event 令 pending bit 成立；enable/mask 與 priority 判斷是否接受；CPU 保存 return PC、先前 privilege 與 interrupt-enable state；由 vector 或 common entry 取得 handler；software 保存還會使用的 registers、辨認來源、service/acknowledge，最後 restore 並執行 return-from-trap。acknowledge 過早可能遺失狀態，過晚可能重複進入。",
+          "RISC-V supervisor mode 以 sip/sie 表示 pending/enable，sstatus.SIE 控制全域接受，stvec 提供 Direct 或 Vectored entry，scause 記錄原因，sepc 保存 return PC，sret 恢復 privilege/control state。Vectored mode 的 asynchronous interrupt entry 為 BASE+4×cause，但 synchronous exceptions 仍到 BASE。"
+        ],
+        figure: {
+          type: "flow",
+          title: "Interrupt entry 到 return 的狀態鏈",
+          items: ["device event", "pending=1", "enable + priority", "save PC / privilege", "vector handler", "service + acknowledge", "restore state", "return"],
+          caption: "interrupt completion 不是只跳到 handler；必須保存足以恢復 execution 的 architectural/control state，並正確清除事件來源。"
+        },
+        sourceRefs: ["S2", "S6"]
+      },
+      {
+        title: "5. Priority、masking 與 moderation 決定最壞延遲",
+        paragraphs: [
+          "interrupt controller 收集多個 sources，以 enable mask、priority 與 routing 選擇 target CPU/vector。mask 只是暫時不接受，不一定清除 device pending state。level-triggered source 在條件存在期間保持 asserted；edge-triggered source記錄 transition。兩者對 acknowledge、共享線與事件合併有不同要求。",
+          "若高 priority handler 可以 preempt 低 priority handler，critical event latency 可降低，但 nesting 增加 stack/state 管理與 shared-data synchronization。若 handler 長時間關閉 interrupts，其他來源即使 priority 更高也可能等待。最壞 latency 至少包含目前不可中斷區段、較高 priority work、entry overhead 與 handler 前置路徑。",
+          "interrupt moderation 把多個 completions 合併後再通知，可降低 interrupts per second 與 CPU overhead，代價是第一個完成必須等待 batch/time threshold。高 IOPS 裝置常把 queues 與 interrupt vectors 分配到不同 CPU affinity，減少共享鎖與跨核心 cache traffic，但 queue imbalance 仍可能造成 tail latency。"
+        ],
+        figure: {
+          type: "timeline",
+          title: "兩種 completion notification 的時間比較",
+          columns: ["t0", "t1", "t2", "t3", "t4", "t5"],
+          rows: [
+            { label: "per-event IRQ", cells: ["C1", "IRQ1", "C2", "IRQ2", "C3", "IRQ3"] },
+            { label: "moderated IRQ", cells: ["C1", "C2", "C3", "timer", "one IRQ", "batch handle"] },
+            { label: "tradeoff", cells: ["低首件延遲", "高 overhead", "", "較高首件等待", "低 IRQ rate", "攤平成本"] }
+          ],
+          caption: "moderation 不會消除 work，只把多次固定通知成本合併；threshold 太大會直接增加 completion latency。"
+        },
+        sourceRefs: ["S2", "S7"]
+      },
+      {
+        title: "6. DMA 正確性來自 buffer ownership、address 與 ordering",
+        paragraphs: [
+          "DMA descriptor 通常保存 device-visible buffer address、length、direction、flags 與 next/index。CPU 先配置/映射 buffer，填入 payload 或保留接收空間，再填 descriptor，最後更新 queue tail/doorbell。controller 取 descriptor 後對 memory 發出 reads/writes，完成時更新 completion entry 或 ownership bit。",
+          "device 使用的 DMA address 可能是 IOVA，而非 CPU virtual address，也不必等於 physical address。IOMMU 依 device/domain page table 將 IOVA 轉成 physical page，提供 scatter-gather mapping、隔離與重定位。driver 必須使用 DMA mapping API，不能把一般 pointer 直接交給裝置。mapping direction 也會影響 cache synchronization 與權限。",
+          "non-coherent system 中，CPU cache 可能持有 device 看不到的 dirty data，或保留 device 已改寫位置的 stale copy；software 需在 ownership transfer 前後 sync/flush/invalidate。即使 coherent DMA，也仍需要 ordering：先讓 descriptor/data 對 device 可見，再 ring doorbell；先確認 completion，再讀 device 寫入的 buffer。coherence 不等於 ordering。"
+        ],
+        figure: {
+          type: "flow",
+          title: "Transmit DMA 的 ownership handoff",
+          items: ["CPU fills buffer", "DMA map → IOVA", "CPU writes descriptor", "memory barrier", "MMIO doorbell", "device DMA reads", "completion", "CPU unmaps/reuses"],
+          caption: "buffer 在 handoff 期間由 device 擁有；CPU 若提早修改或重用，會形成 data race，即使 address mapping 完全正確。"
+        },
+        sourceRefs: ["S3", "S4", "S5"]
+      },
+      {
+        title: "7. Interconnect 將 requests 封裝成可仲裁的 transactions",
+        paragraphs: [
+          "shared parallel bus 由多個 masters 競爭同一組 wires，需要 arbitration 決定 ownership；point-to-point switched fabric 則以 links 與 switches 建立多條 concurrent paths。interconnect 必須定義 addressing/routing、transaction format、flow control、ordering、error detection 與 configuration，而不只是標示一個 peak data rate。",
+          "PCI Express 是 serial point-to-point I/O interconnect，以 lanes 擴展 link width，並以 Transaction、Data Link、Physical layers 運送 memory/configuration/messages。payload 之外還有 headers、link framing、flow control 與 encoding overhead；nominal transfer rate 不能直接當成 application throughput。posted write 可先完成於 requester，read 則需要 request/completion round trip。",
+          "USB 是 host-controlled topology，device 透過 descriptors/endpoints 呈現介面。control、bulk、interrupt、isochronous transfer types 有不同服務語意；名稱為 interrupt transfer 不代表 device 可任意搶占 bus，而是 host controller 依週期排程 endpoint。USB4 進一步讓單一 link 動態共享 data/display protocols。"
+        ],
+        figure: {
+          type: "hierarchy",
+          title: "I/O transaction 的封裝層次",
+          items: [
+            { label: "Software request", detail: "read/write/ioctl、buffer、length" },
+            { label: "Command protocol", detail: "NVMe command、USB transfer、device-specific descriptor" },
+            { label: "Transaction layer", detail: "address、request/completion、routing" },
+            { label: "Link reliability", detail: "sequence、CRC/retry、flow control" },
+            { label: "Physical link", detail: "lanes、symbols/flits、electrical signaling" }
+          ],
+          caption: "應用 payload 只占底層傳輸的一部分；每層加入必要 metadata 與 control，因此 raw link rate 是上限而非實際吞吐量。"
+        },
+        sourceRefs: ["S8", "S14", "S15"]
+      },
+      {
+        title: "8. I/O 效能必須同時保留 latency、IOPS、throughput 與 queue depth",
+        paragraphs: [
+          "latency 是單一 request 從指定起點到終點的時間；IOPS 是每秒完成 requests；throughput 是每秒 payload bytes。若 requests 大小固定，throughput=IOPS×bytes/request；若大小混合，必須用總 bytes/總時間。高 sequential throughput 不保證 4 KiB random IOPS 高，反之亦然。",
+          "queue depth 是同時 outstanding requests 數。Little's Law 對穩定長期系統給出 L=λW：平均 in-flight requests=completion rate×平均 response time。增加 queue depth 可讓 controller/media 平行工作並提高 throughput，但也會增加等待；當 arrival rate 接近 service capacity，utilization 上升會讓 queueing latency 非線性惡化。",
+          "平均值會隱藏 tail latency。p99 表示 99% requests 不超過該時間，仍有 1% 更慢；對 fan-out service，一個 user operation 等待多個 I/Os 時，任一慢 request 都可能主導整體。評估要固定 workload 的 read/write ratio、block size、randomness、queue depth、data state 與 measurement boundary。"
+        ],
+        figure: {
+          type: "matrix",
+          title: "I/O 指標回答的不同問題",
+          columns: ["Metric", "單位", "回答", "不能單獨推論"],
+          rows: [
+            ["Latency", "µs / ms", "單一 request 等多久", "每秒總工作量"],
+            ["IOPS", "requests/s", "每秒完成幾筆", "每筆 bytes"],
+            ["Throughput", "MB/s / GB/s", "每秒 payload", "小 request latency"],
+            ["Queue depth", "requests", "同時 outstanding work", "裝置一定更快"],
+            ["p99 latency", "µs / ms", "尾端等待界線", "最壞情況"]
+          ],
+          caption: "只有在 block size 與 workload 固定時，IOPS 與 throughput 才能直接互換；measurement boundary 也必須一致。"
+        },
+        sourceRefs: ["S7", "S10", "S11"]
+      },
+      {
+        title: "9. HDD latency 由機械定位與資料傳輸共同形成",
+        paragraphs: [
+          "HDD 以 rotating platters 保存磁性資料，head 移到目標 track 的時間是 seek time；目標 sector 旋轉到 head 下方的等待是 rotational latency；資料通過 head 的時間是 transfer time。平均旋轉延遲可近似半圈：Trot=60/(2×RPM) seconds。7200 RPM 約為 4.17 ms，15000 RPM 約 2 ms。",
+          "簡化 access time=Tqueue+Tcontroller+Tseek+Trotation+Ttransfer。random request 常被 seek/rotation 主導；large sequential request 把一次定位成本攤到更多 bytes。logical block address 隱藏實際 geometry，drive firmware、cache 與 command queue 仍可重排 requests 以降低 head movement。",
+          "把多個 random blocks 排序可提高 throughput，卻可能讓較老 request 等更久，所以 scheduler 需平衡 locality、fairness 與 deadline。HDD cache hit、sequential prefetch 或 write cache 也會改變 host-observed latency；完成到 volatile write cache 不一定代表已寫入 platter。"
+        ],
+        figure: {
+          type: "flow",
+          title: "HDD read latency 分解",
+          items: ["queue wait", "controller", "seek to track", "wait for sector", "transfer sectors", "return data"],
+          caption: "random access 的固定機械定位成本通常遠大於傳送少量 bytes；sequential access 主要改善的是定位成本攤提。"
+        },
+        sourceRefs: ["S15"]
+      },
+      {
+        title: "10. SSD 用 FTL 隱藏 NAND 的 erase-before-write 限制",
+        paragraphs: [
+          "NAND flash read/program 以 page 為主要單位，erase 則以包含許多 pages 的較大 block 為單位；已 program page 不能像 RAM 一樣任意原地覆寫。SSD controller 以 Flash Translation Layer（FTL）把 host LBA 映射到 physical flash location，新版本通常寫到其他 free page，再把舊 mapping 標為 invalid。",
+          "garbage collection 選擇含 invalid pages 的 erase block，把仍 valid pages 搬到別處後 erase 原 block。因 host 寫一次可能造成額外 internal copies，write amplification factor WAF=NAND bytes written/host bytes written。WAF>1 會消耗 bandwidth 與 program/erase endurance，並可能在 free space 少時形成 latency spikes。",
+          "TRIM/deallocate 讓 OS 告知哪些 LBAs 不再保存有效資料，使 FTL 可免搬這些 pages。wear leveling 分散 erase cycles，overprovisioning 提供 spare area，parallel channels/dies 則提高 concurrency。SSD 沒有 seek 不代表所有 accesses 等價：block size、queue depth、read/write mix、drive fullness、GC 與 thermal state 都會影響結果。"
+        ],
+        figure: {
+          type: "flow",
+          title: "一筆 overwrite 在 FTL 內部的生命週期",
+          items: ["host writes LBA 42", "allocate free page", "program new data", "update LBA mapping", "old page invalid", "GC copies valid pages", "erase block"],
+          caption: "host 看見固定 LBA，controller 在 NAND 中採 out-of-place update；GC 產生的額外 writes 形成 write amplification。"
+        },
+        sourceRefs: ["S11", "S12"]
+      },
+      {
+        title: "11. NVMe queues 將多核心 requests 對應到 SSD parallelism",
+        paragraphs: [
+          "NVMe 定義 host software 與 nonvolatile-memory subsystem 的 command/completion interface，常透過 PCIe。controller 至少有 Admin Submission/Completion Queue，並可建立多組 I/O Submission/Completion Queues。submission queue entries 由 host 寫入 memory，host 更新 tail doorbell；controller 取命令、執行後把 completion entry 寫回 memory，再以 interrupt 或 polling 通知。",
+          "submission queue 是 host producer/controller consumer；completion queue 是 controller producer/host consumer。head/tail 與 phase state 防止把舊 entry 誤認為新 completion。command identifier 把 out-of-order completion 對回原 request；queue ordering 不代表所有 commands 必須依提交順序完成。",
+          "per-core software queues 減少 global lock contention，hardware queues 讓 controller 同時服務不同 NAND channels/dies。Linux blk-mq 以 software staging queues 與 hardware dispatch queues連接多核心和 block device。queue depth 太小可能餵不滿 SSD，太大則增加 queueing 與 tail latency；最佳值由 workload 與 service-level target 決定。"
+        ],
+        figure: {
+          type: "timeline",
+          title: "NVMe submission/completion queue ownership",
+          columns: ["1", "2", "3", "4", "5", "6"],
+          rows: [
+            { label: "Host", cells: ["write SQE", "barrier", "ring SQ tail", "other work", "read CQE", "ring CQ head"] },
+            { label: "Controller", cells: ["", "", "fetch SQE", "DMA data", "write CQE", "observe head"] },
+            { label: "Ownership", cells: ["host builds", "publish", "device owns", "device active", "host reclaims", "entry reusable"] }
+          ],
+          caption: "doorbell 只發布 queue position；descriptor/data 的 visibility 必須先由 ordering 保證。completion 也要在 CPU 讀 buffer 前建立同步。"
+        },
+        sourceRefs: ["S7", "S9", "S10"]
+      },
+      {
+        title: "12. RAID 在 capacity、performance 與 failure tolerance 間交換",
+        paragraphs: [
+          "RAID 0 將 stripes 分散到 N drives，usable capacity=N×smallest-drive capacity，但沒有 redundancy，任一 drive failure 都破壞 array。RAID 1 保存 mirror copies，two-way mirror 的 usable capacity 約為總容量一半，可從任一健康 copy 讀取。RAID 10 先 mirror 再 stripe，兼具 parallelism 與 redundancy，但 failure tolerance 取決於失效是否落在同一 mirror group。",
+          "RAID 5 以 distributed single parity 提供 N−1 drives 的容量並容忍一顆失效；RAID 6 以 dual parity 提供 N−2 drives 容量並容忍兩顆失效。full-stripe write 可直接由新 data 算 parity；small partial-stripe write 常需 read old data、read old parity、write new data、write new parity，RAID 5 形成典型 4 I/O read-modify-write penalty，RAID 6 需要更多 parity work。",
+          "RAID 不是 backup。它無法防止誤刪、ransomware、controller/software corruption、site failure 或所有 correlated faults。degraded mode 與 rebuild 期間，每筆 request 可能要由 surviving drives 重建資料，performance 下降且其餘 drives 承受更高 load；capacity 計算也必須以 smallest member 為基準。"
+        ],
+        figure: {
+          type: "matrix",
+          title: "常見 RAID level 的基本模型",
+          columns: ["Level", "Usable capacity（N×S）", "最少 drives", "保證容忍", "small-write 特性"],
+          rows: [
+            ["RAID 0", "N×S", "2", "0 drive", "parallel data writes"],
+            ["RAID 1", "約 N/2×S", "2", "每 mirror group 1 drive", "duplicate writes"],
+            ["RAID 5", "(N−1)×S", "3", "1 drive", "single-parity RMW"],
+            ["RAID 6", "(N−2)×S", "4", "2 drives", "dual-parity RMW"],
+            ["RAID 10", "N/2×S", "4", "依 mirror group", "mirror + stripe"]
+          ],
+          caption: "S 是 smallest member capacity；RAID level 只定義 mapping/redundancy，不自動提供獨立歷史版本或異地副本。"
+        },
+        sourceRefs: ["S13"]
+      },
+      {
+        title: "13. 端到端效能與可靠性要先畫出 completion 邊界",
+        paragraphs: [
+          "Amdahl's Law 對 I/O 改善同樣成立：若原 execution time 中 fraction F 在可改善的 I/O path，該部分加速 S 倍，overall speedup=1/((1−F)+F/S)。即使 device 峰值快十倍，若 application 大部分時間在 CPU、locks 或 network，整體改善仍受未改部分限制。反之，CPU 加速也可能讓 I/O 更早成為 bottleneck。",
+          "可靠 I/O 需要在各層檢查 error detection 與 recovery：link CRC/retry 保護傳輸，ECC 保護 media bits，timeout 處理無 completion，sequence/command ID 防止配錯 request，flush/FUA 等命令定義 durability ordering。retry 只有在 operation idempotent 或 protocol 能去重時才安全；結果未知的 write 不能一律盲目重送。",
+          "一次 request 的完整證據包含：command 已發布、buffer ownership 已轉移、device 已完成、data 對 CPU 可見、error status 已檢查，以及必要時已達 persistent boundary。只看『interrupt 到了』或『system call 返回』仍不足以推論所有資料已安全保存；正確性必須和介面保證、power-failure model 一起敘述。"
+        ],
+        figure: {
+          type: "hierarchy",
+          title: "Write completion 的逐層保證",
+          items: [
+            { label: "Submitted", detail: "command 已進入 software/device queue" },
+            { label: "Transferred", detail: "DMA payload 已離開或進入 host memory" },
+            { label: "Controller complete", detail: "device protocol 回報成功" },
+            { label: "Cache durable?", detail: "取決於 volatile cache、power-loss protection 與 flush" },
+            { label: "Media durable", detail: "符合介面對 persistent completion 的定義" }
+          ],
+          caption: "越下層的保證通常成本越高；software 必須要求與資料重要性相符的 completion/durability level。"
+        },
+        sourceRefs: ["S3", "S5", "S9", "S13"]
+      }
+    ],
+    workedExamples: [
+      {
+        title: "例題一：計算 polling 的 CPU 成本與最壞偵測延遲",
+        prompt: "1 GHz CPU 每 200 cycles 檢查一次 status，裝置平均 1 ms 才 ready。若 busy loop 不做其他事，求 checks、耗用 cycles 與最壞額外偵測延遲。",
+        steps: [
+          "poll interval=200 cycles/(10^9 cycles/s)=200 ns。",
+          "平均等待 1 ms 期間 checks=1 ms/200 ns=5000。",
+          "總 polling cycles=5000×200=1,000,000 cycles。",
+          "1,000,000 cycles/1 GHz=1 ms，整段 CPU time 都耗在等待。",
+          "ready 若剛好發生在一次 check 後，最壞額外偵測延遲接近 200 ns；平均約 100 ns。",
+          "縮短 interval 會降低 detection latency，卻增加每秒 register reads；延長 interval 則相反。"
+        ],
+        result: "平均約 5000 次 checks、1,000,000 CPU cycles；最壞偵測延遲約 200 ns。"
+      },
+      {
+        title: "例題二：比較 periodic polling 與 interrupt overhead",
+        prompt: "事件率 10,000/s。每次 interrupt 完整成本 1.2 µs；poll 每 4 µs 一次，每次 check 80 ns。比較單核心時間比例。",
+        steps: [
+          "interrupt CPU time/s=10,000×1.2 µs=12,000 µs=12 ms。",
+          "interrupt utilization=12 ms/1000 ms=1.2%。",
+          "poll rate=1/(4 µs)=250,000 checks/s。",
+          "poll CPU time/s=250,000×80 ns=20,000,000 ns=20 ms。",
+          "poll utilization=20 ms/1000 ms=2.0%。",
+          "此 workload 下 interrupt 固定成本較低；poll 的最壞檢測延遲約 4 µs，兩者 latency boundary 也不同。"
+        ],
+        result: "Interrupt 約占 1.2% CPU，periodic polling 約占 2.0%；不能只以通知次數判斷。"
+      },
+      {
+        title: "例題三：估算 DMA 對 CPU data-copy 工作的減量",
+        prompt: "傳送 8 MiB。PIO loop 每次搬 8 bytes 並耗 4 cycles；DMA setup 與 completion 共 2400 cycles。求 PIO 與 DMA 的 CPU cycles 比。",
+        steps: [
+          "8 MiB=8×2^20=8,388,608 bytes。",
+          "PIO iterations=8,388,608/8=1,048,576。",
+          "PIO CPU cycles=1,048,576×4=4,194,304。",
+          "DMA CPU cycles=2400；payload transfer 由 controller 執行，不計為 CPU cycles。",
+          "CPU-cycle reduction ratio=4,194,304/2400≈1747.63。",
+          "這不是 device transfer 加速 1748 倍；它只表示 CPU copy work 的減量，elapsed time 仍受 memory/interconnect/device bandwidth 限制。"
+        ],
+        result: "PIO 約 4,194,304 cycles，DMA software path 2400 cycles，CPU 搬移成本約減少 1748 倍。"
+      },
+      {
+        title: "例題四：由 event rate 與 handler time 判斷 interrupt 飽和",
+        prompt: "裝置每秒 50,000 events，每次 handler 含 entry/exit 共 6 µs。求 CPU utilization；若改成每 8 events 一次 interrupt、每批 10 µs，求新 utilization。",
+        steps: [
+          "逐事件模式 utilization=50,000×6 µs/s=300,000 µs/s=30%。",
+          "每批 8 events 時，interrupt rate=50,000/8=6250/s。",
+          "batch mode CPU time=6250×10 µs=62,500 µs/s。",
+          "batch utilization=6.25%。",
+          "CPU overhead 降低 30%−6.25%=23.75 percentage points。",
+          "但第一個 event 可能等待其餘 events 或 moderation timer，tail/first-event latency 必須另算。"
+        ],
+        result: "逐事件 IRQ 占 30% CPU；每 8 筆合併後占 6.25%，代價是增加通知等待。"
+      },
+      {
+        title: "例題五：計算 transaction payload efficiency",
+        prompt: "一種 generic link transaction 每 256-byte payload 另有 28 bytes header/control overhead，raw usable symbol bandwidth 為 8 GB/s。求 payload efficiency 與理想 payload throughput。",
+        steps: [
+          "transaction bytes=256+28=284 bytes。",
+          "payload efficiency=256/284≈0.901408。",
+          "理想 payload throughput=8 GB/s×0.901408≈7.211 GB/s。",
+          "每秒 overhead bandwidth 約 8−7.211=0.789 GB/s。",
+          "若 payload 只有 64 bytes，efficiency=64/(64+28)≈69.57%，固定 overhead 影響更大。",
+          "實際 throughput 還會受 idle、flow control、retries、software queue 與 device service 限制。"
+        ],
+        result: "256-byte payload 時效率約 90.14%，理想 payload throughput 約 7.21 GB/s。"
+      },
+      {
+        title: "例題六：用 Little's Law 推導必要 queue depth",
+        prompt: "穩定 workload 完成率 80,000 IOPS，平均 response time 250 µs。求平均 outstanding requests；若 queue depth 只有 8，是否足以維持這組數據？",
+        steps: [
+          "λ=80,000 requests/s，W=250 µs=0.00025 s。",
+          "Little's Law：L=λW。",
+          "L=80,000×0.00025=20 requests。",
+          "平均 in-flight 已是 20，queue depth 8 不可能同時維持同一 throughput 與 latency。",
+          "若 W 仍為 250 µs，QD=8 的理想 throughput upper bound=L/W=8/0.00025=32,000 IOPS。",
+          "這是穩定平均關係，不直接描述 burst 或 p99。"
+        ],
+        result: "平均需要 20 個 outstanding requests；QD=8 在相同 latency 下最多對應約 32,000 IOPS。"
+      },
+      {
+        title: "例題七：分解 7200 RPM HDD random read",
+        prompt: "平均 seek 8.5 ms、7200 RPM、transfer rate 180 MB/s，讀取 64 KiB；忽略 queue/controller overhead，估算 access time。",
+        steps: [
+          "一圈時間=60/7200 s=0.008333... s=8.333 ms。",
+          "平均 rotational latency=半圈=4.1667 ms。",
+          "64 KiB=65,536 bytes；以 180,000,000 bytes/s 計，transfer=0.0003641 s=0.3641 ms。",
+          "access time=8.5+4.1667+0.3641=13.0308 ms。",
+          "資料傳輸只占約 0.3641/13.0308≈2.79%，小 random read 主要被定位成本支配。",
+          "sequential 下一區塊若免 seek/rotation，observed bandwidth 可大幅上升。"
+        ],
+        result: "估計約 13.03 ms，其中 seek 與 rotation 合計約 12.67 ms。"
+      },
+      {
+        title: "例題八：計算 SSD write amplification 與 endurance 時間",
+        prompt: "host 每日寫入 120 GB，controller 因 GC 實際寫 NAND 180 GB。SSD 額定 600 TBW（以十進位計）。求 WAF 與在固定 host workload 下的理想天數。",
+        steps: [
+          "WAF=NAND writes/host writes=180/120=1.5。",
+          "600 TBW=600,000 GB host writes，因 TBW 通常是 host-visible endurance 指標。",
+          "理想天數=600,000 GB/(120 GB/day)=5000 days。",
+          "5000/365≈13.70 years。",
+          "若題目改給 NAND physical write budget，則必須以每日 180 GB 除，不能沿用 host write。",
+          "實際壽命還受 workload、temperature、spare area、firmware 與 warranty 條件影響。"
+        ],
+        result: "WAF=1.5；以 600 TBW 的 host-write 定義估算約 5000 天，約 13.7 年。"
+      },
+      {
+        title: "例題九：比較六顆 4 TB drives 的 RAID capacity",
+        prompt: "六顆相同 4 TB drives，分別建 RAID 0、RAID 1（三組 mirror 再合併容量）、RAID 5、RAID 6、RAID 10，求 usable capacity 與最低保證容錯。",
+        steps: [
+          "總 raw capacity=6×4=24 TB。",
+          "RAID 0：6×4=24 TB，保證容忍 0 顆。",
+          "RAID 1 / RAID 10 two-way mirrors：6/2×4=12 TB；每個 mirror group 可失效一顆。",
+          "RAID 5：(6−1)×4=20 TB，保證容忍任意 1 顆。",
+          "RAID 6：(6−2)×4=16 TB，保證容忍任意 2 顆。",
+          "RAID 10 可能容忍多顆，但若同一 mirror group 全失效就失敗，因此不能簡化為保證任意 3 顆。"
+        ],
+        result: "RAID0/1/5/6/10 分別為 24/12/20/16/12 TB；容錯語意取決於 level 與失效分布。"
+      },
+      {
+        title: "例題十：用 Amdahl's Law 評估 SSD 升級",
+        prompt: "原程式 35% 時間等待 storage I/O。新 device 讓該部分快 5 倍，其他時間不變。求 overall speedup 與新 I/O 時間比例。",
+        steps: [
+          "normalize old time=1；F=0.35，S=5。",
+          "new time=(1−0.35)+0.35/5=0.65+0.07=0.72。",
+          "overall speedup=1/0.72≈1.3889。",
+          "new execution 中 I/O fraction=0.07/0.72≈0.09722=9.72%。",
+          "即使 I/O path 快 5 倍，整體只快約 1.39 倍，因 65% 未改善。",
+          "若把 I/O 變成無限快，上限為 1/0.65≈1.5385。"
+        ],
+        result: "overall speedup 約 1.389；新 execution 中 I/O 約占 9.72%，理論上限約 1.538。"
+      }
+    ],
+    misconceptions: [
+      ["Interrupt-driven I/O 表示 CPU 完全不必處理裝置。", "CPU 仍需 entry/exit、handler、acknowledge、queue cleanup 與 process wakeup；interrupt 只避免持續 polling。"],
+      ["DMA 與 interrupt 是同一種 I/O 模式。", "DMA 決定 payload mover；interrupt 決定 completion notification。兩者可獨立組合。"],
+      ["MMIO register 可像普通 global variable 一樣快取與重排。", "device register 可能有 side effect 且要求 ordering，必須使用 device mapping、accessor 與 barrier。"],
+      ["volatile 能完整解決 DMA 與 MMIO ordering。", "volatile 主要限制 compiler；CPU ordering、cache coherence 與 ownership 需架構/OS API 保證。"],
+      ["IRQ priority 越高，所有 interrupt latency 都越低。", "高 priority 可壓低自身等待，卻可能延後低 priority sources，並增加 nesting 與共享狀態成本。"],
+      ["Peak link rate 就是 application throughput。", "encoding、headers、flow control、retries、queueing 與 device service 都會降低 payload throughput。"],
+      ["較深 queue 一定降低 latency。", "queue depth 可提高 parallel utilization，但排隊時間通常增加，尤其接近飽和時。"],
+      ["SSD 沒有 moving parts，所以每筆 I/O latency 相同。", "FTL mapping、GC、WAF、queue depth、read/write mix、fullness 與 parallelism 都會改變 latency。"],
+      ["TRIM 會立即把指定 NAND pages 全部抹除。", "TRIM/deallocate 表示 LBAs 不再有效，controller 可在合適時機回收；實際 erase timing 由 FTL 決定。"],
+      ["RAID 5 可以視為 backup。", "RAID 提供特定 drive-failure redundancy，不保護誤刪、惡意加密、site failure 或所有 correlated corruption。"],
+      ["RAID 10 一定能容忍任意兩顆 drives 同時失效。", "若兩顆屬同一 mirror group，array 可能失敗；容忍度取決於失效分布。"],
+      ["write system call 返回就必然已寫入 persistent media。", "completion 可能只到 page cache 或 volatile controller cache；durability 取決於 flush/FUA、device guarantee 與 power-failure model。"]
+    ],
+    exercises: [
+      { level: "基礎", question: "data、status 與 control register 各自負責什麼？", solution: ["data 保存 payload/FIFO entry；status 呈現 ready、busy、error 等狀態。", "control/command 由 software 寫入以啟動、重設或選擇模式；每個 register 的副作用由介面定義。"] },
+      { level: "基礎", question: "memory-mapped I/O 與 port-mapped I/O 的核心差異是什麼？", solution: ["MMIO 把 device registers 放入 CPU memory address space，以 load/store 存取。", "port-mapped I/O 使用獨立 I/O space 與專用 instructions；兩者都仍可搭配 polling、interrupt 或 DMA。"] },
+      { level: "基礎", question: "為何 interrupt 不會消除 I/O 的 CPU overhead？", solution: ["CPU 仍要進入 handler、保存/恢復必要 state、辨認與清除來源。", "driver 還需處理 completion、unmap/recycle buffers 與喚醒 process。"] },
+      { level: "基礎", question: "DMA transfer 前，CPU 通常要準備哪些資訊？", solution: ["準備/映射 buffer，建立含 DMA address、length、direction、flags 的 descriptor。", "先發布 descriptor/data，再以正確 ordering 更新 queue/doorbell。"] },
+      { level: "基礎", question: "1 ms 內到達 40 個 completions，若每 10 個合併一次 interrupt，會產生幾次 interrupts？", solution: ["40/10=4 個 batches，因此產生 4 次 interrupts。", "通知成本降低，但每批前面的 completion 會等待 batch threshold 或 timer。"] },
+      { level: "計算", question: "2.5 GHz CPU 的 interrupt handler 花 7500 cycles，單次時間是多少？每秒 20,000 次占多少 CPU？", solution: ["單次=7500/(2.5×10^9)=3 µs。", "20,000×3 µs=60 ms/s，因此占單核心 6%。"] },
+      { level: "計算", question: "4 KiB requests、100,000 IOPS 對應多少十進位 MB/s？", solution: ["4 KiB=4096 bytes；throughput=4096×100,000=409,600,000 bytes/s。", "以 10^6 bytes/MB 計為 409.6 MB/s。"] },
+      { level: "計算", question: "平均 60,000 IOPS、response time 400 µs，依 Little's Law 平均 outstanding requests 為多少？", solution: ["W=0.0004 s，L=λW=60,000×0.0004。", "L=24 requests。"] },
+      { level: "計算", question: "10,000 RPM HDD 的平均 rotational latency 為多少？", solution: ["一圈時間=60/10,000 s=6 ms。", "平均等待半圈，因此 rotational latency=3 ms。"] },
+      { level: "計算", question: "host 寫 80 GB、NAND 寫 200 GB，WAF 是多少？", solution: ["WAF=NAND writes/host writes=200/80。", "WAF=2.5，表示每 1 byte host write 對應平均 2.5 bytes NAND programming。"] },
+      { level: "計算", question: "八顆 6 TB drives 建 RAID 6，usable capacity 與保證容忍失效數是多少？", solution: ["usable=(8−2)×6=36 TB。", "dual parity 保證容忍任意兩顆 member drives 失效。"] },
+      { level: "計算", question: "RAID 5 small write 採 read-modify-write，典型需要哪些四個 member operations？", solution: ["read old data、read old parity。", "write new data、write new parity；不含額外 controller/cache effects。"] },
+      { level: "進階", question: "為何 coherent DMA 仍需要 memory barrier？", solution: ["coherence 確保同一位置的 copies 最終一致，並不自動規定不同位置 accesses 的先後。", "descriptor/data 必須先可見再 ring doorbell；completion 必須先可見再讀 buffer，因此仍需 ordering。"] },
+      { level: "進階", question: "說明 level-triggered interrupt 若未清除 device condition 便 return 會發生什麼。", solution: ["interrupt line/pending condition 仍成立，CPU 重新 enable 後可能立刻再次進入 handler。", "handler 必須依 device protocol service/acknowledge，並確認造成 level 的條件已解除。"] },
+      { level: "進階", question: "同一 SSD 為何 1 MiB sequential throughput 高，4 KiB random latency 卻可能仍不理想？", solution: ["大 sequential request 能攤平 command/queue 固定成本並利用 channels/dies parallelism。", "4 KiB random work 受每筆 command latency、mapping、queueing 與 GC 影響，兩個 metric 不等價。"] },
+      { level: "進階", question: "六顆 drives 的 RAID 10 同時壞兩顆，何時仍可運作、何時失敗？", solution: ["若失效分散在不同 mirror groups 且每組仍有一份 copy，array 可運作。", "若同一 mirror group 的兩份 copies 都失效，該 stripe data 無法重建，array 失敗。"] },
+      { level: "整合", question: "原時間 40% 為 I/O；I/O 快 4 倍後 overall speedup 是多少？", solution: ["new normalized time=0.60+0.40/4=0.70。", "speedup=1/0.70≈1.4286。"] },
+      { level: "整合", question: "一筆 persistent write 從 DMA completion 到真正 durable，還要檢查哪些邊界？", solution: ["確認 DMA/command status、buffer ownership 與 data visibility，並檢查 controller 回報是否包含 write cache。", "若 volatile cache 不在 durable guarantee 中，還需 flush/FUA 或等價機制，並確認 error/timeout 與 power-loss model。"] }
+    ],
+    glossary: [
+      ["Device controller", "把 interconnect commands 轉成裝置內部操作並管理 data/completion 的控制硬體。"],
+      ["Device driver", "作業系統中把通用 I/O request 轉成特定 controller protocol 的 software。"],
+      ["MMIO", "Memory-Mapped I/O，把 device registers 映射進 CPU address space。"],
+      ["PIO", "Programmed I/O，由 CPU instructions 直接搬移資料或輪詢 register。"],
+      ["Polling", "CPU 週期性讀取 status 以偵測事件或 completion。"],
+      ["Interrupt", "外部事件造成的非同步 privileged control transfer。"],
+      ["Interrupt vector", "把 interrupt cause 對應到 handler entry 的編號或位址機制。"],
+      ["Interrupt moderation", "以數量或時間 threshold 合併多個 events 的通知方法。"],
+      ["DMA", "Direct Memory Access，由 controller 在 device 與 main memory 間搬移 payload。"],
+      ["DMA descriptor", "描述 buffer address、length、direction、flags 與 ownership 的 command record。"],
+      ["IOVA", "I/O Virtual Address，device 發出 DMA 時使用、可由 IOMMU 轉譯的 address。"],
+      ["IOMMU", "為 device DMA 提供 address translation 與 isolation 的 memory management unit。"],
+      ["Memory barrier", "限制 memory/MMIO operations 可觀察順序的架構或 OS primitive。"],
+      ["Posted write", "requester 不等待 endpoint completion response 即可向前進行的 write transaction。"],
+      ["Latency", "單一 request 從指定起點到終點的 elapsed time。"],
+      ["IOPS", "Input/Output Operations Per Second，每秒完成的 I/O requests 數。"],
+      ["Throughput", "單位時間完成的 payload bytes 或工作量。"],
+      ["Queue depth", "同時 outstanding、尚未完成的 requests 數量。"],
+      ["Little's Law", "穩定系統中的平均數量 L=arrival/completion rate λ×平均時間 W。"],
+      ["Seek time", "HDD head 移到目標 track 所需時間。"],
+      ["Rotational latency", "HDD 等待目標 sector 旋轉到 head 下方的時間。"],
+      ["FTL", "Flash Translation Layer，把 host LBA 映射到 NAND physical location。"],
+      ["Garbage collection", "SSD 搬移 valid pages 並 erase blocks 以回收 free space。"],
+      ["Write amplification", "NAND physical writes 與 host logical writes 的比值。"],
+      ["TRIM / deallocate", "host 告知 device 某些 LBAs 已不需保留資料的命令語意。"],
+      ["Submission queue", "host 提交 commands、controller 消費 entries 的 queue。"],
+      ["Completion queue", "controller 發布 completion、host 回收 entries 的 queue。"],
+      ["RAID", "以多個 storage devices 實作 striping、mirroring 或 parity 的 array。"],
+      ["Parity", "由 data blocks 計算、可在特定失效數內重建遺失資料的冗餘資訊。"],
+      ["Durability", "成功回報後，在規定 failure model 下資料仍能保存的保證。"]
+    ],
+    sources: [
+      { key: "S1", title: "Cornell CS3410 Fall 2025: Input/Output", url: "https://www.cs.cornell.edu/courses/cs3410/2025fa/notes/io.html", accessed: "2026-08-21", use: "device registers、port/MMIO、polling、interrupt、DMA 與 cache coherence 的公開課程基礎。" },
+      { key: "S2", title: "Cornell CS3410 Spring 2026: Interrupts", url: "https://www.cs.cornell.edu/courses/cs3410/2026sp/notes/interrupt.html", accessed: "2026-08-21", use: "interrupt/trap、precise control transfer、context state 與 I/O notification。" },
+      { key: "S3", title: "Linux Kernel: Bus-Independent Device Accesses", url: "https://docs.kernel.org/driver-api/device-io.html", accessed: "2026-08-21", use: "MMIO accessors、port I/O、posted writes 與 device-access ordering。" },
+      { key: "S4", title: "Linux Kernel: Dynamic DMA Mapping Guide", url: "https://docs.kernel.org/core-api/dma-api-howto.html", accessed: "2026-08-21", use: "DMA addresses、direction、coherent/streaming mappings、ownership 與 synchronization。" },
+      { key: "S5", title: "Linux Kernel Memory Barriers", url: "https://docs.kernel.org/core-api/wrappers/memory-barriers.html", accessed: "2026-08-21", use: "compiler/CPU barriers、device operations、DMA coherence 與 MMIO ordering。" },
+      { key: "S6", title: "RISC-V Supervisor-Level ISA", url: "https://docs.riscv.org/reference/isa/priv/supervisor.html", accessed: "2026-08-21", use: "stvec、sip/sie、scause、sepc、SIE、vectored interrupt 與 sret semantics。" },
+      { key: "S7", title: "Linux Kernel: Multi-Queue Block I/O", url: "https://www.kernel.org/doc/html/latest/block/blk-mq.html", accessed: "2026-08-21", use: "software/hardware queues、多核心 block I/O、NVMe parallel submission 與 queueing。" },
+      { key: "S8", title: "Intel: PCI Express Architecture", url: "https://www.intel.com/content/www/us/en/io/pci-express/pci-express-architecture-general.html", accessed: "2026-08-21", use: "PCIe serial point-to-point architecture、lanes、transaction/data-link/physical layers 與 protocol overhead。" },
+      { key: "S9", title: "NVM Express Base Specification", url: "https://nvmexpress.org/specification/nvm-express-base-specification/", accessed: "2026-08-21", use: "NVMe 2.4、submission/completion queues、commands、transports 與 controller interface。" },
+      { key: "S10", title: "NVM Express: Base Architectural Overview", url: "https://nvmexpress.org/base-nvm-express-part-one/", accessed: "2026-08-21", use: "Admin/I/O SQ-CQ pairs、namespace、command/completion sizes 與 multi-queue concepts。" },
+      { key: "S11", title: "Micron: Client vs. Data Center SSDs", url: "https://www.micron.com/content/dam/micron/global/public/products/technical-marketing-brief/client-vs-enterprise-performance-use-cases-tech-brief.pdf", accessed: "2026-08-21", use: "SSD IOPS、latency、overprovisioning、garbage collection、WAF、parallelism 與 power-loss protection。" },
+      { key: "S12", title: "KIOXIA: Understanding Garbage Collection in NAND Flash", url: "https://americas.kioxia.com/content/dam/kioxia/en-us/business/memory/mlc-nand/asset/KIOXIA_Managed_Flash_BOS_P4_Understanding_Garbage_Collection_Tech_Brief.pdf", accessed: "2026-08-21", use: "NAND valid/invalid data、physical blocks、copy/erase garbage collection 與 lifetime/performance effects。" },
+      { key: "S13", title: "Red Hat Enterprise Linux 8: Managing RAID", url: "https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/8/html/managing_storage_devices/managing-raid_managing-storage-devices", accessed: "2026-08-21", use: "RAID 0/1/4/5/6/10、striping、mirroring、parity、capacity 與 failure recovery。" },
+      { key: "S14", title: "USB-IF: USB4", url: "https://www.usb.org/usb4", accessed: "2026-08-21", use: "host/device interconnect、shared data/display protocols、link bandwidth 與 compatibility。" },
+      { key: "S15", title: "Seagate Cheetah 15K.6 SAS Product Manual", url: "https://www.seagate.com/docs/pdf/en-US/cheetah-15k-6-sas-pm.pdf", accessed: "2026-08-21", use: "HDD rotational speed、average rotational latency、seek、transfer 與 access-time measurement boundary。" }
+    ]
   }
 ];

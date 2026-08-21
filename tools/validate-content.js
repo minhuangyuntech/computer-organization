@@ -33,7 +33,7 @@ assert(fourthEdition.chapters.length === 13, "Fourth edition must contain 13 map
 assert(new Set(fourthEdition.chapters.map((item) => item.chapter)).size === 13, "Fourth edition chapter numbers must be unique");
 assert(fourthEdition.weekMap.length === 18, "Every course week needs a fourth edition mapping");
 assert(new Set(fourthEdition.weekMap.map((item) => item.week)).size === 18, "Fourth edition week mappings must be unique");
-assert(chapterDetails.length >= 6, "At least six detailed self-study chapters are required");
+assert(chapterDetails.length >= 7, "At least seven detailed self-study chapters are required");
 assert(new Set(chapterDetails.map((item) => item.chapter)).size === chapterDetails.length, "Detailed chapter numbers must be unique");
 
 for (const chapter of chapterDetails) {
@@ -110,6 +110,14 @@ assert(chapterSix.sections.filter((item) => item.figure).length >= 13, "Chapter 
 assert(chapterSix.workedExamples.length >= 9, "Chapter 6 needs at least nine worked examples");
 assert(chapterSix.exercises.length >= 18, "Chapter 6 needs at least eighteen exercises with solutions");
 assert(chapterSix.sources.length >= 15, "Chapter 6 needs broad authoritative source coverage");
+
+const chapterSeven = chapterDetails.find((chapter) => chapter.chapter === 7);
+assert(chapterSeven, "Chapter 7 detailed I/O and storage material is missing");
+assert(chapterSeven.sections.length >= 13, "Chapter 7 needs at least thirteen complete concept sections");
+assert(chapterSeven.sections.filter((item) => item.figure).length >= 13, "Chapter 7 needs at least thirteen verifiable diagrams");
+assert(chapterSeven.workedExamples.length >= 10, "Chapter 7 needs at least ten worked examples");
+assert(chapterSeven.exercises.length >= 18, "Chapter 7 needs at least eighteen exercises with solutions");
+assert(chapterSeven.sources.length >= 15, "Chapter 7 needs broad authoritative source coverage");
 
 for (const mapping of fourthEdition.weekMap) {
   assert(mapping.chapters.length >= 1, `Week ${mapping.week} needs at least one fourth edition chapter`);
@@ -308,6 +316,52 @@ assert(Math.abs((0.95 * 101 + 0.05 * 201) - 106) < 1e-12, "Chapter 6 TLB effecti
 assert((1e-6 * 5_000_000) === 5, "Chapter 6 page-fault expected penalty failed");
 assert((2 ** 20) * 4 === 4 * 1024 * 1024, "Chapter 6 dense page-table size failed");
 
+const chapterSevenClockHz = 1e9;
+const chapterSevenPollCycles = 200;
+const chapterSevenPollInterval = chapterSevenPollCycles / chapterSevenClockHz;
+const chapterSevenPollChecks = 1e-3 / chapterSevenPollInterval;
+assert(chapterSevenPollInterval === 200e-9, "Chapter 7 polling interval failed");
+assert(chapterSevenPollChecks === 5000 && chapterSevenPollChecks * chapterSevenPollCycles === 1_000_000, "Chapter 7 polling work failed");
+assert(Math.abs(10_000 * 1.2e-6 - 0.012) < 1e-12, "Chapter 7 interrupt utilization failed");
+assert(Math.abs((1 / 4e-6) * 80e-9 - 0.02) < 1e-12, "Chapter 7 periodic-polling utilization failed");
+
+const chapterSevenTransferBytes = 8 * (2 ** 20);
+const chapterSevenPioCycles = (chapterSevenTransferBytes / 8) * 4;
+assert(chapterSevenTransferBytes === 8_388_608 && chapterSevenPioCycles === 4_194_304, "Chapter 7 PIO copy calculation failed");
+assert(Math.abs(chapterSevenPioCycles / 2400 - 1747.6266666666668) < 1e-9, "Chapter 7 DMA CPU reduction failed");
+assert(Math.abs(50_000 * 6e-6 - 0.30) < 1e-12, "Chapter 7 per-event interrupt load failed");
+assert((50_000 / 8) === 6250 && Math.abs(6250 * 10e-6 - 0.0625) < 1e-12, "Chapter 7 moderated interrupt load failed");
+
+const chapterSevenPayloadEfficiency = 256 / (256 + 28);
+assert(Math.abs(chapterSevenPayloadEfficiency - 0.9014084507042254) < 1e-12, "Chapter 7 transaction efficiency failed");
+assert(Math.abs(8 * chapterSevenPayloadEfficiency - 7.211267605633803) < 1e-12, "Chapter 7 payload throughput failed");
+assert(Math.abs(64 / (64 + 28) - 0.6956521739130435) < 1e-12, "Chapter 7 small-payload efficiency failed");
+assert(80_000 * 250e-6 === 20, "Chapter 7 Little's Law queue depth failed");
+assert(8 / 250e-6 === 32_000, "Chapter 7 queue-depth throughput bound failed");
+
+const chapterSevenRotationMs = (60 / 7200 / 2) * 1000;
+const chapterSevenTransferMs = (64 * 1024 / 180_000_000) * 1000;
+const chapterSevenHddAccessMs = 8.5 + chapterSevenRotationMs + chapterSevenTransferMs;
+assert(Math.abs(chapterSevenRotationMs - 4.166666666666667) < 1e-12, "Chapter 7 HDD rotation calculation failed");
+assert(Math.abs(chapterSevenTransferMs - 0.3640888888888889) < 1e-12, "Chapter 7 HDD transfer calculation failed");
+assert(Math.abs(chapterSevenHddAccessMs - 13.030755555555557) < 1e-12, "Chapter 7 HDD access time failed");
+
+assert(180 / 120 === 1.5, "Chapter 7 SSD WAF failed");
+assert(600_000 / 120 === 5000, "Chapter 7 SSD endurance-days calculation failed");
+assert(6 * 4 === 24 && (6 - 1) * 4 === 20 && (6 - 2) * 4 === 16 && (6 / 2) * 4 === 12, "Chapter 7 RAID capacity calculation failed");
+const chapterSevenAmdahlTime = (1 - 0.35) + 0.35 / 5;
+assert(Math.abs(chapterSevenAmdahlTime - 0.72) < 1e-12, "Chapter 7 Amdahl time failed");
+assert(Math.abs(1 / chapterSevenAmdahlTime - 1.3888888888888888) < 1e-12, "Chapter 7 Amdahl speedup failed");
+assert(Math.abs((0.35 / 5) / chapterSevenAmdahlTime - 0.09722222222222222) < 1e-12, "Chapter 7 post-improvement I/O fraction failed");
+assert(Math.abs(1 / (1 - 0.35) - 1.5384615384615383) < 1e-12, "Chapter 7 Amdahl upper bound failed");
+
+assert(7500 / 2.5e9 === 3e-6 && Math.abs(20_000 * 3e-6 - 0.06) < 1e-12, "Chapter 7 interrupt exercise failed");
+assert(4096 * 100_000 / 1e6 === 409.6, "Chapter 7 IOPS-throughput exercise failed");
+assert(60_000 * 400e-6 === 24, "Chapter 7 Little's Law exercise failed");
+assert((60 / 10_000 / 2) * 1000 === 3, "Chapter 7 10k RPM exercise failed");
+assert(200 / 80 === 2.5 && (8 - 2) * 6 === 36, "Chapter 7 SSD/RAID exercises failed");
+assert(Math.abs(1 / (0.6 + 0.4 / 4) - 1.4285714285714286) < 1e-12, "Chapter 7 integrated Amdahl exercise failed");
+
 const homepage = path.join(root, "index.html");
 const editionPage = path.join(root, "fourth-edition-map.html");
 const chapterFiles = fourthEdition.chapters.map((chapter) => path.join(root, "chapters", `chapter-${String(chapter.chapter).padStart(2, "0")}.html`));
@@ -373,7 +427,7 @@ assert(!visibleWeekClassification.test(editionHtml), "Fourth edition page still 
 assert((editionHtml.match(/class=\"chapter-card\"/g) || []).length === 13, "Fourth edition page must show 13 chapter cards");
 assert((editionHtml.match(/<details>/g) || []).length === 3, "Fourth edition page must show three MARIE self-checks");
 assert(chapterFiles.every((file) => fs.existsSync(file)), "Every chapter navigation item needs an independent HTML page");
-for (const chapterNumber of [7, 10, 12, 13]) {
+for (const chapterNumber of [10, 12, 13]) {
   const chapterHtml = fs.readFileSync(chapterFiles[chapterNumber - 1], "utf8");
   const standaloneStart = chapterHtml.indexOf("class=\"standalone-chapter-content\"");
   const standaloneEnd = chapterHtml.indexOf("class=\"chapter-adjacent\"", standaloneStart);
