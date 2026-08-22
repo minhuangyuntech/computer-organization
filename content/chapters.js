@@ -2918,5 +2918,253 @@ const chapterDetails = [
       { key: "S14", title: "USB-IF: USB4", url: "https://www.usb.org/usb4", accessed: "2026-08-21", use: "host/device interconnect、shared data/display protocols、link bandwidth 與 compatibility。" },
       { key: "S15", title: "Seagate Cheetah 15K.6 SAS Product Manual", url: "https://www.seagate.com/docs/pdf/en-US/cheetah-15k-6-sas-pm.pdf", accessed: "2026-08-21", use: "HDD rotational speed、average rotational latency、seek、transfer 與 access-time measurement boundary。" }
     ]
+  },
+  {
+    chapter: 8,
+    title: "系統軟體：從原始碼到受保護的執行環境",
+    english: "System Software: From Source Code to Protected Execution",
+    revised: "2026-08-22",
+    readingTime: "約 240–300 分鐘",
+    intro: "系統軟體把硬體提供的指令、特權與位址轉譯機制，組合成程式可使用的執行環境。原始碼先經編譯器與組譯器形成帶有符號和重定位資訊的目的檔，連結器解析跨檔案參照並配置位址，載入器建立虛擬位址空間，作業系統再以行程、系統呼叫和排程管理執行。虛擬機器與容器則在不同邊界上重複或隔離這些資源。本章沿著一個程式從文字到 CPU 執行的生命週期，逐位元追蹤符號、節區、重定位、ELF segment、trap、context switch、動態連結與兩階段位址轉譯，並以可重算例題區分語言語意、ABI、ISA 與作業系統政策各自負責的部分。",
+    outcomes: [
+      "能說明 user mode、kernel mode、trap 與 protected resource 之間的關係。",
+      "能列出 process context，並量化 context switch 的直接 CPU 成本。",
+      "能依 RISC-V calling convention 追蹤 system call arguments、cause、return value 與 privilege transition。",
+      "能以 two-pass assembler 建立 symbol table，計算 label address 與 PC-relative displacement。",
+      "能區分 ELF section 與 segment，解讀 symbol、relocation、program header 與 zero-fill 語意。",
+      "能套用 S+A-P 等 relocation expression，並檢查欄位寬度與對齊。",
+      "能說明 static linker、loader、dynamic linker、GOT、PLT 與 shared object 的分工。",
+      "能追蹤 compiler front end、IR、optimization、instruction selection、register allocation 與 code emission。",
+      "能比較 interpretation、bytecode、JIT 與 ahead-of-time compilation 的啟動與穩態成本。",
+      "能區分 virtual machine 與 container 的隔離邊界，並完成兩階段 page translation。",
+      "能由原始碼一路定位到 instruction、mapping、privilege 與 runtime state，建立端到端除錯模型。"
+    ],
+    sections: [
+      {
+        title: "1. 系統軟體是一組可組合的抽象與狀態轉換",
+        paragraphs: [
+          "應用程式看到 function、file、process 與 virtual address；硬體看到 instruction、register、physical memory 與 device event。compiler 把高階語言轉成 ISA instructions，assembler 把 mnemonic 轉成 machine code，linker 把分散的 definitions/references 合成映像，loader 建立 address space，kernel 則仲裁 CPU、memory 與 I/O。每一層都把上一層未完成的名稱或請求，轉成下一層可處理的具體狀態。",
+          "語言規格、ABI 與 ISA 是三個不同契約。語言規格定義 expression 與 object 的語意；ABI 規定 register usage、stack layout、object format、calling convention 與 system interface；ISA 定義 instruction encoding 和 architectural state。相同 C 程式可針對不同 ISA 編譯，而同一 ISA 上若 ABI 不相容，目的檔仍不能直接連結。",
+          "分析問題時可沿四條線追蹤：名稱從 identifier 變成 symbol 再變成 address；資料從 source object 變成 section bytes 再映射到 page；控制從 function call 變成 branch/link 再經 trap 進入 kernel；權限從 process credentials 與 page permission 落到 privilege mode 和 hardware checks。這些線在執行中的一條 instruction 上匯合。"
+        ],
+        figure: { type: "flow", title: "程式生命週期與主要責任", items: ["source language", "compiler / IR", "assembler", "relocatable object", "static linker", "executable / shared object", "loader + dynamic linker", "process on CPU"], caption: "箭頭代表狀態轉換，不代表所有工具必須是獨立行程；每一步都保留或解決一部分資訊。" },
+        sourceRefs: ["S3", "S4", "S6", "S10"]
+      },
+      {
+        title: "2. 特權、保護與作業系統資源",
+        paragraphs: [
+          "user mode 不能任意修改 page tables、interrupt state 或 device registers；這些 privileged operations 由 kernel mode 執行。hardware 在每次 instruction、memory access 或 control transfer 檢查目前 privilege 與權限。保護不是靠應用程式自律，而是靠 CPU privilege、MMU page permissions 與 kernel-maintained ownership 共同強制。",
+          "process 是受保護的執行個體，通常包含 virtual address space、register context、open-file table、credentials、signal state 與 scheduling state。thread 是可被排程的 control flow，擁有自己的 PC、general registers 與 stack，但可與同 process 的其他 threads 共享 address space 和 files。因而 process isolation 與 thread concurrency 是不同問題。",
+          "kernel 以 handle 或 descriptor 表示資源，使應用程式不必直接操控 controller 或 physical page。系統呼叫入口會驗證 number、argument pointer、length 與 permission，之後才執行資源操作。即使參數型別在 source code 正確，kernel 仍須視 user pointer 為不可信，因為 mapping 可缺頁、越界或在 concurrent execution 中改變。"
+        ],
+        figure: { type: "hierarchy", title: "保護邊界由軟硬體共同建立", items: [{ label: "Application", detail: "functions, virtual addresses, descriptors" }, { label: "ABI / system-call boundary", detail: "registers, trap, validated arguments" }, { label: "Kernel", detail: "scheduler, VM, files, drivers" }, { label: "Hardware enforcement", detail: "privilege, page permissions, interrupts" }], caption: "抽象由 software 命名，越權行為則由 privilege checks 與 address translation 阻止。" },
+        sourceRefs: ["S1", "S2", "S3", "S13"]
+      },
+      {
+        title: "3. 行程、執行緒與 context switch",
+        paragraphs: [
+          "CPU 同一時間在一個 hardware thread 上只呈現一組 architectural state。scheduler 要換到另一個 runnable thread，必須保存被換出者稍後需要的 PC、stack pointer、callee-saved registers、status 和必要的 control state，再載入下一個 thread 的 context。保存集合取決於 ISA、ABI、kernel entry path 與 lazy/eager policy。",
+          "context switch 的直接成本是執行 save、scheduler 與 restore 所需 cycles；間接成本則來自 cache working set 被替換、branch predictor history 改變、TLB entries 失效或 address-space tag 切換。只用 instruction count 估算時會漏掉後者，因此實測 latency 會隨 working set、core migration 與 security policy 改變。",
+          "process state 常以 running、runnable、blocked 等狀態表示。blocked thread 正等待 event，放進 run queue 只會浪費 CPU；event completion 使它轉回 runnable，但不保證立刻 running。preemption 是 scheduler 暫停仍可執行的 thread，blocking 則是 thread 當下無法前進，兩者的原因與 accounting 不同。"
+        ],
+        figure: { type: "timeline", title: "一次 blocking I/O 前後的排程狀態", columns: ["t0", "t1", "t2", "t3", "t4", "t5"], rows: [{ label: "Thread A", cells: ["running", "syscall", "blocked", "blocked", "runnable", "running"] }, { label: "Thread B", cells: ["runnable", "runnable", "running", "running", "running", "runnable"] }, { label: "Kernel/event", cells: ["", "submit", "switch", "completion", "wakeup", "switch"] }], caption: "completion 只把 A 變成 runnable；實際取得 CPU 還取決於 scheduler。" },
+        sourceRefs: ["S1", "S2", "S3"]
+      },
+      {
+        title: "4. System call 是受控的同步 trap",
+        paragraphs: [
+          "一般 function call 在同一 privilege level 內改變 PC，system call 則使用 ISA 定義的 trap instruction 進入 kernel。以 RISC-V Linux ABI 為例，system-call number 放在 a7，最多六個參數放在 a0–a5，ecall 觸發 exception；kernel trap entry 保存必要 state、辨認 cause，再依 number 分派。這是一個同步事件，因為 cause 直接來自目前 instruction。",
+          "trap hardware/firmware 會保存可返回的位置和 cause，切換到受信任入口；kernel 不能直接相信 user stack，所以先切到 kernel-controlled stack 或 trap frame。完成後，return value 通常放回 a0，exception return 恢復 privilege 與 PC。錯誤表示法是 ABI 的一部分，不可由 ISA encoding 單獨推得。",
+          "system call 不保證每次都發生 context switch。若 request 可立即完成，kernel 可返回同一 thread；若需等待 I/O，thread 轉為 blocked，scheduler 才換人。相反地，timer interrupt 可在沒有 system call 時造成 preemption。trap、mode switch 與 context switch 因而是三個可重疊但不等價的事件。"
+        ],
+        figure: { type: "flow", title: "RISC-V system call 的控制與資料路徑", items: ["a7=number; a0–a5=args", "ecall", "trap entry + trap frame", "validate + dispatch", "kernel service / possible block", "a0=result", "exception return", "user PC resumes"], caption: "參數先依 ABI 放入 registers；是否排程其他 thread 由服務能否立即完成決定。" },
+        sourceRefs: ["S1", "S2", "S7"]
+      },
+      {
+        title: "5. 組譯器：位置計數器、符號與兩趟解析",
+        paragraphs: [
+          "assembler 解析 labels、mnemonics、operands 與 directives。instruction 產生 machine-code bytes；`.byte`、`.word`、`.align`、`.section` 等 directives 控制資料與 layout，不一定對應 CPU instruction。location counter 記錄目前 section 的 offset，label 則把名稱綁定到當下位置。",
+          "forward reference 在讀到 branch 時尚不知道後方 label 的位址。典型 two-pass assembler 第一趟依 instruction/data 大小更新 location counter 並建立 symbol table；第二趟編碼 operands，已知的 local reference 可直接計算，仍待外部定義者則產生 relocation entry。實作也可用 backpatching，但資訊需求相同。",
+          "PC-relative 欄位通常保存 target 相對某個架構指定基準的位移，而不是 target absolute address。MIPS branch 以 PC+4 為基準，位移以 instruction words 計；若 branch 位於 0x1004、target 0x1010，欄位為 (0x1010−0x1008)/4=2。計算前必須確認基準、縮放、signed range 與 alignment。"
+        ],
+        figure: { type: "timeline", title: "Two-pass assembler 如何解決 forward label", columns: ["讀 source", "更新位置", "建立符號", "編碼", "輸出"], rows: [{ label: "Pass 1", cells: ["scan", "size/align", "labels", "", "symbol table"] }, { label: "Pass 2", cells: ["scan", "", "lookup", "instructions/data", "bytes + relocations"] }], caption: "第一趟解決 section-local 位置；第二趟把可知值寫入欄位，外部或 layout-dependent 值保留為 relocation。" },
+        sourceRefs: ["S4", "S7"]
+      },
+      {
+        title: "6. ELF 目的檔：sections、symbols 與 relocations",
+        paragraphs: [
+          "relocatable object 尚不是可直接執行的 memory image。ELF section header 描述 `.text`、`.rodata`、`.data`、`.bss`、symbol table、string table 和 relocation sections；section 是 linker 的組織單位。`.bss` 表示需配置且初始化為零的資料，通常不必在檔案中存放同量 zero bytes。",
+          "symbol table entry 記錄 name、binding、type、所屬 section 與 value。defined global symbol 可供其他 object 使用；undefined symbol 是等待 linker 尋找 definition 的 reference；local symbol 通常只在 object 內可見。weak/strong 規則與 visibility 會影響 resolution，並不是同名就任意選一個。",
+          "relocation entry 指出要修補的位置、relocation type、相關 symbol 與 addend。type 決定公式、欄位寬度、signedness、縮放與 overflow check。把 relocation 只想成『填絕對位址』會漏掉 PC-relative、GOT-relative、TLS 和 instruction-split encodings。"
+        ],
+        figure: { type: "matrix", title: "ELF link-time sections 的角色", columns: ["Section 類型", "典型內容", "占檔案 bytes", "執行時權限", "主要使用者"], rows: [[".text", "instructions", "是", "R-X", "linker / loader"], [".rodata", "constants", "是", "R--", "linker / loader"], [".data", "initialized writable data", "是", "RW-", "linker / loader"], [".bss", "zero-initialized data", "近乎否", "RW-", "linker / loader"], [".symtab/.strtab", "names and symbols", "是", "通常不映射", "linker/debugger"], [".rela.*", "relocation records", "是", "通常不映射", "linker"]], caption: "section 描述 link-time 組織；最終載入權限由 program segments 決定。" },
+        sourceRefs: ["S6", "S7"]
+      },
+      {
+        title: "7. 靜態連結：符號解析、配置與重定位",
+        paragraphs: [
+          "static linker 先收集 input sections，依 linker script 或預設規則合併與排序，再為 output sections 配置 virtual address 和 file offset。alignment 會在 sections 間產生 padding；地址不能只把前一段 size 相加。之後 linker 解析 symbol definitions，套用 relocations，並建立 executable 或 shared object。",
+          "常見 PC-relative relocation 可抽象為 S+A−P：S 是 symbol address，A 是 addend，P 是被修補位置。若 S=0x2400、A=−4、P=0x1010，結果為 0x13EC。真正 ELF relocation type 可能再做右移、切欄位或加入 GOT/PLT base，因此公式名稱和 ISA 規格都必須一起讀。",
+          "archive library 通常按 unresolved symbols 抽取需要的 members，command-line order 因而可能影響一次掃描式解析。multiple strong definitions 通常是錯誤；unresolved required symbol 也會使連結失敗。link map、symbol table 與 relocation dump 能把『undefined reference』或錯誤跳址定位到確切 object 和修補點。"
+        ],
+        figure: { type: "flow", title: "Static linker 的資訊流", items: ["input objects + archives", "resolve symbols", "merge input sections", "apply script + alignment", "assign S and P", "evaluate relocations", "emit segments + entry point"], caption: "symbol resolution 決定名稱指向誰；layout 決定位址；relocation 才能把位址寫入正確欄位。" },
+        sourceRefs: ["S5", "S6", "S7"]
+      },
+      {
+        title: "8. Loader、execve 與執行時記憶體映像",
+        paragraphs: [
+          "ELF program header 描述 loader 要建立的 segments；section header 主要服務 link/debug。`PT_LOAD` entry 給出 file offset、virtual address、file size、memory size、alignment 與 R/W/X flags。loader 將檔案範圍映射到 pages，若 memory size 大於 file size，差額必須 zero-fill，這正是 `.bss` 常見的執行時來源。",
+          "`execve` 以新程式映像取代目前 process 的 address space，但成功後仍沿用 process identity 的許多外部關係，例如 PID 與未被 close-on-exec 關閉的 descriptors。kernel 建立 mappings、stack、arguments、environment 與 auxiliary vector，設定 entry PC；若 executable 指定 interpreter，dynamic linker 會先取得控制。",
+          "ASLR 讓 stack、shared objects、PIE executable 等 mapping base 在不同執行間變動，降低固定地址可預測性。position-independent code 以 PC-relative 或 GOT-based addressing 減少 text relocation。ASLR 不改變 section 內 object 的相對 layout，但使 absolute runtime address 不能從一次執行永久記住。"
+        ],
+        figure: { type: "hierarchy", title: "一個典型 process virtual address space", items: [{ label: "High addresses", detail: "user stack, argv, env, auxiliary vector" }, { label: "Mapped region", detail: "shared objects, dynamic linker, mmap files" }, { label: "Heap", detail: "dynamic allocation, grows by mappings/brk policy" }, { label: "Executable load segments", detail: "R-X text, R-- constants, RW- data + zero fill" }, { label: "Low addresses", detail: "normally left unmapped near null" }], caption: "實際方向、base 與區域排列由 ABI、OS 與 ASLR 決定；圖表示責任而非固定地址。" },
+        sourceRefs: ["S6", "S8", "S9"]
+      },
+      {
+        title: "9. 動態連結：shared objects、GOT 與 PLT",
+        paragraphs: [
+          "dynamic linking 把部分 symbol resolution 延到 load time 或 first call。dynamic linker 依 executable metadata 與搜尋規則載入 shared objects，處理 dependency graph、symbol lookup 與 dynamic relocations，再把控制交給程式 entry。library filename、SONAME、search path 與 already-loaded object identity 都會影響實際選到的版本。",
+          "position-independent data reference 常透過 Global Offset Table：instruction 以相對方式找到 GOT slot，loader 把 runtime address 寫入 slot。外部 function call 常經 Procedure Linkage Table stub；eager binding 可在啟動時完成，lazy binding 則第一次呼叫 resolver 後改寫 slot。lazy binding 降低未使用 symbol 的 startup work，但增加第一次呼叫成本與狀態轉移。",
+          "shared text pages 可由多個 processes 共用同一 physical pages，private writable data 則各自存在。這能節省記憶體與更新空間，但不是零成本：dynamic relocations、symbol lookup、page faults 與 indirection 仍存在。static 與 dynamic linking 的選擇還牽涉部署、ABI compatibility、security updates 和可重現性。"
+        ],
+        figure: { type: "flow", title: "第一次外部函式呼叫的 lazy binding 路徑", items: ["caller", "PLT entry", "unresolved GOT slot", "dynamic resolver", "search symbol definitions", "patch GOT slot", "target function", "later calls go direct via GOT"], caption: "具體名稱依 ABI 而異；核心概念是把一次昂貴解析結果快取在可寫的表格位置。" },
+        sourceRefs: ["S7", "S9"]
+      },
+      {
+        title: "10. 編譯器管線：從語意到 machine code",
+        paragraphs: [
+          "front end 執行 lexical analysis、parsing、name/type checking，建立帶語意的 intermediate representation。middle end 在 IR 上做 control-flow、data-flow 與 alias analysis，再執行 constant propagation、dead-code elimination、loop transformation 或 inlining。合法 optimization 必須保存語言與 ABI 可觀察行為，而不是只讓輸出看似相同。",
+          "back end 將 IR operations 選成 target instructions，安排 instruction order，並把無限概念 temporaries 配到有限 registers。register allocation 發生 spill 時會新增 load/store 和 stack slots；instruction scheduling 在 dependency 與 latency 限制下調整順序。最後 assembler 或 integrated assembler 產生 object code、symbols、relocations 與 debug/unwind metadata。",
+          "效能不能只由 source statement 數或 instruction count 判斷。optimization 可能減少 instructions 卻增加 CPI，也可能增加 code size 但改善 vectorization。CPU time=instruction count×CPI/clock rate 仍是整合模型；profile-guided optimization 和 link-time optimization 只是取得跨執行或跨 module 資訊，並未取消硬體成本。"
+        ],
+        figure: { type: "flow", title: "Compiler 的主要表示與決策", items: ["tokens + syntax tree", "typed semantic IR", "control/data-flow IR", "target-independent optimization", "instruction selection", "register allocation + scheduling", "machine instructions + metadata"], caption: "每次轉換都應能說明 preserved semantics，以及新加入的 target/ABI constraints。" },
+        sourceRefs: ["S10", "S11"]
+      },
+      {
+        title: "11. Interpreter、bytecode 與 JIT compilation",
+        paragraphs: [
+          "tree-walking interpreter 直接巡訪 syntax/AST；bytecode VM 先把 source 轉成較緊密的虛擬 instruction stream，再以 dispatch loop 執行。兩者都可快速開始且保留動態資訊，但每個 guest operation 會付出 decode、dispatch、type check 或 representation overhead。bytecode 是虛擬 ISA，不等於 host CPU machine code。",
+          "JIT 在執行時挑選 hot code 編譯成 host machine code。它多付 compilation time 和 code memory，換取後續 calls 較低成本；runtime profile 可支持 speculative specialization、inlining 與 devirtualization。若假設失效，guard 會轉入 fallback 或 deoptimization，重建可由 interpreter/較低 tier 理解的 state。",
+          "tiered execution 用 interpreter 或 baseline compiler 取得低 startup latency，再將反覆執行區域交給 optimizing tier。break-even 次數等於 JIT 額外固定成本除以每次節省時間。短命 command 可能永遠無法回收編譯成本，長時間 service 則重視 steady-state throughput 和 pause variability。"
+        ],
+        figure: { type: "matrix", title: "四種執行策略的成本輪廓", columns: ["策略", "啟動成本", "每次 dispatch", "可用 runtime profile", "典型風險"], rows: [["AST interpreter", "低", "高", "可", "節點/型別 overhead"], ["Bytecode VM", "低至中", "中", "可", "dispatch overhead"], ["AOT native", "建置時支付", "低", "有限", "缺少 runtime facts"], ["Tiered JIT", "執行時支付", "熱區低", "強", "compile pause/deopt"]], caption: "實際 runtime 常混合多種策略；比較時需同時列 startup、steady state、memory 與 tail latency。" },
+        sourceRefs: ["S12"]
+      },
+      {
+        title: "12. 虛擬機器與兩階段位址轉譯",
+        paragraphs: [
+          "virtual machine 向 guest 提供虛擬 CPU、memory 與 devices。hypervisor 必須截取或控制 guest 的 privileged operations，並在 guest 之間配置 host resources。type-1 hypervisor 直接管理硬體，type-2/hosted hypervisor 以 host OS process 等機制取得資源；這是部署結構分類，不直接保證某一類必然更快。",
+          "hardware-assisted virtualization 讓 guest kernel 在受控 privilege mode 執行。RISC-V H extension 定義 HS/VS/VU 等狀態，以及 guest virtual address 經 VS-stage 轉成 guest physical address，再由 G-stage 轉成 supervisor physical address。每一階段都有 page permissions；translation cache 未命中時可能需要多次 page-table memory accesses。",
+          "device virtualization 可採 emulation、paravirtual device 或 direct assignment。emulation 相容性高但需攔截較多 operations；paravirtual interface 讓 guest driver 用明確 queue protocol 降低 exits；direct assignment 可接近原生資料路徑，卻需要 IOMMU、interrupt remapping 與 ownership isolation。CPU virtualization 與 I/O virtualization 必須分開評估。"
+        ],
+        figure: { type: "flow", title: "RISC-V guest 的兩階段位址路徑", items: ["guest virtual address", "VS-stage page tables", "guest physical address", "G-stage page tables", "supervisor physical address", "host memory / MMIO"], caption: "page offset 在一般 4 KiB leaf translation 中保留；兩階段都可能因 permission 或 mapping 缺失而 fault。" },
+        sourceRefs: ["S13", "S14"]
+      },
+      {
+        title: "13. Containers、資源控制與端到端診斷",
+        paragraphs: [
+          "container 通常共享 host kernel，不為每個 container 提供完整 guest kernel。namespaces 改變 process 看見的 PID、mount、network 等資源視圖；cgroups 對 process 群組計量與限制 CPU、memory、I/O 等資源；capabilities、seccomp、LSM 與 filesystem policy 再縮小權限。image packaging 不是隔離本身。",
+          "VM 的主要隔離邊界在 virtual hardware/hypervisor，container 的主要邊界在共同 kernel 提供的 process abstractions。VM 可執行不同 guest kernels，成本通常包含 guest memory 與 device model；container 啟動和密度通常較輕，但共同 kernel 的 attack surface 與 compatibility boundary 不同。兩者可疊加，例如在 VM 中執行 containers。",
+          "端到端診斷要先辨認失敗發生在哪個轉換：compiler diagnostic 指向語言/IR，assembler error 指向 syntax/encoding，undefined symbol 指向 resolution，relocation overflow 指向 layout/range，loader error 指向 format/dependency/mapping，protection fault 指向 runtime address/permission，system-call error 指向 resource policy。保留 source、object、link map、ELF dump、process maps、trace 與 performance counters，才能把現象對回正確層次。"
+        ],
+        figure: { type: "matrix", title: "VM 與 container 的隔離邊界", columns: ["面向", "Virtual machine", "Container", "兩者疊加時"], rows: [["Kernel", "每個 guest 可不同", "共享 host kernel", "guest kernel 內共享"], ["Hardware view", "virtual CPU/memory/devices", "host process view", "先虛擬硬體再切 process"], ["Resource control", "hypervisor allocation", "cgroups/scheduler", "兩層 quota 都生效"], ["主要啟動物", "guest OS + services", "process + image", "VM 後啟 container"], ["診斷邊界", "guest/host/hypervisor", "process/shared kernel", "需辨認兩層 mapping"]], caption: "兩種技術解決的邊界不同，不能只用啟動速度或封裝格式判定隔離強度。" },
+        sourceRefs: ["S14", "S15"]
+      }
+    ],
+    workedExamples: [
+      { title: "例題一：量化 context-switch 直接成本", prompt: "2 GHz CPU 每次 context switch 花 12,000 cycles，每秒發生 1000 次。求單次時間與單核心時間比例。", steps: ["單次時間=cycles/clock rate。", "12,000/(2×10^9)=6×10^-6 s=6 µs。", "每秒總時間=1000×6 µs=6000 µs。", "6000 µs=6 ms=0.006 s。", "單核心比例=0.006/1=0.6%。", "這只含直接 cycles；cache、TLB 與 migration 的後續成本未計。"], result: "單次 6 µs，每秒直接使用 6 ms，也就是單核心 0.6%。" },
+      { title: "例題二：追蹤 RISC-V write system call", prompt: "以 Linux RISC-V ABI 表示 write(fd=1, buf, count=5)，追蹤入口到返回所需的 architectural state。", steps: ["將 system-call number 64 放入 a7。", "將 fd=1 放入 a0，buffer address 放入 a1，count=5 放入 a2。", "執行 ecall，CPU 以 environment-call exception 進入 trap path。", "kernel 從 trap frame 取得 number/arguments，驗證 user buffer range 與 descriptor。", "service 完成後把 result 或 ABI 定義的錯誤表示放回 a0。", "exception return 恢復 user PC/privilege；若 I/O 曾阻塞，中間可能另有 scheduler switch。"], result: "入口關鍵值為 a7=64、a0=1、a1=buf、a2=5；ecall 本身不等於一定換行程。" },
+      { title: "例題三：計算 two-pass branch label", prompt: "MIPS 指令固定 4 bytes。branch 在 0x1004，下一指令為 0x1008，target label 位於 0x1010。求 branch immediate。", steps: ["Pass 1 由 base 與每條 4 bytes 計出 label address=0x1010。", "MIPS branch base 是 PC+4，因此 base=0x1008。", "byte displacement=0x1010−0x1008=8 bytes。", "欄位以 word 為單位，8/4=2。", "2 可放入 signed 16-bit immediate，且 target 為 4-byte aligned。", "執行時重建 target=0x1008+(2<<2)=0x1010。"], result: "branch immediate=2；若誤用目前 PC，會得到 3 並跳到錯誤位置。" },
+      { title: "例題四：套用 PC-relative relocation", prompt: "某 relocation 使用 S+A−P。已知 S=0x2400、A=−4、P=0x1010，求待寫值。", steps: ["S 是目標 symbol runtime/link address 0x2400。", "A 是 relocation addend −4。", "P 是被修補欄位地址 0x1010。", "代入：0x2400−4−0x1010。", "0x2400−0x1010=0x13F0，再減 4 得 0x13EC。", "寫入前還須依 relocation type 檢查 signed range、縮放與欄位切割。"], result: "抽象 relocation value=0x13EC；是否直接寫完整值由實際 relocation type 決定。" },
+      { title: "例題五：配置對齊後的 output sections", prompt: "`.text` 從 0x1000 開始、size 0x1A0；`.rodata` 與 `.data` 都需 0x100 alignment，rodata size 0x90。求各起訖位置。", steps: ["text start=0x1000。", "text end-exclusive=0x1000+0x1A0=0x11A0。", "把 0x11A0 向上對齊 0x100，rodata start=0x1200，產生 0x60 padding。", "rodata end-exclusive=0x1200+0x90=0x1290。", "把 0x1290 向上對齊 0x100，data start=0x1300，產生 0x70 padding。", "因此 symbol address 必須在 layout 完成後計算，不能只串接 sizes。"], result: "text [0x1000,0x11A0)、rodata [0x1200,0x1290)、data 從 0x1300 開始。" },
+      { title: "例題六：區分 ELF file size 與 memory size", prompt: "一個 RW load segment 含 1536 bytes initialized data 與 4096 bytes BSS。忽略 page padding，求檔案 payload、記憶體需求與 zero-fill。", steps: ["initialized data 必須在 executable 中保存，因此 file payload=1536 bytes。", "BSS 只描述執行時需為零的區域，不需保存 4096 個 zero bytes。", "memory size=1536+4096=5632 bytes。", "loader 映射 file-backed 1536 bytes。", "其後 4096 bytes 建立為 zero-filled memory。", "所以 program header 的 p_memsz 可大於 p_filesz，差額是 4096 bytes。"], result: "file payload 1536 bytes，memory 5632 bytes，loader zero-fill 4096 bytes。" },
+      { title: "例題七：計算 shared library pages 的節省", prompt: "10 個 processes 使用同一 library；每份有 3 MiB read-only text 與 0.5 MiB private writable data。比較可共享 text 與完全複製。", steps: ["完全複製每 process=3+0.5=3.5 MiB。", "10 份總量=10×3.5=35 MiB。", "共享模式只需一份 text=3 MiB。", "private data 仍需 10×0.5=5 MiB。", "共享總量=3+5=8 MiB。", "節省=35−8=27 MiB；尚未計 page tables、relocations 與未實際 fault-in pages。"], result: "理想物理頁用量由 35 MiB 降為 8 MiB，節省 27 MiB。" },
+      { title: "例題八：評估 optimization 的整體 CPU time", prompt: "原程式 IC=10^9、CPI=1.5、clock=3 GHz。最佳化後 IC=0.75×10^9、CPI=1.7。求兩者時間與 speedup。", steps: ["原時間=10^9×1.5/(3×10^9)=0.5 s。", "最佳化後 cycles=0.75×10^9×1.7=1.275×10^9。", "新時間=1.275×10^9/(3×10^9)=0.425 s。", "speedup=old/new=0.5/0.425≈1.17647。", "雖然 CPI 由 1.5 升到 1.7，IC 降低更多。", "因此只比較 IC 或 CPI 都無法得出完整結論。"], result: "時間由 0.500 s 降為 0.425 s，speedup 約 1.176 倍。" },
+      { title: "例題九：求 JIT break-even 次數", prompt: "JIT compilation 固定花 40 ms；編譯後每 call 2 µs，interpreter 每 call 10 µs。至少幾次 calls 才回收成本？", steps: ["每次節省=10−2=8 µs。", "固定成本 40 ms=40,000 µs。", "break-even N=40,000/8。", "N=5000 calls。", "5000 次時兩者總時間都為 50 ms：interpreter 5000×10 µs；JIT 40 ms+5000×2 µs。", "少於 5000 次 interpreter 較快，多於 5000 次才開始有淨收益。"], result: "break-even 為 5000 calls。" },
+      { title: "例題十：完成兩階段 4 KiB page translation", prompt: "GVA=0x12345ABC。VS-stage 對應 guest PPN=0x45678，G-stage 對應 host PPN=0x9ABCD。求 GPA 與 supervisor physical address。", steps: ["4 KiB page 有 12-bit offset。", "GVA offset=0xABC，VPN=0x12345。", "VS-stage 保留 offset，GPA=(0x45678<<12)|0xABC=0x45678ABC。", "G-stage 以 guest physical page number 查得 host PPN=0x9ABCD。", "再次保留 offset，SPA=(0x9ABCD<<12)|0xABC=0x9ABCDABC。", "任一 stage permission 不足或 entry invalid 都會 fault，不能只檢查最後 physical address。"], result: "GPA=0x45678ABC，supervisor physical address=0x9ABCDABC。" }
+    ],
+    misconceptions: [
+      ["System call 就是普通 library function call。", "library wrapper 可用一般 call 進入，但真正 system-call boundary 需要 trap、privilege transition 與 kernel validation。"],
+      ["每次 system call 都會換到另一個 process。", "mode switch 可返回同一 thread；只有 blocking、preemption 或其他排程決策才需 context switch。"],
+      ["Context switch 只保存 general-purpose registers。", "還可能涉及 PC、status、stack、address-space identity、floating/vector state 與間接 cache/TLB effects。"],
+      ["Assembler 看見 label 就一定知道最終 absolute address。", "relocatable object 的最終 layout 尚未決定；外部或 layout-dependent reference 必須保留 relocation。"],
+      ["ELF section 與 segment 是同一張表的兩個名稱。", "section 是 link-time 組織，segment 是 loader 建立 runtime mapping 的單位。"],
+      ["BSS 是 executable 中一大段 zero bytes。", "BSS 通常以 memory-size metadata 表示，loader 建立 zero-filled pages，避免相同 zeros 佔檔案。"],
+      ["Linker 只把 object files 首尾相接。", "它還要解析 symbols、套用 script/alignment、配置位址、檢查 relocation range 並建立 program headers。"],
+      ["Dynamic linking 代表所有 library code 每個 process 都各複製一份。", "read-only code pages通常可共享；writable state 與部分 relocation pages仍是 private。"],
+      ["Compiler optimization 讓 instruction count 下降就必然更快。", "CPU time 同時受 IC、CPI、clock、cache 與執行路徑影響，必須整體量測或計算。"],
+      ["Bytecode 可直接由任何 CPU 執行。", "bytecode 是虛擬 machine 的 instruction format，仍需 interpreter 或 JIT 轉成 host behavior。"],
+      ["Type-1 hypervisor 必然比 hosted hypervisor 快。", "分類描述部署邊界；實際成本由 exits、translation、device path、scheduler 與實作決定。"],
+      ["Container 就是一種較小的 VM。", "container 通常共享 host kernel，以 namespaces/cgroups 等隔離 processes；VM 則提供 virtual hardware 和獨立 guest kernel。"]
+    ],
+    exercises: [
+      { level: "基礎", question: "語言規格、ABI 與 ISA 分別約束哪一層？", solution: ["語言規格定義 source-level types、operations 與可觀察語意；ISA 定義 machine instructions 和 architectural state。", "ABI 位在兩者與 OS 之間，規定 calling convention、register roles、object format、stack 與 system interface。"] },
+      { level: "基礎", question: "process 與 thread 的 state 有哪些共享與私有部分？", solution: ["同 process threads 通常共享 virtual address space、code/data 與 open files。", "每個 thread 有自己的 PC、register context、stack 與 scheduling state。"] },
+      { level: "基礎", question: "同步 trap 與外部 interrupt 的 cause 有何差異？", solution: ["同步 trap 直接由目前 instruction 引起，例如 ecall 或 page fault。", "外部 interrupt 來自 timer/device 等非同步來源，可在 instruction boundary 被處理。"] },
+      { level: "基礎", question: "assembler directive 為何不一定產生 CPU instruction？", solution: ["directive 命令 assembler 選 section、配置資料、對齊或宣告 symbol。", "只有 instruction mnemonic 的編碼才對應 ISA instruction；directive 可只改 metadata/location counter。"] },
+      { level: "基礎", question: "為何 `.bss` 能增加 memory size 卻幾乎不增加 file payload？", solution: ["它描述 zero-initialized storage，檔案只需記錄位置與大小。", "loader 配置對應 memory 並保證初值為零，不必逐 byte 儲存 zeros。"] },
+      { level: "基礎", question: "ELF section header 與 program header 的主要使用者各是誰？", solution: ["section headers 主要供 assembler/linker/debugger 組織 symbols、code、data 與 relocations。", "program headers 供 loader 建立 runtime segments、permissions 與 entry environment。"] },
+      { level: "計算", question: "3 GHz CPU 每次 context switch 為 9000 cycles，每秒 20,000 次，占單核心多少？", solution: ["單次=9000/(3×10^9)=3 µs。", "每秒=20,000×3 µs=60 ms，因此占單核心 6%。"] },
+      { level: "計算", question: "MIPS branch 位於 0x2000，target=0x1FF0，求 signed word displacement。", solution: ["base=PC+4=0x2004，byte displacement=0x1FF0−0x2004=−0x14=−20。", "以 4-byte word 為單位，immediate=−20/4=−5。"] },
+      { level: "計算", question: "relocation 使用 S+A−P，S=0x5000、A=8、P=0x4800，結果為何？", solution: ["代入為 0x5000+8−0x4800。", "0x5000−0x4800=0x800，因此結果=0x808；仍須做 type-specific range check。"] },
+      { level: "計算", question: "section 末端為 0x237A，下一 section 要求 0x100 alignment，起點與 padding 是多少？", solution: ["下一個 0x100 邊界是 0x2400。", "padding=0x2400−0x237A=0x86 bytes。"] },
+      { level: "計算", question: "segment 的 p_filesz=0x900、p_memsz=0x1500，loader 要 zero-fill 多少？", solution: ["差額=0x1500−0x900=0xC00 bytes。", "file-backed 部分到 p_filesz；其後至 p_memsz 的 0xC00 bytes 必須初始化為零。"] },
+      { level: "計算", question: "JIT 固定成本 24 ms，interpreter 9 µs/call，JIT code 3 µs/call，break-even 為幾次？", solution: ["每次節省 6 µs，24 ms=24,000 µs。", "N=24,000/6=4000 calls。"] },
+      { level: "計算", question: "20 processes 共用 5 MiB text，各有 0.25 MiB private data；理想總物理量是多少？", solution: ["shared text 只計 5 MiB。", "private data=20×0.25=5 MiB，總計 10 MiB。"] },
+      { level: "進階", question: "為何 ASLR 下 PC-relative code 比 absolute-address text relocation 更容易共享？", solution: ["PC-relative reference 依 code 與 target 的相對距離，整段換 base 時通常不必修改 instruction page。", "absolute text relocation 需在每個 runtime base 寫入不同值，使原本 read-only code page 變成 process-private。"] },
+      { level: "進階", question: "lazy binding 的第一次與後續函式呼叫各走什麼路徑？", solution: ["第一次經 PLT/GOT 進 resolver，搜尋 symbol 並把結果寫入 slot。", "後續呼叫讀取已解析 slot，直接跳到 target，省去重複 lookup。"] },
+      { level: "進階", question: "register allocation 發生 spill 為何可能同時改變 IC 與 CPI？", solution: ["spill 插入 load/store，直接增加 dynamic instruction count。", "新增 memory operations 也會改變 dependency、cache miss 與 pipeline pressure，因此 CPI 也可能變動。"] },
+      { level: "整合", question: "兩階段轉譯中，VS-stage 允許 write、G-stage 禁止 write，guest store 是否成功？", solution: ["不成功；有效權限必須通過兩個 stage 的檢查。", "G-stage write permission fault 會把控制交給 hypervisor-defined trap path，即使 guest page table 允許 write。"] },
+      { level: "整合", question: "程式出現 `undefined reference`，應優先檢查哪些 artifact，而不是執行時 page table？", solution: ["檢查 object symbol tables、definition visibility、archive/library order、link command 與 link map。", "這是 link-time name resolution 失敗，尚未產生可載入映像，runtime page table 不是第一層原因。"] }
+    ],
+    glossary: [
+      ["System software", "管理、轉換或提供執行環境的 compiler、assembler、linker、loader、kernel 與 runtime 等軟體。"],
+      ["Privilege mode", "限制可執行 instructions 與可存取 control resources 的處理器狀態。"],
+      ["Process", "具有受保護 address space、resources 與至少一條執行控制流的程式個體。"],
+      ["Thread", "可被 scheduler 執行、具有獨立 PC/registers/stack 的 control flow。"],
+      ["Context switch", "保存一個 execution context 並恢復另一個 context 的排程轉換。"],
+      ["Trap", "由 exception、system call 或 interrupt 進入受信任 handler 的控制轉移。"],
+      ["System call", "user process 依 ABI 請求 kernel service 的受控介面。"],
+      ["ABI", "規範 binary-level calling convention、register、stack、object format 與 system interface 的契約。"],
+      ["Assembler", "把 assembly instructions/directives 轉成 object bytes、symbols 與 relocations 的工具。"],
+      ["Location counter", "assembler 在目前 section 內追蹤下一個 byte/word 位置的狀態。"],
+      ["Symbol", "把名稱連到 section、value、binding、type 或未定義 reference 的 link-time record。"],
+      ["Relocation", "描述 link/load time 應如何依 symbol 與位置修補欄位的 record。"],
+      ["ELF", "Executable and Linkable Format，用於 relocatable object、executable、shared object 與 core file。"],
+      ["Section", "ELF 中供 linking/debugging 組織 code、data、symbols 或 relocations 的單位。"],
+      ["Segment", "program header 描述、供 loader 映射為 runtime memory region 的單位。"],
+      ["BSS", "執行時配置且初值為零、通常不逐 byte 儲存在檔案中的資料區。"],
+      ["Static linker", "解析 symbols、配置 sections、套用 relocations 並產生映像的工具。"],
+      ["Linker script", "控制 output sections、memory regions、alignment、symbols 與 entry 的配置規則。"],
+      ["Loader", "依 executable metadata 建立 process mappings、stack 與 entry state 的機制。"],
+      ["Dynamic linker", "在 load/run time 載入 shared objects 並解析 dynamic symbols/relocations 的 runtime。"],
+      ["GOT", "Global Offset Table，保存 position-independent code 所需 runtime addresses 的表。"],
+      ["PLT", "Procedure Linkage Table，將外部 function call 導向 dynamic resolution/target 的 stubs。"],
+      ["PIC", "Position-Independent Code，可在不同 base address 執行而少做或不做 text relocation。"],
+      ["ASLR", "Address Space Layout Randomization，改變 mappings 的 runtime base 以降低地址可預測性。"],
+      ["IR", "Intermediate Representation，compiler analyses 與 transformations 使用的中間程式形式。"],
+      ["Register allocation", "把 compiler temporaries 配到 physical registers，必要時產生 spill 的步驟。"],
+      ["Interpreter", "在 runtime 逐步解讀 source/AST/bytecode 語意而執行的系統。"],
+      ["JIT", "Just-In-Time compilation，在執行期間把程式區域編譯成 host machine code。"],
+      ["Hypervisor", "建立與管理 virtual machines、仲裁 guest 與 physical resources 的軟體層。"],
+      ["Container", "共享 kernel、以 namespaces/cgroups 等隔離和控制 process 群組的執行環境。"]
+    ],
+    sources: [
+      { key: "S1", title: "Cornell CS3410 Spring 2026: Processes and System Calls", url: "https://www.cs.cornell.edu/courses/cs3410/2026sp/notes/process.html", accessed: "2026-08-22", use: "process、context、system calls、user/kernel boundary 與 RISC-V Linux syscall registers。" },
+      { key: "S2", title: "Cornell CS3410 Spring 2026: Interrupts and Traps", url: "https://www.cs.cornell.edu/courses/cs3410/2026sp/notes/interrupt.html", accessed: "2026-08-22", use: "interrupt、exception、trap、context save 與 privilege transition。" },
+      { key: "S3", title: "MIT 6.1810 Operating System Engineering", url: "https://ocw.mit.edu/courses/6-1810-operating-system-engineering-fall-2023/", accessed: "2026-08-22", use: "xv6-backed processes、virtual memory、traps、system calls、scheduling 與 file interface。" },
+      { key: "S4", title: "GNU Binutils 2.47: Using as", url: "https://sourceware.org/binutils/docs/as/", accessed: "2026-08-22", use: "assembler syntax、directives、symbols、sections、location counter 與 object generation。" },
+      { key: "S5", title: "GNU ld 2.47: Linker Scripts", url: "https://sourceware.org/binutils/docs/ld/Scripts.html", accessed: "2026-08-22", use: "section placement、memory layout、alignment、entry point 與 linker-script semantics。" },
+      { key: "S6", title: "System V ABI: ELF Specification", url: "https://refspecs.linuxfoundation.org/elf/elfspec.pdf", accessed: "2026-08-22", use: "ELF headers、sections、segments、symbols、relocations、loading 與 dynamic linking。" },
+      { key: "S7", title: "RISC-V ABIs Specification", url: "https://riscv-non-isa.github.io/riscv-elf-psabi-doc/", accessed: "2026-08-22", use: "calling convention、ELF object conventions、relocation expressions、GOT/PLT 與 linker relaxation。" },
+      { key: "S8", title: "Linux man-pages: execve(2)", url: "https://man7.org/linux/man-pages/man2/execve.2.html", accessed: "2026-08-22", use: "process image replacement、arguments/environment、interpreter、descriptors 與 process attributes。" },
+      { key: "S9", title: "Linux man-pages: ld.so(8)", url: "https://man7.org/linux/man-pages/man8/ld.so.8.html", accessed: "2026-08-22", use: "dynamic loader、shared-object dependency resolution、search paths、preload 與 secure-execution behavior。" },
+      { key: "S10", title: "GCC Internals: Passes and Files of the Compiler", url: "https://gcc.gnu.org/onlinedocs/gccint/Passes.html", accessed: "2026-08-22", use: "front end、IR、GIMPLE/RTL passes、optimization、register allocation 與 final emission。" },
+      { key: "S11", title: "GCC 16.1: Options That Control Optimization", url: "https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html", accessed: "2026-08-22", use: "optimization levels、individual transformations、profile-guided 與 link-time optimization。" },
+      { key: "S12", title: "LLVM: ORCv2 JIT APIs", url: "https://llvm.org/docs/ORCv2.html", accessed: "2026-08-22", use: "JIT linking、symbol lookup、lazy materialization、concurrent compilation 與 runtime lifecycle。" },
+      { key: "S13", title: "RISC-V Privileged ISA: Hypervisor Extension", url: "https://docs.riscv.org/reference/isa/priv/hypervisor", accessed: "2026-08-22", use: "HS/VS/VU privilege、two-stage address translation、guest traps 與 virtualized interrupts。" },
+      { key: "S14", title: "Oracle VirtualBox 7.2: Introduction", url: "https://docs.oracle.com/en/virtualization/virtualbox/7.2/user/Introduction.html", accessed: "2026-08-22", use: "hosted virtualization、guest/host、virtual hardware、VM lifecycle 與 deployment boundary。" },
+      { key: "S15", title: "Linux Kernel: Control Group v2", url: "https://docs.kernel.org/admin-guide/cgroup-v2.html", accessed: "2026-08-22", use: "cgroup hierarchy、process membership、CPU/memory/I/O resource control 與 delegation。" }
+    ]
   }
 ];

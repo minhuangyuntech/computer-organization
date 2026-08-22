@@ -50,6 +50,7 @@ Repository 根目錄就是這個 `lectures/` 資料夾。GitHub Pages 目前從 
 
 ## 修訂紀錄
 
+- 2026-08-22：完成第 8 章「系統軟體：從原始碼到受保護的執行環境」深度教材，新增 13 個概念單元、13 幅原創圖表、10 個逐步例題、18 題分級練習、30 個術語與 15 項權威來源；另加入 context-switch overhead、system-call ABI、branch displacement、ELF relocation/layout、BSS zero-fill、shared pages、compiler CPU time、JIT break-even 與 two-stage translation 可重算驗證。
 - 2026-08-21：完成第 7 章「輸出入、儲存與現代裝置介面」深度教材，新增 13 個概念單元、13 幅原創圖表、10 個逐步例題、18 題分級練習、30 個術語與 15 項權威來源；另加入 polling/interrupt utilization、DMA CPU work、transaction efficiency、Little's Law、HDD latency、SSD WAF、RAID capacity 與 I/O Amdahl 可重算驗證。
 - 2026-08-20：完成第 6 章「記憶體階層：Cache、虛擬記憶體與位址轉譯」深度教材，新增 13 個概念單元、13 幅原創圖表、9 個逐步例題、18 題分級練習、30 個術語與 15 項權威來源；另加入 cache address split、metadata、mapping trace、replacement、write traffic、AMAT、CPI、paging、Sv32 與 TLB 可重算驗證。
 - 2026-08-19：完成第 5 章「指令集架構：編碼、定址與管線化執行」深度教材，新增 11 個概念單元、11 幅原創圖表、7 個逐步例題、16 題分級練習、24 個術語與 13 項權威來源；另加入 MIPS R/I/J encoding、immediate extension、effective address、branch/jump target、calling convention 與 pipeline timing 可重算驗證。

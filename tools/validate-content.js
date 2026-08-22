@@ -33,7 +33,7 @@ assert(fourthEdition.chapters.length === 13, "Fourth edition must contain 13 map
 assert(new Set(fourthEdition.chapters.map((item) => item.chapter)).size === 13, "Fourth edition chapter numbers must be unique");
 assert(fourthEdition.weekMap.length === 18, "Every course week needs a fourth edition mapping");
 assert(new Set(fourthEdition.weekMap.map((item) => item.week)).size === 18, "Fourth edition week mappings must be unique");
-assert(chapterDetails.length >= 7, "At least seven detailed self-study chapters are required");
+assert(chapterDetails.length >= 8, "At least eight detailed self-study chapters are required");
 assert(new Set(chapterDetails.map((item) => item.chapter)).size === chapterDetails.length, "Detailed chapter numbers must be unique");
 
 for (const chapter of chapterDetails) {
@@ -118,6 +118,14 @@ assert(chapterSeven.sections.filter((item) => item.figure).length >= 13, "Chapte
 assert(chapterSeven.workedExamples.length >= 10, "Chapter 7 needs at least ten worked examples");
 assert(chapterSeven.exercises.length >= 18, "Chapter 7 needs at least eighteen exercises with solutions");
 assert(chapterSeven.sources.length >= 15, "Chapter 7 needs broad authoritative source coverage");
+
+const chapterEight = chapterDetails.find((chapter) => chapter.chapter === 8);
+assert(chapterEight, "Chapter 8 detailed system-software material is missing");
+assert(chapterEight.sections.length >= 13, "Chapter 8 needs at least thirteen complete concept sections");
+assert(chapterEight.sections.filter((item) => item.figure).length >= 13, "Chapter 8 needs at least thirteen verifiable diagrams");
+assert(chapterEight.workedExamples.length >= 10, "Chapter 8 needs at least ten worked examples");
+assert(chapterEight.exercises.length >= 18, "Chapter 8 needs at least eighteen exercises with solutions");
+assert(chapterEight.sources.length >= 15, "Chapter 8 needs broad authoritative source coverage");
 
 for (const mapping of fourthEdition.weekMap) {
   assert(mapping.chapters.length >= 1, `Week ${mapping.week} needs at least one fourth edition chapter`);
@@ -361,6 +369,52 @@ assert(60_000 * 400e-6 === 24, "Chapter 7 Little's Law exercise failed");
 assert((60 / 10_000 / 2) * 1000 === 3, "Chapter 7 10k RPM exercise failed");
 assert(200 / 80 === 2.5 && (8 - 2) * 6 === 36, "Chapter 7 SSD/RAID exercises failed");
 assert(Math.abs(1 / (0.6 + 0.4 / 4) - 1.4285714285714286) < 1e-12, "Chapter 7 integrated Amdahl exercise failed");
+
+const chapterEightSwitchSeconds = 12_000 / 2e9;
+assert(chapterEightSwitchSeconds === 6e-6, "Chapter 8 context-switch time failed");
+assert(Math.abs(1000 * chapterEightSwitchSeconds - 0.006) < 1e-12, "Chapter 8 context-switch utilization failed");
+const chapterEightBranchBase = 0x1004 + 4;
+const chapterEightBranchTarget = 0x1010;
+const chapterEightBranchImmediate = (chapterEightBranchTarget - chapterEightBranchBase) / 4;
+assert(chapterEightBranchImmediate === 2, "Chapter 8 two-pass branch displacement failed");
+const chapterEightRelocation = 0x2400 - 4 - 0x1010;
+assert(chapterEightRelocation === 0x13ec, "Chapter 8 S+A-P relocation failed");
+
+function alignUp(value, alignment) {
+  return Math.ceil(value / alignment) * alignment;
+}
+const chapterEightTextEnd = 0x1000 + 0x1a0;
+const chapterEightRodataStart = alignUp(chapterEightTextEnd, 0x100);
+const chapterEightRodataEnd = chapterEightRodataStart + 0x90;
+const chapterEightDataStart = alignUp(chapterEightRodataEnd, 0x100);
+assert(chapterEightTextEnd === 0x11a0, "Chapter 8 text placement failed");
+assert(chapterEightRodataStart === 0x1200 && chapterEightRodataEnd === 0x1290, "Chapter 8 rodata placement failed");
+assert(chapterEightDataStart === 0x1300, "Chapter 8 data alignment failed");
+assert(1536 + 4096 === 5632, "Chapter 8 ELF memory-size calculation failed");
+
+const chapterEightSharedMemory = 3 + 10 * 0.5;
+const chapterEightPrivateMemory = 10 * (3 + 0.5);
+assert(chapterEightSharedMemory === 8 && chapterEightPrivateMemory === 35, "Chapter 8 shared-library memory calculation failed");
+assert(chapterEightPrivateMemory - chapterEightSharedMemory === 27, "Chapter 8 shared-library savings failed");
+const chapterEightOriginalTime = 1e9 * 1.5 / 3e9;
+const chapterEightOptimizedTime = 0.75e9 * 1.7 / 3e9;
+assert(chapterEightOriginalTime === 0.5 && chapterEightOptimizedTime === 0.425, "Chapter 8 compiler timing failed");
+assert(Math.abs(chapterEightOriginalTime / chapterEightOptimizedTime - 1.1764705882352942) < 1e-12, "Chapter 8 compiler speedup failed");
+assert(Math.abs(40e-3 / (10e-6 - 2e-6) - 5000) < 1e-9, "Chapter 8 JIT break-even failed");
+
+const chapterEightGuestVirtualAddress = 0x12345abc;
+const chapterEightPageOffset = chapterEightGuestVirtualAddress & 0xfff;
+const chapterEightGuestPhysicalAddress = ((0x45678 << 12) | chapterEightPageOffset) >>> 0;
+const chapterEightSupervisorPhysicalAddress = ((0x9abcd << 12) | chapterEightPageOffset) >>> 0;
+assert(chapterEightPageOffset === 0xabc, "Chapter 8 guest page offset failed");
+assert(chapterEightGuestPhysicalAddress === 0x45678abc, "Chapter 8 VS-stage translation failed");
+assert(chapterEightSupervisorPhysicalAddress === 0x9abcdabc, "Chapter 8 G-stage translation failed");
+assert(9000 / 3e9 === 3e-6 && Math.abs(20_000 * 3e-6 - 0.06) < 1e-12, "Chapter 8 context-switch exercise failed");
+assert((0x1ff0 - (0x2000 + 4)) / 4 === -5, "Chapter 8 branch exercise failed");
+assert(0x5000 + 8 - 0x4800 === 0x808, "Chapter 8 relocation exercise failed");
+assert(alignUp(0x237a, 0x100) === 0x2400 && 0x2400 - 0x237a === 0x86, "Chapter 8 alignment exercise failed");
+assert(0x1500 - 0x900 === 0xc00, "Chapter 8 zero-fill exercise failed");
+assert(Math.abs(24e-3 / (9e-6 - 3e-6) - 4000) < 1e-9, "Chapter 8 JIT exercise failed");
 
 const homepage = path.join(root, "index.html");
 const editionPage = path.join(root, "fourth-edition-map.html");
