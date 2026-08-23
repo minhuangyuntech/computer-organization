@@ -3166,5 +3166,266 @@ const chapterDetails = [
       { key: "S14", title: "Oracle VirtualBox 7.2: Introduction", url: "https://docs.oracle.com/en/virtualization/virtualbox/7.2/user/Introduction.html", accessed: "2026-08-22", use: "hosted virtualization、guest/host、virtual hardware、VM lifecycle 與 deployment boundary。" },
       { key: "S15", title: "Linux Kernel: Control Group v2", url: "https://docs.kernel.org/admin-guide/cgroup-v2.html", accessed: "2026-08-22", use: "cgroup hierarchy、process membership、CPU/memory/I/O resource control 與 delegation。" }
     ]
+  },
+  {
+    chapter: 9,
+    title: "替代型計算機架構：從 ILP 到異質平行系統",
+    english: "Alternative Architectures: From ILP to Heterogeneous Parallel Systems",
+    revised: "2026-08-23",
+    readingTime: "約 260–320 分鐘",
+    intro: "單一順序指令流不是唯一的計算組織方式。現代 CPU 在不改變程式順序語意的前提下，以 superscalar、out-of-order 與 speculation 挖掘 instruction-level parallelism；vector processor 和 GPU 把同一運算擴展到許多資料元素；multicore 與 cluster 讓多個指令流透過共享記憶體或 message passing 協作；dataflow、systolic array 與 neural accelerator 則把運算和資料移動固定成更專用的空間結構。量子處理器更換了 state、operation 與 measurement 的基本模型。本章以『平行工作由誰發現、由誰排程、資料放在哪裡、如何同步、上限由什麼決定』為主線，建立各種架構可比較、可計算且不混淆抽象層次的共同框架。",
+    outcomes: [
+      "能用 Flynn taxonomy 分辨 SISD、SIMD、MISD 與 MIMD，並說明其分類限制。",
+      "能區分 RISC ISA 原則與 superscalar、out-of-order 等微架構實作。",
+      "能追蹤 register renaming、issue、execute、retire 如何保存 precise architectural state。",
+      "能比較動態 superscalar 排程與 VLIW/EPIC 靜態排程的責任分配。",
+      "能依 VLEN、SEW、VL 計算 vector strip-mining 次數與 lane utilization。",
+      "能分辨 SIMD、SIMT、SPMD 與 thread-level parallelism，並量化 warp divergence。",
+      "能說明 cache coherence、memory consistency、atomicity 與 synchronization 的差異。",
+      "能比較 shared-memory OpenMP 與 distributed-memory MPI 的資料交換成本。",
+      "能套用 Amdahl's Law、Gustafson's Law、parallel efficiency 與 communication model。",
+      "能推導 dataflow firing、systolic wavefront 與 roofline throughput ceiling。",
+      "能以 state vector、unitary gate、measurement probability 與 circuit depth描述量子架構的基本限制。"
+    ],
+    sections: [
+      {
+        title: "1. 平行性有不同粒度，也有不同責任邊界",
+        paragraphs: [
+          "parallelism 是同一段時間內有多個有用 operations 前進，但 operations 可以來自同一 instruction 的多個資料元素、同一 thread 的多條獨立 instructions、多個 threads、多個 processes，或專用 accelerator 的 processing elements。data-level parallelism、instruction-level parallelism（ILP）、thread-level parallelism（TLP）與 request-level parallelism（RLP）描述不同來源，不能只以『核心數』概括。",
+          "Flynn taxonomy 以 instruction streams 與 data streams 各為 single/multiple，形成 SISD、SIMD、MISD、MIMD。它描述觀察到的控制/資料流，不直接指定 cache、interconnect、programming language 或是否 out-of-order。superscalar CPU 對單一 sequential program 可同時發出多條 instructions，但在 Flynn 的程式模型分類中仍常視為 SISD。",
+          "真實系統常疊加分類：MIMD multicore 的每個 core 可能是 superscalar，core 內又有 SIMD vector units；GPU grid 是大量 threads 的 SPMD programming model，warp 在硬體上以 SIMT 執行。比較架構時必須先選定觀察層次，否則同一 GPU 可被不一致地貼上 SIMD 或 MIMD 標籤。"
+        ],
+        figure: { type: "matrix", title: "Flynn taxonomy 與現代解讀", columns: ["Instruction streams", "Data streams", "分類", "典型抽象", "不代表"], rows: [["Single", "Single", "SISD", "sequential program/core", "一定是單週期或 in-order"], ["Single", "Multiple", "SIMD", "vector instruction over lanes", "每 lane 有獨立 instruction stream"], ["Multiple", "Single", "MISD", "罕見的多重處理鏈", "一般 pipeline"], ["Multiple", "Multiple", "MIMD", "multicore/cluster", "一定共享 memory"]], caption: "taxonomy 只用兩個 stream 維度分類；microarchitecture、memory model 與 programming model 要另外描述。" },
+        sourceRefs: ["S1", "S2"]
+      },
+      {
+        title: "2. RISC 是 ISA 設計取向，不是低效能微架構",
+        paragraphs: [
+          "RISC 架構通常強調規則 instruction encoding、load/store memory operations、較多 registers 與易於 pipeline 的基本 operations；CISC 則可提供較多 addressing forms 或複雜 instructions。這是 ISA interface 的取向，不是 transistor 數、issue width 或 clock frequency 的直接分類。RISC ISA 完全可以由寬發射、out-of-order、speculative CPU 實作。",
+          "ISA 決定 software-visible registers、instructions、exceptions 與 memory-order rules；microarchitecture 決定 decode width、reorder buffer、execution ports、cache hierarchy 與 predictor。相同 RISC-V binary 可以在小型 in-order core 與大型 out-of-order core 上正確執行，只是 latency、IPC、power 和 supported optional extensions 不同。",
+          "簡單 encoding 能降低部分 front-end 複雜度，但現代效能仍受 branch prediction、data dependencies、memory latency 與 instruction supply 限制。把『一條 RISC instruction 做的事較少』直接推成『程式一定較慢』忽略 instruction count、CPI、clock rate 與 compiler code generation 的共同作用。"
+        ],
+        figure: { type: "hierarchy", title: "同一 ISA 下可存在的微架構跨度", items: [{ label: "Program / ABI", detail: "相同 binary-level contract" }, { label: "RISC-V ISA", detail: "instructions, registers, exceptions, memory model" }, { label: "Small core", detail: "in-order, narrow issue, small caches" }, { label: "Large core", detail: "superscalar, out-of-order, speculation" }, { label: "Implementation result", detail: "不同 IPC, frequency, area, power" }], caption: "ISA 相容不要求內部 datapath 相同；software-visible結果必須符合相同 architectural contract。" },
+        sourceRefs: ["S2", "S3", "S16"]
+      },
+      {
+        title: "3. Superscalar 與 out-of-order execution 挖掘 ILP",
+        paragraphs: [
+          "superscalar front end 每 cycle 最多 fetch/decode/rename 多條 instructions，back end 也有多個 execution units。issue width 是每 cycle 的理論寬度，實際 IPC 還受 instruction supply、dependencies、port conflicts、cache misses、branch mispredictions 與 retirement width 限制。四寬處理器並不保證 IPC=4。",
+          "register renaming 把 ISA architectural register 名稱映射到較多 physical registers，消除 WAR 與 WAW false dependencies；RAW true dependency 仍必須等待 producer。reservation stations 或 issue queues 保存待執行 operations，operands ready 且 execution port 可用時便可越過較早但尚未 ready 的 instruction。",
+          "out-of-order execute 之後通常依 program order retire。reorder buffer 保存順序、result status 與 exception information，只有最舊已完成 instruction 能提交 architectural state。若 speculation 錯誤或較老 instruction fault，較新的 speculative results 被丟棄，因而維持 precise exception。"
+        ],
+        figure: { type: "flow", title: "Out-of-order core 的前進與提交路徑", items: ["fetch + predict", "decode", "rename physical registers", "dispatch to issue queue", "out-of-order execute", "write result", "in-order retire", "architectural state"], caption: "execute 可重排，retire 仍按 program order；rename map 與 reorder buffer 共同區分 speculative/committed state。" },
+        sourceRefs: ["S2", "S3"]
+      },
+      {
+        title: "4. VLIW/EPIC 把排程責任移向 compiler",
+        paragraphs: [
+          "VLIW 將多個可並行 operations 編入同一個很寬的 instruction word 或 bundle，不同 slots 對應可用 functional-unit 類型。compiler 建立 dependency graph、安排 operations 到 cycles/slots，必要時插入 NOP。hardware 不必像通用 out-of-order core 一樣在 runtime 搜尋大量 ready instructions。",
+          "static scheduling 的難點是 latency、resource 與 control-flow assumptions 被編進 binary。若下一代實作改變 operation latency 或 functional units，舊 schedule 可能仍正確但效率下降；binary compatibility、code size、cache pressure 和 unpredictable memory latency 都是成本。EPIC 類設計以 predication、speculation hints 與 bundles 增加 compiler 可表達資訊。",
+          "動態 superscalar 看到當次 cache miss、branch outcome 與 runtime dependencies，可即時改排；VLIW compiler 則看到較大範圍的 source/IR dependence，且 scheduling logic 不必每 cycle耗電。兩者不是『硬體平行』與『軟體不平行』的對立，而是誰在什麼時刻決定 issue grouping。"
+        ],
+        figure: { type: "timeline", title: "四槽 VLIW bundle 的靜態配置", columns: ["0", "1", "2", "3", "4"], rows: [{ label: "ALU slot", cells: ["A", "D", "G", "J", "M"] }, { label: "MUL slot", cells: ["B", "", "H", "K", ""] }, { label: "MEM slot", cells: ["", "E", "I", "", "N"] }, { label: "BR slot", cells: ["C", "F", "", "L", ""] }], caption: "每個 cycle 對應一個 bundle；空白 slot 仍占 encoding，示例共有 13 個 useful operations、20 個 slots。" },
+        sourceRefs: ["S4", "S17"]
+      },
+      {
+        title: "5. Vector architecture 以 VL 控制資料平行",
+        paragraphs: [
+          "vector instruction 對一組 elements 執行相同 operation，vector registers 保存多個 elements，lanes 提供平行 datapaths。以 RISC-V V extension 為例，VLEN 是 implementation 的 vector-register bit width，SEW 是 selected element width，LMUL 可把多個 registers 組成較大的 register group；當 LMUL=1 時，VLMAX 約為 VLEN/SEW。",
+          "程式以 strip mining 處理任意長度 N：每輪 `vsetvli` 依剩餘 elements 和 hardware capacity 設定 VL，vector load/compute/store 只處理 active elements，再把 index 增加 VL。最後一輪可自然使用較小 VL，避免為固定 SIMD width 另寫 scalar tail。vector-length agnostic binary 因而能在不同 VLEN implementations 上運作。",
+          "mask register 讓每個 element 可選擇是否更新，適合 conditionals 與 tail；但 masked-off lanes 不產生有用 operation，不能視為滿利用率。vector chaining、memory stride、gather/scatter、bank conflicts 與 memory bandwidth 會使 peak lane count 與實際 throughput 出現差距。"
+        ],
+        figure: { type: "bits", title: "VLEN=256、SEW=32、LMUL=1 的 vector register", totalBits: 256, items: [{ label: "e0", bits: 32 }, { label: "e1", bits: 32 }, { label: "e2", bits: 32 }, { label: "e3", bits: 32 }, { label: "e4", bits: 32 }, { label: "e5", bits: 32 }, { label: "e6", bits: 32 }, { label: "e7", bits: 32 }], caption: "此設定 VLMAX=8 elements；實際 VL 可小於 8，例如最後一輪只啟用 3 個 elements。" },
+        sourceRefs: ["S5", "S6"]
+      },
+      {
+        title: "6. SIMD、SIMT 與 GPU warp 不是同一抽象",
+        paragraphs: [
+          "SIMD instruction 在 ISA 中明確操作 vector lanes；SIMT programming model 讓每個 thread 保有自己的 registers、thread index 與邏輯 control flow，hardware 再把 threads 分組執行。CUDA 中 32 threads 組成一個 warp；warp issue 一個共同 instruction，active mask 指定目前參與的 lanes。",
+          "同一 warp 的 threads 遇到 data-dependent branch 並走不同 paths 時，hardware 必須在不同 active masks 下執行各 path，稱為 divergence。結果仍符合各 thread 的 control flow，但 lanes 在另一 path 執行期間閒置。divergence 只在 warp 內造成這種 serialization，不同 warps 走不同 paths 不等同於同一 warp divergence。",
+          "GPU 以大量 resident warps 隱藏 long-latency operation：某 warp 等 memory 時，scheduler 可 issue 另一個 ready warp。occupancy 受 registers、shared memory、block/warp limits 共同限制；高 occupancy 只增加可選 warps，不保證 coalesced memory、低 divergence 或足夠 arithmetic intensity。"
+        ],
+        figure: { type: "timeline", title: "一個 divergent warp 的 active masks", columns: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"], rows: [{ label: "Path A: 20 lanes", cells: ["20", "20", "20", "20", "20", "", "", "", "", "", "", ""] }, { label: "Path B: 12 lanes", cells: ["", "", "", "", "", "12", "12", "12", "12", "12", "12", "12"] }, { label: "Reconverged", cells: ["", "", "", "", "", "", "", "", "", "", "", "32"] }], caption: "示例以先 A 後 B 表示 serialization；實際 scheduling/reconvergence 細節依架構，但 inactive lanes 不完成該 path 的工作。" },
+        sourceRefs: ["S1", "S7"]
+      },
+      {
+        title: "7. Shared-memory multicore 需要 coherence 與 consistency",
+        paragraphs: [
+          "每個 core 有 private cache 時，同一 physical cache line 可能出現多份 copies。cache coherence 對單一 memory location 的 writes/reads 建立一致性，例如 write-invalidate protocol 先取得 exclusive ownership，再使其他 cached copies invalid。MESI 類 states描述 line 是否 modified、exclusive、shared 或 invalid，但具體 protocol 可有更多 states與 directory。",
+          "memory consistency model 規定不同 locations 的 memory operations 可被其他 harts 觀察成哪些順序。coherence 不自動保證 `write data; write flag` 在另一 core 看來同序；RISC-V RVWMO 允許較弱排序，跨 hart communication 需使用 acquire/release、atomics 或 FENCE 等同步機制建立 happens-before。",
+          "false sharing 發生在 cores 修改同一 cache line 中不同 variables。程式沒有共享同一 variable，卻因 ownership 以 line 為單位來回轉移而變慢。padding 或重新配置 data ownership 可降低 transfer，但會增加 footprint；正確性問題與效能問題仍要分開判斷。"
+        ],
+        figure: { type: "flow", title: "Write-invalidate ownership 的簡化路徑", items: ["Core A/B hold Shared line", "Core A requests write ownership", "coherence request", "Core B copy invalidated", "Core A enters Modified", "A writes locally", "later read by B triggers transfer/writeback"], caption: "圖只表達 ownership 核心語意；bus snooping、directory、transient states 與 acknowledgement 數量依實作而異。" },
+        sourceRefs: ["S10", "S11", "S12"]
+      },
+      {
+        title: "8. Synchronization 建立 ordering，不替代工作分解",
+        paragraphs: [
+          "data race 是兩個 concurrent accesses 指向同一 memory location、至少一個是 write，且缺少足以排序它們的 synchronization。lost update 可由兩個 threads 都讀到舊值、各自加一再寫回造成。cache coherence 只確保 writes 的傳播規則，不把 read-modify-write 三步自動變成 atomic transaction。",
+          "mutex 把 critical section 序列化；atomic read-modify-write 對一個位置提供 indivisible update，並依 memory order 建立同步；barrier 讓一組 participants 在 phase boundary 等待；condition/event 處理狀態尚未成立時的等待。選擇 primitive 要依 invariant，而不是把所有 shared accesses 都加同一種 barrier。",
+          "lock contention、atomic serialization、barrier imbalance 與 cache-line bouncing 都是 synchronization overhead。細粒度 locking 可增加 concurrency 卻提高 bookkeeping 和 deadlock complexity；粗粒度 locking 較簡單但限制 parallel fraction。correctness 必須先由 happens-before 證明，再量測 contention。"
+        ],
+        figure: { type: "timeline", title: "Lost update 與 atomic update 的差異", columns: ["1", "2", "3", "4", "5", "6"], rows: [{ label: "Thread A (racy)", cells: ["load 0", "", "add→1", "", "store 1", ""] }, { label: "Thread B (racy)", cells: ["", "load 0", "", "add→1", "", "store 1"] }, { label: "Atomic version", cells: ["fetch_add→1", "serialized", "fetch_add→2", "", "", ""] }], caption: "兩次普通 increment 最後可能只得到 1；atomic RMW 讓兩個更新在線性化順序中各生效一次。" },
+        sourceRefs: ["S8", "S11"]
+      },
+      {
+        title: "9. Shared-memory 與 message-passing programming models",
+        paragraphs: [
+          "OpenMP 以 compiler directives、runtime routines 和 environment variables 擴充 C/C++/Fortran，可表達 parallel regions、worksharing、tasks、SIMD 和 device offload。threads 可共享 address space，但 variables 的 shared/private/mapped semantics 必須明確；規格不要求 implementation 自動偵測所有 data races 或 deadlocks。",
+          "MPI 讓 processes 透過 communicator 執行 point-to-point、collective、one-sided 與 I/O operations。每個 rank 通常有自己的 address space，資料交換是 explicit messages；這適合跨 nodes 擴展，也迫使 decomposition 明確。send completion、receive matching、ordering 與 collective participation 都由 MPI semantics 定義。",
+          "communication time 常以 T=α+n/β 近似：α 是固定 startup latency，n 是 bytes，β 是 effective bandwidth。小 messages 受 α 支配，大 messages 才接近 bandwidth；collective 還受 topology、algorithm 與 participant count 影響。shared memory 也不是免費通訊，coherence traffic 和 NUMA remote access 只是隱藏在 load/store interface 下。"
+        ],
+        figure: { type: "matrix", title: "OpenMP 與 MPI 的主要成本邊界", columns: ["面向", "OpenMP shared memory", "MPI message passing", "共同要求"], rows: [["Address space", "threads 共享", "ranks 分離", "partition work/data"], ["Communication", "loads/stores + coherence", "explicit messages/collectives", "計算與傳輸重疊"], ["Synchronization", "locks/atomics/barriers/tasks", "matching/collectives/RMA sync", "避免 races/deadlock"], ["Scale boundary", "通常單一 shared-memory node", "可跨 nodes", "受 serial work 與 imbalance 限制"], ["Data placement", "first-touch/NUMA policy", "rank-local buffers", "locality 決定成本"]], caption: "programming model 不等於 hardware topology；混合 MPI+OpenMP 可在 node 間與 node 內使用不同抽象。" },
+        sourceRefs: ["S8", "S9"]
+      },
+      {
+        title: "10. Scalability：固定工作量與固定時間是不同問題",
+        paragraphs: [
+          "Amdahl's Law 假設固定 problem size，parallel fraction p 在 N 個 processors 上理想縮短為 p/N：S(N)=1/((1−p)+p/N)。當 N→∞，speedup 上限為 1/(1−p)。serial fraction、communication、synchronization、load imbalance 與 parallel overhead 都會把實際結果壓得更低。",
+          "parallel efficiency E=S/N 表示平均每個 processor 相對單 processor baseline 的使用成效。增加 N 若 speedup 增幅小於 N，efficiency 下降；但 efficiency 不是 energy efficiency，也不表示每個 core 每 cycle 都忙。strong scaling 固定問題大小，weak scaling 則隨資源增加問題大小。",
+          "Gustafson's Law 以固定 parallel execution time 解讀 scaled workload。若在 N processors 的執行時間中 serial fraction 為 s，scaled speedup S_G=N−s(N−1)。它不否定 Amdahl，而是改變問題大小與 fraction 的量測基準；報告 speedup 時必須交代 fixed-size 或 scaled-size。"
+        ],
+        figure: { type: "matrix", title: "p=0.92 的 Amdahl strong-scaling 曲線", columns: ["Processors N", "Serial term", "Parallel term p/N", "Ideal speedup", "Efficiency"], rows: [["1", "0.08", "0.9200", "1.000", "100.0%"], ["2", "0.08", "0.4600", "1.852", "92.6%"], ["4", "0.08", "0.2300", "3.226", "80.6%"], ["8", "0.08", "0.1150", "5.128", "64.1%"], ["16", "0.08", "0.0575", "7.273", "45.5%"], ["∞", "0.08", "0", "12.500", "→0"]], caption: "即使 92% 可平行，16 processors 的理想 speedup 只有約 7.27；增加 resources 不會消除 serial term。" },
+        sourceRefs: ["S13", "S14"]
+      },
+      {
+        title: "11. Dataflow 與 systolic array 把 dependencies 空間化",
+        paragraphs: [
+          "von Neumann control-flow machine 主要由 PC 選下一條 instruction；dataflow model 則在 operation 的 input tokens 都 ready 時 firing。dependency graph 中沒有 edge path 的 nodes 可並行，control dependence 可轉成 tokens/predicates。純 dataflow 容易暴露平行性，但 token matching、memory side effects 與 resource scheduling仍需實作機制。",
+          "systolic array 由規則排列的 processing elements（PEs）以鄰近 links 傳資料。matrix multiplication 可讓 A values 沿 rows 流動、B values 沿 columns 流動，每個 PE累積一個 output dot product。權重或 partial sums 的 stationary 選擇會改變 data reuse 與 external bandwidth。",
+          "N×N 方形 array 在一個常見 skewed-input 模型下，第一個 products 進入後形成 wavefront；最後一個 output 約在 3N−2 cycles 完成。這不是所有 accelerator 的固定公式，因為 pipeline depth、input/output staging、tiling 和 array dimensions 會改變邊界；推導時必須明示 cycle convention。"
+        ],
+        figure: { type: "matrix", title: "4×4 systolic matrix-multiply processing elements", columns: ["PE column 0", "PE column 1", "PE column 2", "PE column 3"], rows: [["C00 += A0k×Bk0", "C01 += A0k×Bk1", "C02 += A0k×Bk2", "C03 += A0k×Bk3"], ["C10 += A1k×Bk0", "C11 += A1k×Bk1", "C12 += A1k×Bk2", "C13 += A1k×Bk3"], ["C20 += A2k×Bk0", "C21 += A2k×Bk1", "C22 += A2k×Bk2", "C23 += A2k×Bk3"], ["C30 += A3k×Bk0", "C31 += A3k×Bk1", "C32 += A3k×Bk2", "C33 += A3k×Bk3"]], caption: "每個 PE 保留自己的 Cij partial sum；A 沿 row、B 沿 column 逐 cycle 移動並重用。" },
+        sourceRefs: ["S15", "S18"]
+      },
+      {
+        title: "12. Neural accelerator 是 domain-specific data movement machine",
+        paragraphs: [
+          "neural-network workload 大量使用 matrix multiply、convolution、activation 與 reduction。專用 accelerator 以 MAC arrays、較低精度 arithmetic、大型 on-chip buffers 與 software-managed data movement 提高 throughput/energy efficiency。它不是『神經網路自己思考的硬體』，而是對特定 tensor operations 與 dataflow 優化的計算機。",
+          "roofline model 以 operational intensity I=operations/byte 連結 compute 與 memory：attainable performance ≤ min(peak compute, memory bandwidth×I)。低 intensity workload 位於 bandwidth-bound 區，高 intensity 才可能接近 compute peak。tiling、fusion 與 reuse 主要提高 bytes 搬入後可完成的 operations。",
+          "Google 第一代 datacenter TPU 的核心是 65,536 個 8-bit MAC matrix unit 與 28 MiB software-managed on-chip memory，展現 domain-specific architecture 如何把 area/power 移給大量 MAC 與 predictable data path。歷史測量不能直接代表現代 accelerator，但其方法仍提醒 peak TOPS、achieved TOPS、latency、batch size 與 TOPS/W 必須分開。"
+        ],
+        figure: { type: "flow", title: "Tensor tile 在 accelerator 中的資料生命週期", items: ["off-chip tensor", "DMA / prefetch", "on-chip buffer", "tile / layout transform", "MAC or tensor array", "accumulator / reduction", "activation / quantize", "write result tile"], caption: "能量與時間常由資料移動支配；tiling 的目的，是讓同一批 bytes 在 array 內重用多次。" },
+        sourceRefs: ["S15", "S19"]
+      },
+      {
+        title: "13. Quantum architecture 改變 state 與 measurement 模型",
+        paragraphs: [
+          "classical bit 是 0 或 1；單一 pure qubit 可寫成 |ψ⟩=α|0⟩+β|1⟩，其中 complex amplitudes 滿足 |α|²+|β|²=1。對 computational basis 測量得到 0/1 的機率分別為 |α|²、|β|²，單次 measurement 不會輸出 amplitudes。重複 shots 只能估計 probability distribution。",
+          "quantum gate 對 state vector 執行 unitary transformation；多 qubits 可形成 entangled state，不能拆成各自獨立 state 的 tensor product。quantum circuit depth 是沿 dependency path 的 gate layers；共用同一 qubit 的 gates 不能同 layer。實體 QPU 還受 topology、gate fidelity、decoherence、calibration 與 measurement errors 限制。",
+          "physical qubit 不等於 fault-tolerant logical qubit。quantum error correction 以多個 physical qubits、syndrome extraction 和 classical decoding 保護 logical information，帶來大量空間/時間 overhead。2026 roadmap 屬工程目標而非已完成保證；量子處理器也不取代 CPU，實際 workflow 包含 classical mapping、transpilation、control、shots 與 post-processing。"
+        ],
+        figure: { type: "flow", title: "一個 Bell-state circuit 的狀態路徑", items: ["|00⟩", "H on q0", "(|00⟩+|10⟩)/√2", "CNOT q0→q1", "(|00⟩+|11⟩)/√2", "measure both", "00 or 11, each 1/2"], caption: "量測結果具有相關性；不會在一次 shot 同時讀出 00 與 11，也不能由單次結果還原 amplitudes。" },
+        sourceRefs: ["S20", "S21"]
+      }
+    ],
+    workedExamples: [
+      { title: "例題一：由 issue width 與 IPC 分開計算 cycles", prompt: "4-wide superscalar core 執行 20 條 instructions。理想無限制與實測 IPC=2.5 時各需多少 cycles？", steps: ["issue width=4 表示每 cycle 理論最多 4 條。", "理想 cycles=ceil(20/4)=5。", "實測平均 IPC=2.5，cycles=instruction count/IPC。", "20/2.5=8 cycles。", "實測相對理想多 8−5=3 cycles。", "差距可能來自 dependencies、misses 或 port conflicts，不能由 IPC 單獨定位原因。"], result: "理想 5 cycles；IPC=2.5 時 8 cycles，達到理論 issue capacity 的 62.5%。" },
+      { title: "例題二：建立 out-of-order ready schedule", prompt: "I1: r1=a+b（latency 2）；I2: r2=r1×c（3）；I3: r3=d+e（1）；I4: r4=r3+f（1）。假設每 cycle 可發出兩條且 units 足夠，求最早完成 cycle。", steps: ["I1→I2 是 RAW chain；I3→I4 是另一條 RAW chain。", "cycle 1 可同時 issue I1 與 I3。", "I3 latency 1，在 cycle 2 前 ready，因此 cycle 2 issue I4。", "I1 latency 2，在 cycle 3 前 ready，因此 cycle 3 issue I2。", "I4 在 cycle 3 前完成；I2 latency 3，在 cycle 6 前完成。", "in-order machine 若被 I2 阻擋可能延後 I3/I4；out-of-order 可先利用獨立 chain。"], result: "critical path I1→I2 決定最早完成時間，於 cycle 6 前完成；I3/I4 可穿插執行。" },
+      { title: "例題三：計算 VLIW bundle slot utilization", prompt: "四槽 VLIW schedule 使用 5 個 bundles，共放入 13 個 useful operations。求 slot utilization 與 NOP/empty slots。", steps: ["總 slots=4×5=20。", "useful slots=13。", "empty slots=20−13=7。", "utilization=13/20=0.65。", "empty fraction=7/20=35%。", "這只量化 static packing；不包含 cache miss 造成整個 schedule 等待。"], result: "slot utilization=65%，共有 7 個 empty/NOP slots。" },
+      { title: "例題四：RISC-V vector strip mining", prompt: "VLEN=256、SEW=32、LMUL=1，處理 N=1003 elements。求 VLMAX、迴圈輪數、最後 VL 與平均 lane utilization。", steps: ["VLMAX=VLEN/SEW=256/32=8 elements。", "full rounds=floor(1003/8)=125，處理 1000 elements。", "remaining=3，所以還需一輪，總 rounds=126。", "最後 `vsetvli` 設 VL=3。", "總 lane capacity=126×8=1008 element-slots。", "平均 utilization=1003/1008≈99.504%。"], result: "VLMAX=8、126 輪、最後 VL=3，平均 lane utilization 約 99.50%。" },
+      { title: "例題五：量化 warp branch divergence", prompt: "32-lane warp 中 20 lanes 走 5-cycle path A，12 lanes 走 7-cycle path B，兩路需序列化。求 elapsed warp cycles 與 useful lane-cycle utilization。", steps: ["divergent paths serial execution，elapsed=5+7=12 cycles。", "capacity=32 lanes×12 cycles=384 lane-cycles。", "path A useful work=20×5=100 lane-cycles。", "path B useful work=12×7=84 lane-cycles。", "total useful=184 lane-cycles。", "utilization=184/384≈47.9167%。"], result: "warp 經過 12 cycles，active useful lane-cycle utilization 約 47.92%。" },
+      { title: "例題六：追蹤 false-sharing ownership", prompt: "Core A、B 交替對同一 64-byte line 中不同 counters 做 8 次 writes；line 起初不在任一 cache。計算取得 ownership 與 core-to-core ownership transfers。", steps: ["第 1 次 A write 取得 exclusive/modified ownership。", "第 2 次 B write 使 A copy invalid，ownership A→B。", "之後每次 writer 都與前一次不同，因此每次都轉移 ownership。", "8 次 writes 中，第 1 次是初次取得，後 7 次是 core-to-core transfers。", "若 counters padding 到不同 lines，各 core 首次取得自己的 line 後不必因對方 write 轉移。", "variables 不同仍會 bouncing，因 coherence granularity 是 cache line。"], result: "共有 8 次 ownership acquisitions，其中 7 次為 A/B 間轉移；padding 可消除這個交替 transfer pattern。" },
+      { title: "例題七：估算 MPI point-to-point message time", prompt: "模型 T=α+n/β，startup α=2 µs、bandwidth β=20 GB/s（十進位）、payload=64 KiB。求理想時間與有效 payload bandwidth。", steps: ["n=64×1024=65,536 bytes。", "transfer term=n/β=65,536/(20×10^9) s。", "transfer=3.2768 µs。", "total=2+3.2768=5.2768 µs。", "effective bandwidth=n/T=65,536/(5.2768 µs)≈12.419 GB/s。", "固定 startup 使小 message 尚未達到 20 GB/s link ceiling。"], result: "理想 message time 約 5.2768 µs，有效 payload bandwidth 約 12.42 GB/s。" },
+      { title: "例題八：比較 Amdahl 與 Gustafson scaling", prompt: "parallel fraction p=0.92、N=16。求 Amdahl fixed-size speedup/efficiency；若 parallel run 中 serial fraction s=0.08，求 Gustafson scaled speedup。", steps: ["Amdahl denominator=(1−0.92)+0.92/16。", "denominator=0.08+0.0575=0.1375。", "S_A=1/0.1375≈7.2727。", "efficiency=7.2727/16≈45.45%。", "Gustafson S_G=N−s(N−1)=16−0.08×15。", "S_G=14.8；它對應 scaled workload，不可與 7.2727 當同一固定問題的衝突結果。"], result: "Amdahl speedup≈7.273、efficiency≈45.45%；Gustafson scaled speedup=14.8。" },
+      { title: "例題九：推導 4×4 systolic wavefront latency", prompt: "採用 skewed inputs、每 PE 每 cycle 做一個 MAC、無額外 pipeline/output delay的 4×4 square array，求最後 output 完成 cycle。", steps: ["output Cij 需要 k=0..3 共 4 個 products。", "A row i 與 B column j 的第一組 operands 在 offset i+j 後相遇。", "Cij 的第 4 個 product 在 offset i+j+3 的 cycle slot 執行。", "以第一個 MAC 為 cycle 1，完成 cycle=i+j+4。", "最晚是 C33：3+3+4=10。", "等價一般式為 3N−2=3×4−2=10 cycles。"], result: "在明示的 cycle convention 下，最後 C33 於 cycle 10 完成。" },
+      { title: "例題十：用 roofline 判斷 neural kernel bottleneck", prompt: "accelerator peak=100 TOPS，memory bandwidth=2 TB/s，kernel operational intensity=30 operations/byte。求 performance ceiling 與 bottleneck。", steps: ["bandwidth roof=bandwidth×intensity。", "2×10^12 bytes/s×30 operations/byte=60×10^12 operations/s。", "bandwidth roof=60 TOPS。", "compute roof=100 TOPS。", "attainable≤min(100,60)=60 TOPS。", "要進入 compute-bound，intensity 至少需 peak/bandwidth=100/2=50 operations/byte。"], result: "ceiling=60 TOPS，屬 bandwidth-bound；ridge point intensity=50 operations/byte。" },
+      { title: "例題十一：計算 Hadamard 後的測量機率", prompt: "qubit 初態 |0⟩，施加 H 得 (|0⟩+|1⟩)/√2。求測量機率與 1000 shots 的期望 counts。", steps: ["α=1/√2，β=1/√2。", "P(0)=|α|²=1/2。", "P(1)=|β|²=1/2。", "1000 shots 的 expected count(0)=1000×0.5=500。", "expected count(1)=500。", "實際 finite-shot counts 可偏離 500/500；單次 measurement 只給一個 bit。"], result: "P(0)=P(1)=0.5；1000 shots 的期望值各 500 次。" }
+    ],
+    misconceptions: [
+      ["RISC processor 都是簡單、單發射、in-order。", "RISC 描述 ISA 取向；實作可以是寬發射、out-of-order、speculative microarchitecture。"],
+      ["四寬 superscalar 的 IPC 永遠是 4。", "4 是 issue/retire ceiling之一；dependencies、ports、branches 和 memory stalls 會降低 achieved IPC。"],
+      ["Register renaming 能消除所有 data dependencies。", "它消除 WAR/WAW name dependencies；RAW true dependency 仍須等待 producer。"],
+      ["VLIW 不需要處理 runtime hazards。", "compiler 處理可預測的 dependency/resource schedule；cache miss、exception 與變動 latency仍需 architecture/hardware semantics。"],
+      ["Vector width 越大，任何程式都等比例變快。", "可用 DLP、tail/mask、memory bandwidth、stride 和 dependencies 都限制利用率。"],
+      ["SIMD、SIMT 與 SPMD 是同一詞。", "SIMD 是單一 vector instruction；SIMT 是 warp 執行模型；SPMD 是多 workers 執行同一 program 的 programming model。"],
+      ["GPU 的高 occupancy 就代表高效能。", "occupancy 只提供可排程 warps；divergence、uncoalesced access、low intensity 與 instruction mix 仍可能成為瓶頸。"],
+      ["Cache coherence 保證所有 cores 以程式順序看到所有 writes。", "coherence 主要約束單一 location；跨 locations ordering 由 memory consistency與 synchronization 定義。"],
+      ["不同 variables 不會 false sharing。", "只要落在同一 cache line 且由不同 cores 寫入，就可能發生 ownership bouncing。"],
+      ["Atomic increment 和普通 load-add-store 等價。", "普通三步可交錯而遺失更新；atomic RMW 提供不可分割的線性化操作。"],
+      ["MPI bandwidth 等於每個 message 的有效 bandwidth。", "小 message 受 startup latency α 支配，protocol、topology與 contention 也會降低有效值。"],
+      ["Gustafson's Law 推翻 Amdahl's Law。", "兩者分別回答 scaled-size/fixed-time 與 fixed-size 問題，假設與 fraction 定義不同。"],
+      ["Neural accelerator 的 TOPS 就是模型推論速度。", "實際速度還受 precision、utilization、memory、layout、batch、unsupported operations 與 latency boundary 影響。"],
+      ["n qubits 可在一次 measurement 讀出全部 2^n amplitudes。", "一次 measurement 只得到一個 n-bit outcome；估計 distribution 需重複 shots，且一般不能完整重建所有 amplitudes。"]
+    ],
+    exercises: [
+      { level: "基礎", question: "為何 superscalar sequential CPU 在 Flynn taxonomy 中常仍歸為 SISD？", solution: ["architectural program 仍是一個 instruction stream 操作一個邏輯 data stream。", "同 cycle 內多發射是 microarchitectural ILP，不自動形成多個自主 instruction streams。"] },
+      { level: "基礎", question: "RAW、WAR、WAW 中，register renaming 能消除哪些？", solution: ["renaming 可讓不同 writes 使用不同 physical registers，消除 WAR 與 WAW name dependencies。", "RAW 是 consumer 真正需要 producer value 的 true dependency，不能由改名消除。"] },
+      { level: "基礎", question: "VL 與 VLEN 有何差異？", solution: ["VLEN 是 implementation 的 vector-register bit width，通常為硬體屬性。", "VL 是當前 vector instruction 實際處理的 active element count，可在每輪由剩餘工作設定。"] },
+      { level: "基礎", question: "Warp divergence 為何只需在同一 warp 內判斷？", solution: ["同一 warp 的 lanes 共用 instruction issue，分支路徑需用不同 masks 序列化。", "不同 warps 本來就可由 scheduler 獨立前進，走不同 path 不會互相遮罩 lanes。"] },
+      { level: "基礎", question: "Cache coherence 與 memory consistency 各回答什麼問題？", solution: ["coherence 回答同一 location 的多份 cached copies 和 writes 如何保持一致。", "consistency 回答跨 locations、跨 harts 的 memory operations 可以被觀察成哪些順序。"] },
+      { level: "基礎", question: "OpenMP 與 MPI 的 address-space 假設有何典型差異？", solution: ["OpenMP threads 通常共享一個 process address space，以 shared/private rules 區分資料。", "MPI ranks 通常各有 address space，透過明確 send/receive/collective 交換資料。"] },
+      { level: "計算", question: "8-wide core 執行 100 instructions，實測 IPC=5，理想與實測 cycles 各是多少？", solution: ["理想 cycles=ceil(100/8)=13。", "實測 cycles=100/5=20；issue-capacity utilization=5/8=62.5%。"] },
+      { level: "計算", question: "三槽 VLIW 使用 8 bundles 放入 18 useful operations，slot utilization 為多少？", solution: ["總 slots=3×8=24。", "utilization=18/24=75%，empty slots=6。"] },
+      { level: "計算", question: "VLEN=512、SEW=64、LMUL=1，處理 130 elements 需幾輪，最後 VL 是多少？", solution: ["VLMAX=512/64=8。", "ceil(130/8)=17 輪；16 輪處理 128，最後 VL=2。"] },
+      { level: "計算", question: "32-lane warp 只有 24 lanes 執行一段 6-cycle 無其他分支程式，lane utilization 為多少？", solution: ["useful lane-cycles=24×6，capacity=32×6。", "utilization=24/32=75%。"] },
+      { level: "計算", question: "T=α+n/β，α=1 µs、β=10 GB/s、n=10 KB（十進位），求 message time。", solution: ["transfer=10,000/(10×10^9)=1 µs。", "total=1+1=2 µs。"] },
+      { level: "計算", question: "p=0.95、N=20 時 Amdahl speedup 與 efficiency 為多少？", solution: ["S=1/(0.05+0.95/20)=1/0.0975≈10.256。", "E=S/20≈0.5128=51.28%。"] },
+      { level: "計算", question: "Gustafson 模型 N=32、parallel-run serial fraction s=0.03，scaled speedup 為多少？", solution: ["S_G=N−s(N−1)。", "32−0.03×31=31.07。"] },
+      { level: "計算", question: "peak=80 TOPS、bandwidth=1.5 TB/s、intensity=40 ops/byte，roofline ceiling 為多少？", solution: ["bandwidth roof=1.5×40=60 TOPS。", "min(80,60)=60 TOPS，因此 bandwidth-bound。"] },
+      { level: "進階", question: "False sharing 為何可在程式沒有 data race 時仍發生？", solution: ["threads 可寫不同 variables，因此沒有同一 location 的 conflicting access。", "若 variables 位於同一 cache line，coherence ownership 仍以 line 為單位轉移，造成效能損失。"] },
+      { level: "進階", question: "VLIW binary 換到 operation latency 不同的新實作時，correctness 與 performance 可能如何不同？", solution: ["architecture 必須提供相容 semantics，必要時 hardware interlock 或重新編譯保證 correctness。", "舊 static schedule 可能留下更多 bubbles 或不合新 resources，因此即使正確也失去效能。"] },
+      { level: "整合", question: "一個 GPU kernel 同時有高 occupancy、嚴重 divergence 與低 operational intensity，為何仍可能很慢？", solution: ["高 occupancy 只代表有較多 resident warps 可隱藏 latency。", "divergence 降低 active lanes；低 intensity 使工作受 memory bandwidth 限制，兩者都不會由 occupancy 自動修復。"] },
+      { level: "整合", question: "Bell state (|00⟩+|11⟩)/√2 測量 1000 shots，哪些 outcomes 理論機率為零，非零 outcomes 的期望 counts 為何？", solution: ["01 與 10 的 amplitude 為零，因此理論機率為零。", "00 與 11 各為 1/2，期望各約 500；實機 noise 可能出現少量其他 outcomes。"] }
+    ],
+    glossary: [
+      ["ILP", "Instruction-Level Parallelism，同一 instruction stream 中可重疊執行的獨立 operations。"],
+      ["DLP", "Data-Level Parallelism，對多個資料元素套用相同或相近運算的平行性。"],
+      ["TLP", "Thread-Level Parallelism，多個 threads 同時前進的平行性。"],
+      ["Flynn taxonomy", "以 instruction streams 與 data streams 的 single/multiple 組合分類架構。"],
+      ["SISD", "Single Instruction Stream, Single Data Stream。"],
+      ["SIMD", "Single Instruction Stream, Multiple Data Streams，以一個 vector operation 控制多 lanes。"],
+      ["MIMD", "Multiple Instruction Streams, Multiple Data Streams，多個自主 processors/cores 的模型。"],
+      ["SPMD", "Single Program, Multiple Data，多 workers 執行同一程式但處理不同 data/indices。"],
+      ["Superscalar", "每 cycle 可 issue/execute/retire 多條 scalar instructions 的微架構。"],
+      ["IPC", "Instructions Per Cycle，每 cycle 平均完成或 retired 的 instructions 數。"],
+      ["Register renaming", "把 architectural registers 映射到 physical registers 以消除 name dependencies。"],
+      ["Reorder buffer", "追蹤 in-flight instructions 並支持 in-order retirement/precise exception 的結構。"],
+      ["Speculation", "在結果尚未確定前先執行預測路徑，錯誤時回復 committed state。"],
+      ["VLIW", "Very Long Instruction Word，由 compiler 把多個並行 operations 打包進寬 instruction。"],
+      ["EPIC", "Explicitly Parallel Instruction Computing，以 bundles、predication 等顯式描述平行性的 ISA 取向。"],
+      ["VLEN", "RISC-V vector implementation 每個 vector register 的 bit width。"],
+      ["SEW", "Selected Element Width，vector operation 當前 element bit width。"],
+      ["VL", "Vector Length，當前 vector instruction 實際處理的 active element count。"],
+      ["Strip mining", "將任意長迴圈切成每輪最多 VL elements 的 vectorized execution 方法。"],
+      ["SIMT", "Single Instruction, Multiple Threads，以 thread semantics 表達、以 warp-like group 執行的模型。"],
+      ["Warp", "CUDA 中由 32 threads 組成、共同接受 instruction issue 的 execution group。"],
+      ["Divergence", "同一 warp threads 採不同 control paths，造成 masks 下的 path serialization。"],
+      ["Occupancy", "可同時 resident 的 active warps 相對硬體上限的比例或數量概念。"],
+      ["Cache coherence", "維持同一 memory location 多份 cached copies 之 read/write 一致性的規則。"],
+      ["Memory consistency", "規定跨 processors memory operations 可被觀察成哪些順序的模型。"],
+      ["False sharing", "不同 variables 共用 cache line，跨 cores writes 造成不必要 ownership traffic。"],
+      ["Atomic RMW", "不可分割完成 read-modify-write 並具有指定 ordering semantics 的 operation。"],
+      ["Strong scaling", "固定 problem size，增加 processors 以縮短 execution time。"],
+      ["Weak scaling", "增加 processors 時同步增加 problem size，觀察固定每 processor 工作下的時間。"],
+      ["Systolic array", "processing elements 以規則鄰接資料流逐拍計算的空間化陣列。"],
+      ["Operational intensity", "完成 operations 數與從指定 memory boundary 搬移 bytes 的比值。"],
+      ["Roofline model", "以 compute peak 與 bandwidth×intensity 的較小值界定 performance ceiling。"],
+      ["Qubit", "以 normalized complex amplitudes 表示 |0⟩、|1⟩ superposition 的量子資訊單位。"],
+      ["Quantum circuit depth", "考慮 qubit dependencies 後必須依序執行的最少 gate layers 數。"]
+    ],
+    sources: [
+      { key: "S1", title: "UC Berkeley CS61C: Flynn's Taxonomy", url: "https://notes.cs61c.org/content/parallel-dlp/", accessed: "2026-08-23", use: "SISD/SIMD/MISD/MIMD、SPMD 與現代多層平行架構分類。" },
+      { key: "S2", title: "Cornell ECE 4750 / CS 4420 Computer Architecture, Fall 2026", url: "https://www.cs.cornell.edu/courses/cs4420/2017fa/", accessed: "2026-08-23", use: "superscalar、out-of-order、register renaming、VLIW、SIMD、multithreading、coherence 與 consistency 範圍。" },
+      { key: "S3", title: "Intel 64 and IA-32 Architecture Manuals, August 2026", url: "https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html", accessed: "2026-08-23", use: "current superscalar CPU ISA、vector extensions、optimization manuals 與 multiprocessor architecture references。" },
+      { key: "S4", title: "Intel Itanium Architecture Software Developer's Manual, Volume 1", url: "https://www.intel.com/content/dam/www/public/us/en/documents/manuals/itanium-architecture-software-developer-rev-2-3-vol-1-manual.pdf", accessed: "2026-08-23", use: "EPIC bundles、instruction groups、predication、speculation 與 static parallel encoding。" },
+      { key: "S5", title: "RISC-V V Vector Extension 1.0", url: "https://docs.riscv.org/reference/isa/unpriv/v-st-ext", accessed: "2026-08-23", use: "VLEN、SEW、LMUL、VL、mask、strip mining 與 vector-length agnostic execution。" },
+      { key: "S6", title: "Arm: Introduction to SVE", url: "https://developer.arm.com/-/media/Arm%20Developer%20Community/PDF/SVE%20programmers%20guide/102476_0001_00_en_introduction-to-sve.pdf", accessed: "2026-08-23", use: "vector-length agnostic programming、predication 與不同 hardware vector lengths 的 binary portability。" },
+      { key: "S7", title: "NVIDIA CUDA Programming Guide 13.2", url: "https://docs.nvidia.com/cuda/cuda-programming-guide/01-introduction/programming-model.html", accessed: "2026-08-23", use: "SIMT、32-thread warps、active masks、divergence、thread hierarchy、memory 與 occupancy。" },
+      { key: "S8", title: "OpenMP API Specification 6.0", url: "https://www.openmp.org/wp-content/uploads/OpenMP-API-Specification-6-0.pdf", accessed: "2026-08-23", use: "shared-memory parallel regions、tasks、worksharing、SIMD、device constructs 與 synchronization semantics。" },
+      { key: "S9", title: "MPI Standard 4.1", url: "https://www.mpi-forum.org/docs/mpi-4.1/mpi41-report/mpi41-report.htm", accessed: "2026-08-23", use: "point-to-point、collectives、communicators、one-sided communication、I/O 與 process model。" },
+      { key: "S10", title: "Cornell CS3410 Spring 2026: Cache Coherency", url: "https://courses.cs.cornell.edu/cs3410/2026sp/notes/cachecoherency.html", accessed: "2026-08-23", use: "private caches、write-invalidate、snooping、coherence states 與 false sharing foundation。" },
+      { key: "S11", title: "RISC-V RVWMO Memory Consistency Model 2.0", url: "https://docs.riscv.org/reference/isa/unpriv/rvwmo.html", accessed: "2026-08-23", use: "global memory order、preserved program order、FENCE、acquire/release 與 legal executions。" },
+      { key: "S12", title: "MIT 6.004: Multicore and Cache Coherence", url: "https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/pages/c21/c21s1/", accessed: "2026-08-23", use: "shared-memory multicore、coherence/consistency distinction、barriers 與 cache-line states。" },
+      { key: "S13", title: "Gene Amdahl: Validity of the Single Processor Approach", url: "https://doi.org/10.1145/1465482.1465560", accessed: "2026-08-23", use: "fixed-workload serial fraction 與 parallel speedup upper-bound 的原始論文。" },
+      { key: "S14", title: "John Gustafson: Reevaluating Amdahl's Law", url: "https://course.ece.cmu.edu/~ece600/fall16/references/gustafson.pdf", accessed: "2026-08-23", use: "scaled-workload/fixed-time speedup 與 Gustafson formula 的原始論文。" },
+      { key: "S15", title: "Google: In-Datacenter Performance Analysis of a TPU", url: "https://research.google/pubs/in-datacenter-performance-analysis-of-a-tensor-processing-unit/", accessed: "2026-08-23", use: "systolic-style matrix unit、on-chip memory、TOPS、latency 與 domain-specific architecture measurements。" },
+      { key: "S16", title: "RISC-V Unprivileged ISA Introduction", url: "https://docs.riscv.org/reference/isa/v20240411/unpriv/intro.html", accessed: "2026-08-23", use: "RISC-V modular ISA、implementation freedom 與 ISA/execution-environment boundary。" },
+      { key: "S17", title: "LLVM VLIW Machine Scheduler", url: "https://llvm.org/doxygen/classllvm_1_1VLIWMachineScheduler.html", accessed: "2026-08-23", use: "現行 compiler backend 的 VLIW dependency/resource scheduling 與 packetization。" },
+      { key: "S18", title: "Wavelet: Formally Verified Asynchronous Dataflow Compilation", url: "https://arxiv.org/abs/2608.05451", accessed: "2026-08-23", use: "spatial dataflow operators、asynchronous channels、determinacy、pipelining 與 data locality 的現代研究。" },
+      { key: "S19", title: "Google NeuroMeter: Modeling ML Accelerators", url: "https://research.google/pubs/neurometer-an-integrated-power-area-and-timing-modeling-framework-for-machine-learning-accelerators/", accessed: "2026-08-23", use: "systolic tensor units、vector units、reduction trees、power/area/timing 與 accelerator tradeoffs。" },
+      { key: "S20", title: "IBM Quantum Learning: Quantum Circuits", url: "https://quantum.cloud.ibm.com/learning/en/courses/basics-of-quantum-information/quantum-circuits/circuits", accessed: "2026-08-23", use: "qubit wires、unitary gates、state vectors、measurement、composition 與 circuit model。" },
+      { key: "S21", title: "IBM Quantum 2026 Roadmap", url: "https://www.ibm.com/roadmaps/quantum/2026/", accessed: "2026-08-23", use: "2026 hardware、circuit-depth/error-correction goals、modular processors 與 classical-quantum workflow 的 current context。" }
+    ]
   }
 ];

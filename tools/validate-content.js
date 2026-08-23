@@ -33,7 +33,7 @@ assert(fourthEdition.chapters.length === 13, "Fourth edition must contain 13 map
 assert(new Set(fourthEdition.chapters.map((item) => item.chapter)).size === 13, "Fourth edition chapter numbers must be unique");
 assert(fourthEdition.weekMap.length === 18, "Every course week needs a fourth edition mapping");
 assert(new Set(fourthEdition.weekMap.map((item) => item.week)).size === 18, "Fourth edition week mappings must be unique");
-assert(chapterDetails.length >= 8, "At least eight detailed self-study chapters are required");
+assert(chapterDetails.length >= 9, "At least nine detailed self-study chapters are required");
 assert(new Set(chapterDetails.map((item) => item.chapter)).size === chapterDetails.length, "Detailed chapter numbers must be unique");
 
 for (const chapter of chapterDetails) {
@@ -126,6 +126,14 @@ assert(chapterEight.sections.filter((item) => item.figure).length >= 13, "Chapte
 assert(chapterEight.workedExamples.length >= 10, "Chapter 8 needs at least ten worked examples");
 assert(chapterEight.exercises.length >= 18, "Chapter 8 needs at least eighteen exercises with solutions");
 assert(chapterEight.sources.length >= 15, "Chapter 8 needs broad authoritative source coverage");
+
+const chapterNine = chapterDetails.find((chapter) => chapter.chapter === 9);
+assert(chapterNine, "Chapter 9 detailed alternative-architecture material is missing");
+assert(chapterNine.sections.length >= 13, "Chapter 9 needs at least thirteen complete concept sections");
+assert(chapterNine.sections.filter((item) => item.figure).length >= 13, "Chapter 9 needs at least thirteen verifiable diagrams");
+assert(chapterNine.workedExamples.length >= 11, "Chapter 9 needs at least eleven worked examples");
+assert(chapterNine.exercises.length >= 18, "Chapter 9 needs at least eighteen exercises with solutions");
+assert(chapterNine.sources.length >= 20, "Chapter 9 needs broad authoritative source coverage");
 
 for (const mapping of fourthEdition.weekMap) {
   assert(mapping.chapters.length >= 1, `Week ${mapping.week} needs at least one fourth edition chapter`);
@@ -415,6 +423,53 @@ assert(0x5000 + 8 - 0x4800 === 0x808, "Chapter 8 relocation exercise failed");
 assert(alignUp(0x237a, 0x100) === 0x2400 && 0x2400 - 0x237a === 0x86, "Chapter 8 alignment exercise failed");
 assert(0x1500 - 0x900 === 0xc00, "Chapter 8 zero-fill exercise failed");
 assert(Math.abs(24e-3 / (9e-6 - 3e-6) - 4000) < 1e-9, "Chapter 8 JIT exercise failed");
+
+const chapterNineIdealCycles = Math.ceil(20 / 4);
+const chapterNineMeasuredCycles = 20 / 2.5;
+assert(chapterNineIdealCycles === 5 && chapterNineMeasuredCycles === 8, "Chapter 9 superscalar cycle calculation failed");
+assert(2.5 / 4 === 0.625, "Chapter 9 issue-capacity utilization failed");
+assert(1 + 2 + 3 === 6, "Chapter 9 out-of-order critical-path completion failed");
+
+const chapterNineVliwSlots = 4 * 5;
+assert(chapterNineVliwSlots === 20 && chapterNineVliwSlots - 13 === 7, "Chapter 9 VLIW slot count failed");
+assert(13 / chapterNineVliwSlots === 0.65, "Chapter 9 VLIW utilization failed");
+const chapterNineVlmax = 256 / 32;
+const chapterNineVectorRounds = Math.ceil(1003 / chapterNineVlmax);
+const chapterNineLastVl = 1003 % chapterNineVlmax;
+assert(chapterNineVlmax === 8 && chapterNineVectorRounds === 126 && chapterNineLastVl === 3, "Chapter 9 vector strip-mining failed");
+assert(Math.abs(1003 / (126 * 8) - 0.9950396825396826) < 1e-12, "Chapter 9 vector lane utilization failed");
+
+const chapterNineWarpCapacity = 32 * (5 + 7);
+const chapterNineWarpUseful = 20 * 5 + 12 * 7;
+assert(chapterNineWarpCapacity === 384 && chapterNineWarpUseful === 184, "Chapter 9 SIMT lane-cycle count failed");
+assert(Math.abs(chapterNineWarpUseful / chapterNineWarpCapacity - 0.4791666666666667) < 1e-12, "Chapter 9 divergence utilization failed");
+assert(8 - 1 === 7, "Chapter 9 false-sharing ownership-transfer count failed");
+
+const chapterNineMessageBytes = 64 * 1024;
+const chapterNineMessageSeconds = 2e-6 + chapterNineMessageBytes / 20e9;
+assert(Math.abs(chapterNineMessageSeconds - 5.2768e-6) < 1e-15, "Chapter 9 MPI message-time calculation failed");
+assert(Math.abs(chapterNineMessageBytes / chapterNineMessageSeconds / 1e9 - 12.419648271679806) < 1e-12, "Chapter 9 MPI effective bandwidth failed");
+const chapterNineAmdahl = 1 / (0.08 + 0.92 / 16);
+assert(Math.abs(chapterNineAmdahl - 7.2727272727272725) < 1e-12, "Chapter 9 Amdahl speedup failed");
+assert(Math.abs(chapterNineAmdahl / 16 - 0.45454545454545453) < 1e-12, "Chapter 9 parallel efficiency failed");
+assert(16 - 0.08 * 15 === 14.8, "Chapter 9 Gustafson speedup failed");
+
+assert(3 * 4 - 2 === 10, "Chapter 9 systolic wavefront latency failed");
+assert(Math.min(100, 2 * 30) === 60, "Chapter 9 roofline ceiling failed");
+assert(100 / 2 === 50, "Chapter 9 roofline ridge point failed");
+assert(Math.abs((1 / Math.sqrt(2)) ** 2 - 0.5) < 1e-12, "Chapter 9 Hadamard measurement probability failed");
+assert(1000 * 0.5 === 500, "Chapter 9 expected quantum shot count failed");
+
+assert(Math.ceil(100 / 8) === 13 && 100 / 5 === 20, "Chapter 9 superscalar exercise failed");
+assert(18 / (3 * 8) === 0.75, "Chapter 9 VLIW exercise failed");
+assert(512 / 64 === 8 && Math.ceil(130 / 8) === 17 && 130 % 8 === 2, "Chapter 9 vector exercise failed");
+assert(24 / 32 === 0.75, "Chapter 9 warp-utilization exercise failed");
+assert(1e-6 + 10_000 / 10e9 === 2e-6, "Chapter 9 communication exercise failed");
+const chapterNineExerciseAmdahl = 1 / (0.05 + 0.95 / 20);
+assert(Math.abs(chapterNineExerciseAmdahl - 10.256410256410255) < 1e-12, "Chapter 9 Amdahl exercise failed");
+assert(Math.abs(chapterNineExerciseAmdahl / 20 - 0.5128205128205128) < 1e-12, "Chapter 9 efficiency exercise failed");
+assert(32 - 0.03 * 31 === 31.07, "Chapter 9 Gustafson exercise failed");
+assert(Math.min(80, 1.5 * 40) === 60, "Chapter 9 roofline exercise failed");
 
 const homepage = path.join(root, "index.html");
 const editionPage = path.join(root, "fourth-edition-map.html");
