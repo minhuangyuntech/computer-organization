@@ -400,7 +400,7 @@ const lectures = [
     title: "計算機組織整體架構總整理與應用案例",
     english: "Computer Organization Overview and Practical Applications",
     tags: ["integration", "case study", "optimization"],
-    goals: ["整合 ISA、datapath、pipeline、cache。", "能用完整路徑解釋程式效能瓶頸。", "準備期末專題報告。"],
+    goals: ["整合 ISA、datapath、pipeline、cache。", "能用完整路徑解釋程式效能瓶頸。", "能建立可重算的跨層效能模型。"],
     concepts: [
       ["整體路徑", "一行程式經編譯成指令，指令由 PC 取出，經 decode 讀暫存器，在 ALU 計算，可能存取 cache/memory，最後寫回暫存器或記憶體。"],
       ["效能瓶頸", "瓶頸可能來自指令數太多、CPI 過高、branch misprediction、cache miss、資料相依造成 stall，或演算法本身不具 locality。"],

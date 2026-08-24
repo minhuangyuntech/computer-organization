@@ -33,7 +33,7 @@ assert(fourthEdition.chapters.length === 13, "Fourth edition must contain 13 map
 assert(new Set(fourthEdition.chapters.map((item) => item.chapter)).size === 13, "Fourth edition chapter numbers must be unique");
 assert(fourthEdition.weekMap.length === 18, "Every course week needs a fourth edition mapping");
 assert(new Set(fourthEdition.weekMap.map((item) => item.week)).size === 18, "Fourth edition week mappings must be unique");
-assert(chapterDetails.length >= 9, "At least nine detailed self-study chapters are required");
+assert(chapterDetails.length >= 10, "At least ten detailed self-study chapters are required");
 assert(new Set(chapterDetails.map((item) => item.chapter)).size === chapterDetails.length, "Detailed chapter numbers must be unique");
 
 for (const chapter of chapterDetails) {
@@ -134,6 +134,14 @@ assert(chapterNine.sections.filter((item) => item.figure).length >= 13, "Chapter
 assert(chapterNine.workedExamples.length >= 11, "Chapter 9 needs at least eleven worked examples");
 assert(chapterNine.exercises.length >= 18, "Chapter 9 needs at least eighteen exercises with solutions");
 assert(chapterNine.sources.length >= 20, "Chapter 9 needs broad authoritative source coverage");
+
+const chapterTen = chapterDetails.find((chapter) => chapter.chapter === 10);
+assert(chapterTen, "Chapter 10 detailed embedded-systems material is missing");
+assert(chapterTen.sections.length >= 13, "Chapter 10 needs at least thirteen complete concept sections");
+assert(chapterTen.sections.filter((item) => item.figure).length >= 13, "Chapter 10 needs at least thirteen verifiable diagrams");
+assert(chapterTen.workedExamples.length >= 11, "Chapter 10 needs at least eleven worked examples");
+assert(chapterTen.exercises.length >= 18, "Chapter 10 needs at least eighteen exercises with solutions");
+assert(chapterTen.sources.length >= 20, "Chapter 10 needs broad authoritative source coverage");
 
 for (const mapping of fourthEdition.weekMap) {
   assert(mapping.chapters.length >= 1, `Week ${mapping.week} needs at least one fourth edition chapter`);
@@ -471,12 +479,55 @@ assert(Math.abs(chapterNineExerciseAmdahl / 20 - 0.5128205128205128) < 1e-12, "C
 assert(32 - 0.03 * 31 === 31.07, "Chapter 9 Gustafson exercise failed");
 assert(Math.min(80, 1.5 * 40) === 60, "Chapter 9 roofline exercise failed");
 
+const chapterTenBreakEven = (36_000_000 - 1_200_000) / (280 - 70);
+assert(Math.abs(chapterTenBreakEven - 165_714.2857142857) < 1e-9, "Chapter 10 platform break-even calculation failed");
+assert(Math.floor(chapterTenBreakEven) + 1 === 165_715, "Chapter 10 break-even integer volume failed");
+const chapterTenMmio = ((0xa5 | 0x08) & ~0x20) & 0xff;
+assert(chapterTenMmio === 0x8d, "Chapter 10 MMIO bit-mask update failed");
+const chapterTenSysTickLoad = 48_000_000 / 1000 - 1;
+assert(chapterTenSysTickLoad === 47_999 && chapterTenSysTickLoad <= (2 ** 24 - 1), "Chapter 10 SysTick reload failed");
+assert(Math.abs(8000 * 1.5e-6 - 0.012) < 1e-12, "Chapter 10 ISR utilization failed");
+assert(Math.abs(8000 * 4e-6 - 0.032) < 1e-12, "Chapter 10 deferred-work utilization failed");
+assert(1200 / 6 === 200 && 1024 * 6 - 1200 === 4944, "Chapter 10 DMA break-even failed");
+
+const chapterTenUtilization = 1 / 5 + 1.5 / 10 + 2 / 20;
+const chapterTenRmBound = 3 * (2 ** (1 / 3) - 1);
+assert(Math.abs(chapterTenUtilization - 0.45) < 1e-12, "Chapter 10 periodic utilization failed");
+assert(Math.abs(chapterTenRmBound - 0.7797631496846196) < 1e-12, "Chapter 10 RM bound failed");
+let chapterTenResponse = 2 + 0.5;
+for (let iteration = 0; iteration < 10; iteration += 1) {
+  const next = 2 + 0.5 + Math.ceil(chapterTenResponse / 4) * 1;
+  if (next === chapterTenResponse) break;
+  chapterTenResponse = next;
+}
+assert(chapterTenResponse === 3.5 && chapterTenResponse <= 10, "Chapter 10 response-time iteration failed");
+
+assert(32 + 180 + 180 + 16 === 408 && 512 - 408 === 104, "Chapter 10 Flash budget failed");
+assert(24 + 4 * 2 + 36 + 12 === 80 && 128 - 80 === 48, "Chapter 10 SRAM budget failed");
+const chapterTenUartBits = 256 * 10;
+const chapterTenUartSeconds = chapterTenUartBits / 115_200;
+assert(chapterTenUartBits === 2560, "Chapter 10 UART framing failed");
+assert(Math.abs(chapterTenUartSeconds - 0.022222222222222223) < 1e-15, "Chapter 10 UART timing failed");
+assert(2048 / chapterTenUartSeconds === 92_160, "Chapter 10 UART payload rate failed");
+assert(3 * 9 === 27 && 27 / 400_000 === 67.5e-6, "Chapter 10 I2C timing failed");
+const chapterTenEnergyMj = 20 * 10 / 1000 + 0.1 * 90 / 1000;
+assert(Math.abs(chapterTenEnergyMj - 0.209) < 1e-12, "Chapter 10 duty-cycle energy failed");
+assert(Math.abs(chapterTenEnergyMj / 0.1 - 2.09) < 1e-12, "Chapter 10 average power failed");
+
+assert(80_000_000 / 2000 - 1 === 39_999, "Chapter 10 SysTick exercise failed");
+assert(Math.abs(25_000 * 2e-6 - 0.05) < 1e-12, "Chapter 10 interrupt exercise failed");
+assert(Math.floor(900 / 5) + 1 === 181, "Chapter 10 DMA exercise failed");
+assert(1 / 4 + 2 / 10 + 1 / 20 === 0.5, "Chapter 10 task-utilization exercise failed");
+assert(Math.abs(1100 / 115_200 - 0.009548611111111112) < 1e-15, "Chapter 10 UART exercise failed");
+assert(5 * 9 / 100_000 === 450e-6, "Chapter 10 I2C exercise failed");
+assert(Math.abs((30 * 5 + 0.2 * 195) / 200 - 0.945) < 1e-12, "Chapter 10 power exercise failed");
+
 const homepage = path.join(root, "index.html");
 const editionPage = path.join(root, "fourth-edition-map.html");
 const chapterFiles = fourthEdition.chapters.map((chapter) => path.join(root, "chapters", `chapter-${String(chapter.chapter).padStart(2, "0")}.html`));
 const detailedChapterFiles = chapterDetails.map((chapter) => path.join(root, "chapters", `chapter-${String(chapter.chapter).padStart(2, "0")}.html`));
 const htmlFiles = [homepage, editionPage, ...chapterFiles];
-const prohibited = /教學建議|授課|請學生|讓學生|給學生|要求學生/;
+const prohibited = /教學建議|授課|請學生|讓學生|給學生|要求學生|準備期末/;
 const siteGuidance = /獨立頁面|獨立 URL|多頁式靜態網站|適用 GitHub Pages|不需要切換|如何使用|使用方法|網站特色|內容範圍與編寫原則|本站文字|本站只使用/;
 const visibleWeekClassification = /Week\s*\d|第\s*\d+\s*週|週次|weeks\//;
 
@@ -536,7 +587,7 @@ assert(!visibleWeekClassification.test(editionHtml), "Fourth edition page still 
 assert((editionHtml.match(/class=\"chapter-card\"/g) || []).length === 13, "Fourth edition page must show 13 chapter cards");
 assert((editionHtml.match(/<details>/g) || []).length === 3, "Fourth edition page must show three MARIE self-checks");
 assert(chapterFiles.every((file) => fs.existsSync(file)), "Every chapter navigation item needs an independent HTML page");
-for (const chapterNumber of [10, 12, 13]) {
+for (const chapterNumber of [12, 13]) {
   const chapterHtml = fs.readFileSync(chapterFiles[chapterNumber - 1], "utf8");
   const standaloneStart = chapterHtml.indexOf("class=\"standalone-chapter-content\"");
   const standaloneEnd = chapterHtml.indexOf("class=\"chapter-adjacent\"", standaloneStart);

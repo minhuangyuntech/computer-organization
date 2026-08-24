@@ -50,6 +50,7 @@ Repository 根目錄就是這個 `lectures/` 資料夾。GitHub Pages 目前從 
 
 ## 修訂紀錄
 
+- 2026-08-24：完成第 10 章「嵌入式系統：從硬體邊界到可預測且可更新的裝置」深度教材，新增 13 個概念單元、13 幅原創圖表、11 個逐步例題、18 題分級練習、36 個術語與 24 項權威來源；另加入 MCU/FPGA/ASIC 成本、MMIO bit mask、SysTick、interrupt/DMA utilization、EDF/RM、response-time、Flash/SRAM、UART/I2C、平均功率與 signed A/B update 可重算驗證。
 - 2026-08-23：完成第 9 章「替代型計算機架構：從 ILP 到異質平行系統」深度教材，新增 13 個概念單元、13 幅原創圖表、11 個逐步例題、18 題分級練習、34 個術語與 21 項權威來源；另加入 superscalar IPC、out-of-order critical path、VLIW slot utilization、vector strip mining、SIMT divergence、false sharing、MPI latency、Amdahl/Gustafson scaling、systolic wavefront、roofline 與 quantum measurement 可重算驗證。
 - 2026-08-22：完成第 8 章「系統軟體：從原始碼到受保護的執行環境」深度教材，新增 13 個概念單元、13 幅原創圖表、10 個逐步例題、18 題分級練習、30 個術語與 15 項權威來源；另加入 context-switch overhead、system-call ABI、branch displacement、ELF relocation/layout、BSS zero-fill、shared pages、compiler CPU time、JIT break-even 與 two-stage translation 可重算驗證。
 - 2026-08-21：完成第 7 章「輸出入、儲存與現代裝置介面」深度教材，新增 13 個概念單元、13 幅原創圖表、10 個逐步例題、18 題分級練習、30 個術語與 15 項權威來源；另加入 polling/interrupt utilization、DMA CPU work、transaction efficiency、Little's Law、HDD latency、SSD WAF、RAID capacity 與 I/O Amdahl 可重算驗證。

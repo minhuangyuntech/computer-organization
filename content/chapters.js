@@ -3427,5 +3427,272 @@ const chapterDetails = [
       { key: "S20", title: "IBM Quantum Learning: Quantum Circuits", url: "https://quantum.cloud.ibm.com/learning/en/courses/basics-of-quantum-information/quantum-circuits/circuits", accessed: "2026-08-23", use: "qubit wires、unitary gates、state vectors、measurement、composition 與 circuit model。" },
       { key: "S21", title: "IBM Quantum 2026 Roadmap", url: "https://www.ibm.com/roadmaps/quantum/2026/", accessed: "2026-08-23", use: "2026 hardware、circuit-depth/error-correction goals、modular processors 與 classical-quantum workflow 的 current context。" }
     ]
+  },
+  {
+    chapter: 10,
+    title: "嵌入式系統：從硬體邊界到可預測且可更新的裝置",
+    english: "Embedded Systems: From Hardware Boundaries to Predictable and Updateable Devices",
+    revised: "2026-08-24",
+    readingTime: "約 280–340 分鐘",
+    intro: "嵌入式系統不是縮小版桌上型電腦，而是為特定物理任務配置計算、記憶體、通訊、能源與可靠度的完整系統。感測器送入的事件有截止時間，致動器的錯誤輸出可能直接改變真實世界；Flash 和 SRAM 容量固定，電池能量有限，韌體還必須能在部署後安全更新。本章從 MCU、MPU、SoC、FPGA 與 ASIC 的選型開始，逐層追蹤 reset、memory map、MMIO、interrupt、DMA、RTOS scheduling、serial buses、low-power state、watchdog 與 signed firmware update。每個主題都以 state、時間上界、資源預算與失敗後果描述，使系統是否正確不只憑『平均看起來夠快』判斷。",
+    outcomes: [
+      "能依 workload、deadline、memory、power、volume 與可更新性比較 MCU、MPU、SoC、FPGA 和 ASIC。",
+      "能追蹤 reset vector、startup code、linker image、Flash/SRAM 區域與 C runtime 初始化。",
+      "能正確解讀 memory-mapped register 的 access width、bit mask、side effect、volatile 與 memory barrier。",
+      "能分解 interrupt latency、service time、jitter、nesting 與 deferred work 的時間路徑。",
+      "能設計 DMA buffer ownership，並辨識 cache coherence、alignment 與 completion ordering 的條件。",
+      "能以 C、T、D、J、B 與 WCET 建模 periodic tasks，檢查 utilization 和 response time。",
+      "能區分 thread、ISR、queue、semaphore、mutex、priority inheritance、tick 與 tickless idle。",
+      "能建立 Flash、SRAM、stack、heap、buffer 與 OTA slots 的可驗證資源預算。",
+      "能估算 UART、SPI、I2C 與 CAN transaction 的 framing、bandwidth、latency 與 arbitration 成本。",
+      "能以 duty cycle、residency 與 wake-up latency 分析平均功率和 sleep-state 選擇。",
+      "能說明 watchdog、brownout、secure boot、A/B update、rollback 與 anti-rollback 各自處理的失敗。"
+    ],
+    sections: [
+      {
+        title: "1. 嵌入式系統由物理任務與限制共同定義",
+        paragraphs: [
+          "embedded system 以特定功能為中心：讀取 sensor、執行 control law、更新 actuator、保存狀態並和其他節點通訊。它可能沒有螢幕或一般檔案系統，卻仍是一台完整計算機。功能正確只是第一層；相同結果若晚於 deadline、耗盡電池、超出溫度範圍或無法從斷電恢復，仍是系統失敗。",
+          "MCU 通常把 processor core、Flash、SRAM、timers、interrupt controller 和 peripherals 整合在單一晶片，適合直接控制、低 standby power 與固定 memory budget。MPU 常搭配外部 DRAM、MMU 和較完整 OS，適合大型 software stack；SoC 是整合尺度，可能同時包含 MCU-class cores、application cores、GPU、DSP、radio 與 accelerators，不能只由名稱推定能力。",
+          "選型先把需求寫成可驗證界線：event rate、worst-case latency、compute throughput、code/data capacity、I/O voltage/protocol、average/peak power、boot time、security lifecycle、環境溫度與 production volume。datasheet 的 peak MHz 或 core 名稱只回答局部問題；系統邊界才決定 memory、interconnect、clock、package 和 software 是否一起成立。"
+        ],
+        figure: { type: "matrix", title: "嵌入式平台的典型能力邊界", columns: ["平台", "Memory/OS", "I/O 與 timing", "主要優勢", "主要代價"], rows: [["MCU", "on-chip Flash/SRAM；bare metal/RTOS", "直接 peripheral、低 interrupt latency", "低功耗、低 BOM、快速啟動", "容量與隔離有限"], ["MPU", "external DRAM；rich OS", "driver stack、較高變異", "大記憶體、process ecosystem", "功耗、boot 與硬體複雜"], ["Heterogeneous SoC", "多種 memories/OS domains", "real-time core + application core", "整合與分工", "共享資源驗證困難"], ["FPGA", "on-chip RAM + external memory", "自訂 parallel datapath/I/O", "可重組、deterministic pipeline", "開發、面積與動態功耗"], ["ASIC/ASSP", "依產品固定", "完全客製介面", "量產效率與密度", "NRE、時程、不可重組"]], caption: "表列典型特性而非硬性分類；實際零件仍須由 datasheet、reference manual 與 workload measurement 核對。" },
+        sourceRefs: ["S1", "S14"]
+      },
+      {
+        title: "2. 現成元件、FPGA 與 ASIC 是不同的承諾時間點",
+        paragraphs: [
+          "off-the-shelf MCU/SoC 在製造前已固定 CPU、memory 與 peripherals，設計者主要以 software 和 board wiring 組合功能。它降低 non-recurring engineering（NRE）與上市時間，但若 workload 需要特殊 bit-level pipeline、超多 parallel channels 或非標準 timing，general-purpose datapath 可能浪費 cycles 與 energy。",
+          "FPGA 由 LUT、flip-flop、carry chain、block RAM、DSP blocks、I/O blocks 與 programmable routing 組成。hardware description 經 synthesis、place-and-route 形成 configuration；不同 operations 可真正同時存在於空間，而不是輪流占用 CPU。可重組不代表零成本：routing delay、resource utilization、clock-domain crossing 與 timing closure 都必須驗證。",
+          "ASIC 把功能固定到製造的 silicon，量大時可取得更高密度、更低每單位能耗與較低 unit cost，但需支付 masks、verification、tooling 與 respin 風險。選擇可用 break-even 思考：總成本=NRE+volume×unit cost；此外還要加入 field update、certification、供應鏈與錯誤修復的價值，不能只比較單價。"
+        ],
+        figure: { type: "matrix", title: "設計彈性與成本發生時間", columns: ["面向", "MCU/SoC", "FPGA", "ASIC"], rows: [["功能固定", "晶片固定；韌體可改", "logic/routing 可重組", "製造後固定"], ["前期成本", "低", "中", "高"], ["單位成本/量產效率", "中", "中至高", "大量時最佳"], ["parallel timing", "由 CPU/accelerator 排程", "可建立專用 pipeline", "可完全專用"], ["部署後修正", "firmware update", "bitstream + firmware", "只能改可程式層"]], caption: "真正決策還包含 volume、上市時間、power、certification 和錯誤後果；單一維度沒有普遍最佳解。" },
+        sourceRefs: ["S14", "S15"]
+      },
+      {
+        title: "3. Reset 到 main 之間存在完整的啟動資料路徑",
+        paragraphs: [
+          "reset 後 processor 從 architecture 指定的 reset state 取得初始 stack pointer 與 reset handler，或先從固定 boot address 取第一條 instruction。startup code 設定 clock、memory wait states 和必要的低階硬體，再建立語言執行環境。C/C++ 的 `main` 不是第一條指令；它依賴先前已建立的 stack、initialized data 與 zero-initialized storage。",
+          "linker script 把 `.text`、`.rodata` 與初值映像放進 nonvolatile Flash，把執行時可寫的 `.data`、`.bss`、heap、stacks 和 DMA buffers 配到 SRAM。啟動時 `.data` 初值由 Flash copy 到 SRAM，`.bss` 清零。link address、load address 與 runtime address 可能不同，若 copy range 或 alignment 錯一 byte，程式可在進入 main 前就破壞 state。",
+          "vector table 把 exception/interrupt number 對應到 handler address；bootloader 可能先驗證 application image，再把 vector base、stack 與 entry control 交給 application。完整 boot contract 要說明 clock/reset cause、memory ownership、interrupt mask、peripheral state 和 image metadata，否則 bootloader 與 application 會各自假設對方已初始化同一資源。"
+        ],
+        figure: { type: "hierarchy", title: "韌體映像與啟動時搬移", items: [{ label: "Flash: bootloader", detail: "reset entry、image verification、recovery" }, { label: "Flash: vector + .text/.rodata", detail: "handlers、instructions、constants" }, { label: "Flash: .data load image", detail: "writable globals 的初值" }, { label: "SRAM: .data + .bss", detail: "copy initial values；zero-fill" }, { label: "SRAM: heap/stacks/buffers", detail: "runtime allocation 與 bounded ownership" }, { label: "main / scheduler", detail: "在 runtime state 完成後開始" }], caption: "Flash 中的 load image 與 SRAM 中的 execution state 是不同位置；linker symbols 定義 copy/zero 的精確邊界。" },
+        sourceRefs: ["S1", "S2", "S16"]
+      },
+      {
+        title: "4. MMIO register 是具有副作用的硬體介面",
+        paragraphs: [
+          "memory-mapped I/O（MMIO）把 peripheral registers 放進 processor address space，load/store 會被 interconnect 導向 device。register 可能是 read-only status、write-only command、read-write configuration、write-one-to-clear（W1C）flags，或 read-to-clear FIFO data。相同 32-bit bit pattern 因 access type 不同而產生不同 state transition。",
+          "C 的 `volatile` 告訴 compiler 每次 expression 都要真的發生 access，避免把 polling read 快取在 register 或刪除 output write；它不保證 atomicity、不建立跨 core/device 的 ordering，也不等於 thread synchronization。當 architecture 或 peripheral contract 要求完成前一筆 write、刷新 pipeline 或限制 memory reordering 時，還需要 DMB、DSB、ISB 或平台 API 定義的 barrier。",
+          "read-modify-write 必須符合 register semantics。對一般 RW register，可用 `(old & ~mask) | value` 更新欄位；對 W1C status，先 read 再 OR 後 write 可能意外清除其他已置位事件。reserved bits 通常要保留 reset/value 規則，access width 與 alignment 也不可任意改變。正確 driver 的單位是規格定義的 transaction，不只是 C assignment。"
+        ],
+        figure: { type: "bits", title: "32-bit 控制暫存器的欄位範例", totalBits: 32, items: [{ label: "RES", bits: 16 }, { label: "DIV", bits: 8 }, { label: "MODE", bits: 4 }, { label: "IRQ_EN", bits: 1 }, { label: "DMA_EN", bits: 1 }, { label: "START", bits: 1 }, { label: "ENABLE", bits: 1 }], caption: "更新 MODE 或 DIV 時要以欄位 mask 保留其他 bits；真正 access policy 必須以該元件 reference manual 為準。" },
+        sourceRefs: ["S1", "S2", "S3"]
+      },
+      {
+        title: "5. Interrupt 把外部事件轉成有上界的控制轉移",
+        paragraphs: [
+          "interrupt request 先由 peripheral 產生 pending condition，再經 interrupt controller 的 enable、priority 和 routing 判斷。processor 在可接受的 boundary 保存必要 context、取得 vector 並執行 ISR。interrupt latency 是事件發生到 ISR 的關鍵處理開始，不只包含 vector entry；更高優先權 ISR、critical section、disabled interval、bus stall 與 cache miss 都可能加入。",
+          "ISR 應完成具有立即 deadline 的最小工作：讀取/確認 source、保存 timestamp 或 data、更新 bounded state，然後以 queue、event 或 work item 喚醒 thread-level processing。長計算、blocking lock、動態配置與無界迴圈會延長所有較低優先事件的 blocking。Zephyr 明確區分直接 ISR 與 offloaded work；CMSIS-RTOS2 也限制 ISR 可呼叫的 API。",
+          "priority 降低的是特定事件等待，不會消除 overload。若 arrival rate×service time 接近或超過 1，pending work 仍會累積。edge-triggered source 可能因合併事件而需要 counter/FIFO；level-triggered source 若未清除原因會立刻再次進入。設計時要同時記錄 latency distribution、worst observed、理論 blocking bound 和 lost-event counter。"
+        ],
+        figure: { type: "timeline", title: "Interrupt latency 與 service 的時間分解", columns: ["event", "mask/block", "entry", "top half", "signal", "bottom half", "done"], rows: [{ label: "Device", cells: ["IRQ pending", "pending", "", "ack/data", "", "", ""] }, { label: "CPU/ISR", cells: ["", "higher-priority/critical", "save+vector", "bounded ISR", "post event", "", "return"] }, { label: "Thread", cells: ["", "", "", "", "ready", "process", "complete"] }], caption: "deadline 可能要求 top half 完成，也可能允許 bottom half 完成；兩種 end point 必須分開量測。" },
+        sourceRefs: ["S4", "S5", "S6"]
+      },
+      {
+        title: "6. DMA 移動資料，但 ownership 與一致性仍由系統決定",
+        paragraphs: [
+          "DMA controller 依 source、destination、length、direction 和 trigger 搬移資料，CPU 只負責 descriptor/setup 與 completion。它降低每 byte 的 instruction work，卻不保證整體更快：短 transfer 可能被 setup cost 主導，DMA 與 CPU 也可能競爭 memory bus。circular、scatter-gather 或 linked descriptors 可連續處理 streams，但增加狀態數量。",
+          "buffer 必須有明確 ownership。TX 路徑中 CPU 填滿 buffer、完成必要 cache clean/barrier 後交給 DMA，直到 completion 前不得修改；RX 路徑中 DMA 寫完後，CPU 要等待 completion 並依平台規則 invalidate cache 才能讀。Zephyr DMA 文件指出 cache coherence 不由通用 API 自動提供，且同一 channel 通常由單一 client 擁有。",
+          "double buffering 讓 DMA 填 A 時 CPU 處理 B，吞吐量由較慢階段決定；若 CPU 偶爾超過一個 buffer period，仍會 overrun。descriptor、buffer、length 和 cache line 的 alignment 要依 controller 限制，completion interrupt 也只證明 DMA 定義的完成點；若資料還要送到 device FIFO 或 nonvolatile media，可能另有 drain/flush 狀態。"
+        ],
+        figure: { type: "flow", title: "RX DMA buffer 的 ownership handoff", items: ["CPU allocates empty B0", "cache/device preparation", "DMA owns B0", "peripheral fills bytes", "DMA completion", "barrier + cache maintenance", "CPU owns valid B0", "process then recycle"], caption: "在 ownership 交接前讀寫同一 buffer 會形成 race；cache maintenance 的方向取決於 DMA 讀或寫 memory。" },
+        sourceRefs: ["S7", "S8"]
+      },
+      {
+        title: "7. 即時系統分析的是 deadline，不是平均速度",
+        paragraphs: [
+          "periodic task 可用 execution time C、period T 與 relative deadline D 表示；sporadic event 還需 minimum inter-arrival time，release jitter J 描述理想 release 與實際 ready 的偏移。C 應是指定硬體、compiler、memory 與 interference 假設下的 WCET bound，不是平均 profiling time。deadline miss 可能在平均 utilization 很低時仍發生。",
+          "preemptive uniprocessor、independent periodic tasks、D=T 且 overhead 忽略時，EDF 的經典 utilization condition 為 Σ(Ci/Ti)≤1；rate-monotonic（RM）固定優先權的充分條件為 U≤n(2^(1/n)−1)，極限趨近 ln2。未通過 RM 充分條件不代表一定失敗，還可做 exact response-time analysis。",
+          "真實系統要加入 interrupt execution、context switch、cache-related preemption delay、shared-resource blocking、release jitter 與 non-preemptive sections。schedulability test 是帶假設的證明：只要 workload、priority、clock、compiler 或 critical section 改變，原結論就要重新計算。測試可發現錯誤，但不能取代尚未被測到的 worst case。"
+        ],
+        figure: { type: "matrix", title: "即時工作模型的符號", columns: ["符號", "含義", "必須界定", "常見錯誤"], rows: [["C", "worst-case execution time", "硬體/clock/cache/干擾", "用平均時間"], ["T", "period/min inter-arrival", "來源的最快到達", "只看 nominal rate"], ["D", "relative deadline", "從 release 到何時", "一律假設 D=T"], ["J", "release jitter", "release 可延遲多少", "完全忽略"], ["B", "lower-priority blocking", "critical sections/protocol", "只算 higher-priority interference"]], caption: "所有時間必須使用同一單位與同一觀察邊界；C 不包含哪些成本也要明列。" },
+        sourceRefs: ["S9", "S10", "S11"]
+      },
+      {
+        title: "8. Fixed-priority response time 揭露 blocking 與 interference",
+        paragraphs: [
+          "對 fixed-priority preemptive uniprocessor，一個常用 response-time recurrence 是 Ri^(k+1)=Ci+Bi+Σ ceil((Ri^k+Jj)/Tj)Cj，總和遍歷較高優先 tasks。從 Ri^0=Ci+Bi 迭代到 fixed point；若在收斂前超過 Di，就無法在這組假設下保證 deadline。ceil 表示 response window 內可能到達的完整干擾工作數。",
+          "priority inversion 發生在 high-priority task 等 low-priority task 持有的 mutex，而 medium-priority work 又搶占 low task，使 high task 間接等待 medium work。priority inheritance 暫時提升 lock owner，限制這種 unbounded inversion；priority ceiling 可同時限制 blocking 和某些 deadlock pattern。binary semaphore 只表示 token/event，沒有 mutex owner，因此不能自然提供 inheritance。",
+          "降低 critical-section 長度、禁止在持鎖時 blocking I/O、使用 bounded data structure，都能縮小 B。單純把所有 tasks priority 調高沒有意義，priority 是相對順序；過多 interrupt-level work還可能繞過 thread priority protocol。每個 shared resource 都要知道 owner、最大持有時間與允許的 call context。"
+        ],
+        figure: { type: "timeline", title: "Priority inheritance 限制反轉", columns: ["t0", "t1", "t2", "t3", "t4", "t5", "t6"], rows: [{ label: "Low L", cells: ["lock", "run", "inherits H", "run", "unlock", "", ""] }, { label: "High H", cells: ["", "blocks on lock", "blocked", "blocked", "ready", "run", "done"] }, { label: "Medium M", cells: ["", "ready", "cannot preempt L@H", "waiting", "waiting", "", "run"] }], caption: "inheritance 讓 L 以 H 的有效 priority 完成 bounded critical section；它不縮短 critical section 本身。" },
+        sourceRefs: ["S9", "S10", "S11"]
+      },
+      {
+        title: "9. RTOS 把 concurrency 寫成明確 state 與同步關係",
+        paragraphs: [
+          "RTOS thread 常在 RUNNING、READY、BLOCKED 與 TERMINATED/INACTIVE states 間轉移。READY 只表示可執行，實際 CPU 由 scheduler 依 priority/policy 選擇；BLOCKED thread 等待 timer、queue、semaphore、mutex 或 event flags，不消耗 polling cycles。ISR 不是一般 thread，不能假設可 sleep 或呼叫所有 kernel services。",
+          "queue 同時傳遞資料與 ownership；counting semaphore 表示可用資源/事件數；mutex 保護 invariant 並具有 owner；event flags 聚合 bit conditions。同步物件不是可互換名稱。queue capacity 需要以 burst 和 consumer response time決定，滿佇列時 drop、overwrite、block 或 backpressure 都是不同 system semantics。",
+          "periodic tick 以固定頻率更新 kernel time 並觸發 timeout，簡單但在 idle 時持續喚醒。tickless idle 會把 timer 設到下一個 deadline，延長 sleep，但 timer range、clock drift、wake latency 與 elapsed-time compensation 必須正確。CMSIS OS Tick 的 timer load 關係為 load=SystemCoreClock/frequency−1，且 SysTick reload field 只有 24 bits。"
+        ],
+        figure: { type: "flow", title: "RTOS thread state transitions", items: ["INACTIVE", "create → READY", "scheduler → RUNNING", "wait/sleep → BLOCKED", "event/timeout → READY", "preempt/yield → READY", "exit → TERMINATED"], caption: "priority 決定 READY threads 的選擇；BLOCKED 與 busy-wait 不同，前者讓 CPU 可執行其他工作或進入 idle。" },
+        sourceRefs: ["S4", "S9", "S12"]
+      },
+      {
+        title: "10. 記憶體預算要以 link map 與 runtime high-water mark閉合",
+        paragraphs: [
+          "Flash budget 不只含 application `.text`：bootloader、vector/metadata、constants、filesystem/configuration、crash record、factory data 與 OTA secondary slot 都占空間。SRAM 也不只看 global variables：每個 thread stack、kernel objects、network buffers、DMA descriptors、heap fragmentation、alignment padding 和 interrupt nesting 都會疊加。",
+          "static allocation 或 fixed-size pool 讓 capacity 與 failure point 可預測；general heap 提供彈性，卻可能 fragmentation、unbounded allocation time 或 runtime failure。安全關鍵 buffer 常用 pool + ownership state。每個 thread stack 必須依最深 call chain、local objects、saved context、library usage 和 nested interrupts 估計，再以 canary/high-water measurement 驗證 margin。",
+          "MPU 以有限 regions 建立 read/write/execute 與 privilege 邊界，可隔離 thread stack、driver memory 或 untrusted component；它不是 MMU，也不自動提供 demand paging。region count、alignment、subregion 與 context-switch cost 會限制 partition。把 writable data 設為 non-executable、把 code 設為 read-only，是降低任意寫入後果的基本層。"
+        ],
+        figure: { type: "hierarchy", title: "512 KiB Flash / 128 KiB SRAM 的預算樹", items: [{ label: "Flash 512 KiB", detail: "boot 32 + slot A 200 + slot B 200 + config/log 24 + reserve 56" }, { label: "SRAM 128 KiB", detail: "static 28 + stacks 24 + pools 40 + kernel 12 + reserve 24" }, { label: "Stack evidence", detail: "link map + call depth + high-water + nesting" }, { label: "Pool evidence", detail: "object size × count + alignment" }, { label: "Failure policy", detail: "bounded reject/drop/recovery，不越界" }], caption: "reserve 不是未說明空白；它要對應 growth、worst-case burst、alignment 與 future update 的明確用途。" },
+        sourceRefs: ["S13", "S16", "S17"]
+      },
+      {
+        title: "11. Serial bus 的有效時間由 framing、turnaround 與 arbitration 決定",
+        paragraphs: [
+          "UART 是 asynchronous point-to-point stream，雙方以 baud、data bits、parity 和 stop bits 約定 frame；8N1 每個 8-bit payload 需 start+8 data+stop 共 10 bit times。SPI 以 clock、controller select 和分離資料線進行 full-duplex shift，沒有統一的高層 framing；mode、word size、select timing 與 maximum clock 由 peripheral 規格決定。",
+          "I2C 以 SDA/SCL 兩線連接 addressable targets，byte 後有第九個 ACK/NACK clock，還包含 START、address+R/W、可能的 repeated START 和 STOP。open-drain 與 pull-up 使 rise time、bus capacitance 和 clock stretching 影響可用速率。計算 2-byte write 時至少要計 address byte、register byte、data byte各 9 clocks，而不是只算 16 payload bits。",
+          "CAN 以 message identifier 進行 non-destructive bitwise arbitration，較高優先 identifier 可在競爭時繼續，其他 sender 稍後重試；CRC、bit stuffing、acknowledgement 和 error handling 都占 bus time。Classical CAN、CAN FD 與 CAN XL 的 frame/bit-rate 規則不同。選 bus 要比較 topology、距離、noise、determinism、payload、software stack 和 fault containment，不只 peak Mbit/s。"
+        ],
+        figure: { type: "timeline", title: "UART 8N1 傳送 0x53 的十個 bit times", columns: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"], rows: [{ label: "Line", cells: ["START=0", "D0=1", "D1=1", "D2=0", "D3=0", "D4=1", "D5=0", "D6=1", "D7=0", "STOP=1"] }], caption: "UART 通常 least-significant data bit first；0x53=01010011₂，因此 D0 到 D7 為 1,1,0,0,1,0,1,0。" },
+        sourceRefs: ["S8", "S18", "S19"]
+      },
+      {
+        title: "12. 低功耗設計是在工作量、state 與喚醒延遲間取捨",
+        paragraphs: [
+          "energy 是 power 對時間的積分；週期性系統的平均功率可用 Σ(Pstate×tstate)/T。降低 active time 可能讓系統更早進 sleep（race to idle），但提高 clock/voltage 也可能增加 dynamic power。CMOS dynamic power 常以 P≈αCV²f 描述趨勢，實際還有 leakage、clock tree、memory、radio 與 regulator loss。",
+          "sleep state 越深，通常 steady-state power 越低，但 entry/exit energy、wake latency 與 lost context 越大。只有預測 idle duration 足夠覆蓋 minimum residency，而且 exit latency 不會讓下一 deadline 失敗，才適合進入該 state。Zephyr system power policy 正是以下一 kernel event、minimum residency 與 exit latency做選擇。",
+          "peripheral、DMA、radio 和 debug probe 都可能阻止深睡；unused clock domain、floating input 或錯誤 pull configuration 也會增加耗電。功耗量測要對齊 state timeline，分開 average、peak current、energy per operation 與 battery self-discharge。只看 multimeter 的慢速平均值可能漏掉使 regulator brownout 的短暫峰值。"
+        ],
+        figure: { type: "matrix", title: "Power state 的可用條件", columns: ["State", "典型保留", "Exit latency", "適用 idle", "檢查項"], rows: [["Run", "全部", "0", "有 ready work", "frequency/voltage"], ["Clock idle", "register/memory", "極短", "短 gap", "interrupt wake"], ["Deep sleep", "部分 SRAM/RTC", "中", "長於 residency", "timer/source/context"], ["Standby/off", "少量 retention", "長", "長期", "boot + state restore"]], caption: "state 名稱因晶片而異；決策必須使用該平台實測 entry/exit energy 和 latency。" },
+        sourceRefs: ["S20", "S21"]
+      },
+      {
+        title: "13. 可靠啟動與更新把失敗限制在可恢復狀態",
+        paragraphs: [
+          "watchdog 偵測 software 未在期限內證明健康並觸發 reset；正確 feed point 應在關鍵工作完成後，而不是由獨立高優先 thread 無條件餵狗。brownout detector 在 supply 不足時阻止錯誤執行或寫 Flash。reset cause、monotonic boot count 與 crash record 讓重啟後能分辨 power、watchdog、fault 或 software request。",
+          "secure boot 建立從 immutable/root-of-trust code 到後續 image 的驗證鏈：計算 image hash、驗證由受信 private key 產生的 signature、檢查 metadata/policy，再交出執行權。checksum 只能偵測意外損壞，不能證明發布者。NIST IR 8259 Rev.1 把裝置識別、組態、資料保護、介面限制、更新與 cybersecurity state awareness 視為核心能力。",
+          "A/B 或 primary/secondary slots 讓新 image 先被驗證並以 test mode 啟動；application 完成 self-test 後才標記 confirmed，否則下次 reset revert 到舊 image。MCUboot 也支援 security counter 防止回退到已知脆弱版本。power loss 可發生在下載、erase、swap 或 metadata write 任一點，因此狀態轉移要 idempotent，且 recovery image、signing key custody、version policy 和 end-of-support 都是 lifecycle 的一部分。"
+        ],
+        figure: { type: "flow", title: "可回復的 signed A/B update 狀態機", items: ["download to inactive slot", "verify hash + signature + policy", "mark TEST", "boot candidate", "runtime self-test", "confirm → keep new", "no confirm/reset → revert old", "record outcome"], caption: "signature 驗證、runtime health 與 rollback prevention 是不同檢查；任一步驟失敗都要留下可再次啟動的已知良好映像。" },
+        sourceRefs: ["S22", "S23", "S24"]
+      }
+    ],
+    workedExamples: [
+      { title: "例題一：比較平台方案的量產總成本", prompt: "MCU 方案 NRE=NT$120 萬、單價 NT$280；ASIC 方案 NRE=NT$3,600 萬、單價 NT$70。只比較這兩項時，break-even volume 為多少？", steps: ["令兩方案總成本相等。", "1,200,000+280N=36,000,000+70N。", "把 unit-cost 差移到左側：210N=34,800,000。", "N=34,800,000/210≈165,714.29。", "volume 必須是整數，從 165,715 units 起 ASIC 的兩項總成本較低。", "這個結果尚未計入時程、驗證、庫存、field update 與 respin 風險。"], result: "簡化 break-even 約 165,715 units；它是成本門檻，不是自動的設計結論。" },
+      { title: "例題二：以 mask 更新 MMIO 欄位", prompt: "8-bit RW control register 原值 0xA5。要 set bit 3 並 clear bit 5，其餘保持不變，求寫回值。", steps: ["0xA5=1010 0101₂。", "set bit3 的 mask 是 0x08：0xA5 OR 0x08=0xAD。", "clear bit5 的 mask 是 NOT 0x20；在 8-bit 內為 0xDF。", "0xAD AND 0xDF=0x8D。", "0x8D=1000 1101₂，可見 bit3=1、bit5=0。", "此方法只適用一般 RW register；W1C register 必須依另一套 write semantics。"], result: "寫回 0x8D。" },
+      { title: "例題三：計算 SysTick reload 與可表示性", prompt: "SystemCoreClock=48 MHz，要產生 1 kHz OS tick。求 reload；24-bit SysTick 是否容納？", steps: ["每 tick 所需 clocks=48,000,000/1,000=48,000。", "CMSIS 關係為 LOAD=clocks−1。", "LOAD=48,000−1=47,999。", "24-bit 最大 reload=2^24−1=16,777,215。", "47,999 小於上限，因此可直接表示。", "理想 tick period=48,000/48 MHz=1 ms；clock 誤差仍會成為時間誤差。"], result: "LOAD=47,999，可由 24-bit SysTick 表示。" },
+      { title: "例題四：求 interrupt 的 CPU utilization", prompt: "某事件每秒 8,000 次，ISR 每次 1.5 µs，deferred thread 每次再用 4 µs。求兩部分 CPU utilization。", steps: ["ISR CPU time/s=8,000×1.5 µs=12,000 µs。", "ISR utilization=12,000/1,000,000=1.2%。", "thread CPU time/s=8,000×4 µs=32,000 µs。", "thread utilization=3.2%。", "total=4.4%，但它不包含 scheduling、cache 與 burst interference。", "ISR 的 1.2% 具有較高 priority，對低優先 tasks 的影響不能只和 thread time 合併看平均。"], result: "ISR 1.2%、deferred work 3.2%，合計平均 CPU work 4.4%。" },
+      { title: "例題五：判斷 DMA 的 break-even transfer size", prompt: "PIO 每 byte 要 6 CPU cycles；DMA setup+completion 固定共 1,200 cycles，忽略每 byte DMA CPU cost。何時 DMA 節省 CPU cycles？", steps: ["PIO cost=6N cycles。", "DMA CPU cost=1,200 cycles。", "要節省 CPU：1,200<6N。", "N>200 bytes。", "N=200 時兩者同為 1,200 cycles，尚未嚴格節省。", "N=1,024 時 PIO=6,144 cycles，DMA 節省 4,944 CPU cycles；bus elapsed time另算。"], result: "transfer 大於 200 bytes 時 DMA 才在此模型下降低 CPU work。" },
+      { title: "例題六：檢查 EDF 與 RM utilization bound", prompt: "三個 periodic tasks 的 (C,T) 分別為 (1,5)、(1.5,10)、(2,20) ms，且 D=T、獨立、可搶占。求 U 並套用 EDF 與 RM sufficient test。", steps: ["U1=1/5=0.20。", "U2=1.5/10=0.15；U3=2/20=0.10。", "total U=0.45。", "EDF 在列出的理想假設下以 U≤1 檢查，因此通過。", "n=3 的 RM bound=3(2^(1/3)−1)≈0.779763。", "0.45≤0.779763，也通過 RM sufficient test；尚需加入實際 overhead/blocking。"], result: "U=45%；在題設假設下同時通過 EDF 與 RM sufficient bound。" },
+      { title: "例題七：迭代 fixed-priority response time", prompt: "高優先 τ1: C1=1,T1=4 ms；低優先 τ2: C2=2,D2=10 ms，blocking B2=0.5 ms，J1=0。求 R2。", steps: ["初值 R2⁰=C2+B2=2.5 ms。", "R2¹=2.5+ceil(2.5/4)×1=3.5 ms。", "R2²=2.5+ceil(3.5/4)×1=3.5 ms。", "兩次相同，fixed point 為 3.5 ms。", "R2=3.5≤D2=10 ms，因此 τ2 在此模型下通過。", "若 B2 增加或 τ1 release jitter 非零，必須重新迭代。"], result: "R2=3.5 ms，小於 10 ms deadline。" },
+      { title: "例題八：閉合 Flash 與 SRAM 預算", prompt: "512 KiB Flash 配 boot 32、app A 180、OTA B 180、config 16 KiB；128 KiB SRAM 配 static 24、4 個 2 KiB stacks、buffers 36、kernel 12 KiB。求餘量。", steps: ["Flash 使用=32+180+180+16=408 KiB。", "Flash reserve=512−408=104 KiB。", "stack total=4×2=8 KiB。", "SRAM 使用=24+8+36+12=80 KiB。", "SRAM reserve=128−80=48 KiB。", "reserve 還要覆蓋 alignment、interrupt stack、heap 或未列出的 peripheral descriptors。"], result: "Flash 餘 104 KiB；SRAM 餘 48 KiB。" },
+      { title: "例題九：計算 UART 8N1 傳輸時間", prompt: "UART 115,200 baud、8N1，傳 256 payload bytes，忽略 gaps。求 line bits、時間與有效 payload rate。", steps: ["8N1 每 byte=1 start+8 data+1 stop=10 bits。", "line bits=256×10=2,560 bits。", "time=2,560/115,200 s=0.022222... s。", "即約 22.22 ms。", "payload bits=256×8=2,048。", "有效 payload rate=2,048/0.022222...=92,160 bit/s，為 baud 的 80%。"], result: "需 2,560 line bits、約 22.22 ms；有效 payload 92.16 kbit/s。" },
+      { title: "例題十：計算 I2C transaction 的 clock 下限", prompt: "I2C 400 kHz 對既有 target 做 1-byte register address + 1-byte data write；計入 address+W、兩個 bytes與各自 ACK，忽略 START/STOP hold time。求 clocks 與理想時間。", steps: ["address+W 是 8 bits，再加 ACK 1 clock，共 9。", "register address 是 8+ACK=9 clocks。", "data byte 也是 8+ACK=9 clocks。", "總 clocks=9+9+9=27。", "time=27/400,000 s=67.5 µs。", "若有 clock stretching、bus contention、rise-time 限制或 software gaps，實際更久。"], result: "理想下限為 27 clocks，即 67.5 µs。" },
+      { title: "例題十一：以 duty cycle 求平均功率", prompt: "每 100 ms 週期 active 10 ms、20 mW；sleep 90 ms、0.1 mW。求平均功率與每週期能量。", steps: ["active energy=20 mW×10 ms=200 mW·ms=0.200 mJ。", "sleep energy=0.1 mW×90 ms=9 mW·ms=0.009 mJ。", "總能量=0.209 mJ/period。", "period=0.1 s。", "average power=0.209 mJ/0.1 s=2.09 mW。", "若 wake transition 有額外能量，必須另加後再除以 period。"], result: "平均功率 2.09 mW，每 100 ms 消耗 0.209 mJ。" }
+    ],
+    misconceptions: [
+      ["嵌入式系統就是低效能、小記憶體的電腦。", "它由特定任務、物理 I/O、deadline、energy、reliability 與 lifecycle 定義；有些嵌入式 SoC 的計算能力很高。"],
+      ["MCU、MPU 與 SoC 是互斥的三類。", "MCU/MPU 偏向處理與 memory/OS 組織，SoC 描述整合尺度；一顆 SoC 可含多種 cores。"],
+      ["FPGA 是可程式 CPU 的另一個名稱。", "FPGA configuration 建立 LUT、register、routing 與專用 datapath；它可包含 CPU，但核心模型不是順序執行 instructions。"],
+      ["`volatile` 會讓 shared data thread-safe。", "volatile 主要約束 compiler access；atomicity、inter-thread ordering 和 mutual exclusion 需要 atomic/lock/barrier。"],
+      ["任何 register 都能 read-modify-write。", "W1C、read-clear、write-only 與 reserved bits 可能讓 RMW 產生額外副作用。"],
+      ["ISR 越長，事件就處理得越完整。", "長 ISR 增加其他事件 blocking；非緊急工作應以 bounded handoff 延後到 thread context。"],
+      ["DMA 自動解決 cache coherence。", "DMA API 常不自動維護 CPU cache；ownership、clean/invalidate、barrier 與 alignment 都需平台規則。"],
+      ["CPU 平均 utilization 低就不會 miss deadline。", "burst、blocking、priority interference、jitter 與 non-preemptive section 可在低平均負載下造成 deadline miss。"],
+      ["RM utilization 超過 bound 就一定不可排程。", "該 bound 是 sufficient 而非 necessary；超過後可用 response-time 等更精確分析。"],
+      ["Semaphore 與 mutex 只差名稱。", "mutex 有 owner 並可配合 priority inheritance；semaphore 表示 token/count，語意和錯誤模式不同。"],
+      ["Heap 剩餘總 bytes 足夠就一定配置成功。", "fragmentation、alignment、最大 contiguous block 與配置時間都可能使 allocation 失敗或不可預測。"],
+      ["400 kHz I2C 每秒可傳 400 kbit payload。", "address、ACK、START/STOP、stretching 和 gaps 都降低 payload rate。"],
+      ["最深 sleep state 永遠最省電。", "短 idle 可能無法攤平 entry/exit energy，且 wake latency 可能破壞 deadline。"],
+      ["Firmware 有 checksum 就是 secure boot。", "checksum 不驗證發布者；secure boot 需要受信 key/policy 與 cryptographic signature verification。"],
+      ["Watchdog 能偵測所有錯誤。", "它只偵測未按健康協定回報的 liveness failure；錯誤但持續餵狗的程式仍可能輸出危險結果。"]
+    ],
+    exercises: [
+      { level: "基礎", question: "MCU 與 MPU 的典型 memory/OS 邊界有何不同？", solution: ["MCU 常整合有限 Flash/SRAM，使用 bare metal 或 RTOS，啟動快且直接控制 peripheral。", "MPU 常配外部 DRAM、MMU 與 rich OS，容量和隔離較強但功耗、boot 與軟體變異較大。"] },
+      { level: "基礎", question: "為何 FPGA 的 parallelism 與 CPU time slicing 不同？", solution: ["FPGA 可把多個 datapaths 同時實現在 logic/routing 中，每拍並行前進。", "CPU 通常讓多個 operations 輪流使用有限 execution units，平行程度由 core/units 與 scheduling 限制。"] },
+      { level: "基礎", question: "`.data` 與 `.bss` 在啟動時各如何建立？", solution: ["`.data` 的初值映像通常在 Flash，startup 將它 copy 到 SRAM。", "`.bss` 只需配置 runtime space，startup 依語言規則清零，不必在 image 存同量 zero bytes。"] },
+      { level: "基礎", question: "`volatile` 與 DMB/DSB memory barrier 分別約束什麼？", solution: ["volatile 約束 compiler 必須發生可觀察 access。", "barrier 約束 architecture 對 memory operations 的 order 或 completion；DSB 比 DMB 進一步等待先前 explicit accesses 完成。"] },
+      { level: "基礎", question: "為何 W1C status register 不宜做一般 read-modify-write？", solution: ["read 可能同時看到多個 pending 1 bits。", "把讀值 OR 後寫回會對那些 1 全部執行 clear；應只寫要 acknowledge 的 mask。"] },
+      { level: "基礎", question: "ISR top half 與 deferred bottom half 的責任如何分配？", solution: ["top half 立即確認 source、保存必要 data/time 並發出 bounded signal。", "bottom half 在 thread/workqueue context 完成較長處理，可使用允許 blocking 的 kernel services。"] },
+      { level: "計算", question: "80 MHz clock 要產生 2 kHz tick，reload 是多少？24-bit 是否容納？", solution: ["clocks/tick=80,000,000/2,000=40,000，LOAD=39,999。", "39,999<16,777,215，因此 24-bit 可容納。"] },
+      { level: "計算", question: "每秒 25,000 次 interrupt、每次 2 µs，CPU utilization 為多少？", solution: ["每秒 ISR time=25,000×2 µs=50,000 µs。", "utilization=50,000/1,000,000=5%。"] },
+      { level: "計算", question: "DMA 固定成本 900 cycles、PIO 每 byte 5 cycles，嚴格節省 CPU 的最小整數 bytes 是多少？", solution: ["要求 900<5N，所以 N>180。", "最小整數 N=181 bytes。"] },
+      { level: "計算", question: "tasks (C,T)=(1,4)、(2,10)、(1,20) ms 的 utilization 是多少？", solution: ["U=1/4+2/10+1/20=0.25+0.20+0.05。", "總 utilization=0.50=50%。"] },
+      { level: "計算", question: "115,200 baud、8E1 UART 傳 100 bytes 需要多久？", solution: ["8E1 每 frame=1 start+8 data+1 parity+1 stop=11 bits，共 1,100 bits。", "time=1,100/115,200≈9.5486 ms。"] },
+      { level: "計算", question: "I2C 100 kHz 傳 address+W 與 4 data bytes，各 byte 皆有 ACK，忽略 START/STOP 時間，需多久？", solution: ["總共 5 bytes×9 clocks=45 clocks。", "time=45/100,000=450 µs。"] },
+      { level: "計算", question: "active 5 ms@30 mW、sleep 195 ms@0.2 mW，每 200 ms 重複，平均功率多少？", solution: ["energy=30×5+0.2×195=189 mW·ms=0.189 mJ。", "average=0.189 mJ/0.2 s=0.945 mW。"] },
+      { level: "進階", question: "說明 RX DMA 在 non-coherent cache 系統的正確 ownership 次序。", solution: ["CPU 準備 aligned buffer 後交給 DMA，期間不讀寫；等待 DMA completion。", "completion 後依平台規則執行 barrier/cache invalidate，再由 CPU 讀資料，最後才 recycle。"] },
+      { level: "進階", question: "Priority inheritance 為何不能消除 high-priority task 的全部 blocking？", solution: ["它防止 medium tasks 延長 lock owner 的執行，限制 priority inversion。", "high task 仍須等待 low task 完成原本的 bounded critical section；I/O、nested locks 等成本仍存在。"] },
+      { level: "進階", question: "Tickless idle 為何需要知道下一個 deadline 與 wake latency？", solution: ["timer 要設定到最早 kernel event，否則 sleeping 太久會漏 deadline。", "只有 idle window 扣除 wake latency 後仍足夠，且超過 minimum residency，深睡才有收益。"] },
+      { level: "整合", question: "A/B update 為何同時需要 signature、self-test 與 revert？", solution: ["signature 證明 image 來自受信發布者且內容未被改；不保證新版本在此硬體一定正常。", "self-test 驗證 runtime health；未 confirm 時 revert 保留已知良好版本，避免裝置永久失效。"] },
+      { level: "整合", question: "一個控制迴路平均只用 20% CPU，仍偶發 miss deadline，應檢查哪些時間來源？", solution: ["檢查 interrupt burst、higher-priority interference、critical-section blocking、release jitter 與 non-preemptive intervals。", "同時量測 WCET path、cache/DMA/bus contention、clock/power-state wake latency，並重新做 response-time analysis。"] }
+    ],
+    glossary: [
+      ["Embedded system", "為特定物理或資訊任務整合計算、I/O、memory、energy 與 lifecycle 的系統。"],
+      ["MCU", "Microcontroller Unit，常整合 CPU、Flash、SRAM、timer 與 peripherals。"],
+      ["MPU (processor)", "Microprocessor Unit，常配外部 DRAM、MMU 與較完整作業系統。"],
+      ["SoC", "System on Chip，把多種 processors、memory interfaces、I/O 與 accelerators 整合於單晶片。"],
+      ["FPGA", "以可組態 logic blocks、registers 與 routing 建立數位硬體的元件。"],
+      ["ASIC", "Application-Specific Integrated Circuit，製造後功能結構固定的客製積體電路。"],
+      ["NRE", "Non-Recurring Engineering，產品量產前一次性的設計、驗證、mask/tooling 成本。"],
+      ["Reset vector", "processor reset 後取得初始執行位置或 vector state 的架構入口。"],
+      ["Linker script", "控制 sections、load/run addresses、memory regions 與 symbols 的配置規則。"],
+      ["MMIO", "Memory-Mapped I/O，以一般 address-space transactions 存取 device registers。"],
+      ["W1C", "Write One to Clear，對 status bit 寫 1 才清除的 register semantics。"],
+      ["Memory barrier", "約束 memory operations ordering 或 completion 的 architecture primitive。"],
+      ["Interrupt latency", "事件發生到指定 ISR 關鍵處理開始之間的時間。"],
+      ["Jitter", "週期事件或 task release/finish 相對理想時間的變動。"],
+      ["Deferred work", "由 ISR 發出、稍後在 thread/workqueue context 執行的非緊急處理。"],
+      ["DMA", "Direct Memory Access，由 controller 在 peripheral/memory 間搬移資料。"],
+      ["Buffer ownership", "某一時間唯一允許讀寫 buffer 的 CPU、DMA 或 device 責任狀態。"],
+      ["WCET", "Worst-Case Execution Time，在明定硬體與干擾假設下的執行時間上界。"],
+      ["Deadline", "job release 後必須完成指定結果的最晚時間界線。"],
+      ["EDF", "Earliest Deadline First，優先執行 absolute deadline 最早 ready job 的動態策略。"],
+      ["Rate monotonic", "period 越短固定 priority 越高的 periodic-task 排程策略。"],
+      ["Response-time analysis", "迭代計入 execution、blocking 與高優先干擾以求最壞 response time。"],
+      ["Priority inversion", "高優先工作因低優先工作持有資源而受中優先工作間接延長等待。"],
+      ["Priority inheritance", "mutex owner 暫時繼承最高 waiter priority 以限制 priority inversion。"],
+      ["RTOS", "Real-Time Operating System，提供可分析 scheduling、timers、IPC 與同步機制的核心。"],
+      ["Tickless idle", "idle 時把 timer 設到下一事件，避免固定 periodic tick 喚醒。"],
+      ["MPU (protection)", "Memory Protection Unit，以有限 regions 設定 access permission，通常不做虛擬位址 paging。"],
+      ["UART", "使用約定 baud 與 start/data/parity/stop framing 的非同步 serial interface。"],
+      ["SPI", "由 controller clock/select 與同步 shift data lines 組成的 serial peripheral interface。"],
+      ["I2C", "使用 SDA/SCL、address、ACK/NACK 與 open-drain arbitration 的雙線 bus。"],
+      ["CAN", "以 identifier arbitration、錯誤偵測與 frame protocol支援多節點的控制網路。"],
+      ["Duty cycle", "工作在某 power/activity state 的時間占總觀察時間比例。"],
+      ["Watchdog", "若軟體未在期限內完成健康回報便觸發 recovery/reset 的 timer。"],
+      ["Secure boot", "由 root of trust 驗證後續 executable image authenticity/integrity 的啟動鏈。"],
+      ["Rollback", "新 image 未確認健康時回復到先前已知良好版本。"],
+      ["Anti-rollback", "拒絕啟動低於安全版本/計數器的已知脆弱 image。"]
+    ],
+    sources: [
+      { key: "S1", title: "Arm CMSIS 6: General Device Support", url: "https://arm-software.github.io/CMSIS_6/latest/General/index.html", accessed: "2026-08-24", use: "Cortex-M device startup、vector table、system initialization、device header 與一致的 peripheral interface。" },
+      { key: "S2", title: "Arm CMSIS 6 Core: Peripheral Access", url: "https://arm-software.github.io/CMSIS_6/latest/Core/group__peripheral__gr.html", accessed: "2026-08-24", use: "core peripherals、NVIC、SysTick、memory-mapped register structures 與 access qualifiers。" },
+      { key: "S3", title: "Arm CMSIS Core Intrinsic Functions", url: "https://arm-software.github.io/CMSIS_5/Core_A/html/group__CMSIS__Core__InstructionInterface.html", accessed: "2026-08-24", use: "DMB、DSB、ISB、WFI/WFE 的 ordering、completion 與 low-power semantics。" },
+      { key: "S4", title: "CMSIS-RTOS2: Using the API", url: "https://arm-software.github.io/CMSIS_6/latest/RTOS2/usingOS2.html", accessed: "2026-08-24", use: "ISR-callable API、threads、timers、flags、mutexes、semaphores、queues 與 resource behavior。" },
+      { key: "S5", title: "Zephyr: Interrupts", url: "https://docs.zephyrproject.org/latest/kernel/services/interrupts.html", accessed: "2026-08-24", use: "ISR context、direct/regular interrupts、latency 與 offloading work 的規則。" },
+      { key: "S6", title: "Zephyr: Workqueue Threads", url: "https://docs.zephyrproject.org/latest/kernel/services/threads/workqueue.html", accessed: "2026-08-24", use: "ISR deferred processing、work item lifecycle、queue/thread execution 與 race handling。" },
+      { key: "S7", title: "Zephyr: Direct Memory Access", url: "https://docs.zephyrproject.org/latest/hardware/peripherals/dma.html", accessed: "2026-08-24", use: "DMA configuration、channel ownership、callback、alignment 與 non-automatic cache coherence。" },
+      { key: "S8", title: "Zephyr: UART", url: "https://docs.zephyrproject.org/latest/hardware/peripherals/uart.html", accessed: "2026-08-24", use: "polling、interrupt-driven 與 asynchronous DMA-backed UART API 模型。" },
+      { key: "S9", title: "CMSIS-RTOS2: Thread Management", url: "https://arm-software.github.io/CMSIS_6/main/RTOS2/group__CMSIS__RTOS__ThreadMgmt.html", accessed: "2026-08-24", use: "thread states、priority、scheduling、stack space 與 lifecycle。" },
+      { key: "S10", title: "Zephyr: Scheduling", url: "https://docs.zephyrproject.org/latest/kernel/services/scheduling/index.html", accessed: "2026-08-24", use: "priority-based scheduling、EDF tie-break、ready queues、ISR precedence 與 rescheduling。" },
+      { key: "S11", title: "Liu and Layland: Scheduling Algorithms for Multiprogramming in a Hard-Real-Time Environment", url: "https://www.cs.ru.nl/~hooman/DES/liu-layland.pdf", accessed: "2026-08-24", use: "Radboud University 公開課程保存的原始論文；periodic task model、rate-monotonic 條件與 utilization bound。" },
+      { key: "S12", title: "CMSIS-RTOS2: OS Tick API", url: "https://arm-software.github.io/CMSIS_6/latest/RTOS2/group__CMSIS__RTOS__TickAPI.html", accessed: "2026-08-24", use: "OS tick、SysTick reload、timer frequency 與 24-bit限制。" },
+      { key: "S13", title: "Zephyr: User Mode", url: "https://docs.zephyrproject.org/latest/kernel/usermode/index.html", accessed: "2026-08-24", use: "MPU-backed userspace、kernel objects、memory domains 與 thread isolation。" },
+      { key: "S14", title: "AMD FPGA Architecture", url: "https://docs.amd.com/r/en-US/ug1291-viv/FPGA-Architecture", accessed: "2026-08-24", use: "FPGA logic elements、routing、I/O、memory 與 architecture resources。" },
+      { key: "S15", title: "AMD 7 Series Configurable Logic Blocks", url: "https://docs.amd.com/r/en-US/ug474_7Series_CLB/CLB-Overview", accessed: "2026-08-24", use: "LUT、flip-flop、carry logic、distributed memory 與 configurable routing 的具體組成。" },
+      { key: "S16", title: "GNU ld: Linker Scripts", url: "https://sourceware.org/binutils/docs/ld/Scripts.html", accessed: "2026-08-24", use: "embedded memory regions、section placement、load/run address、symbols 與 linker image。" },
+      { key: "S17", title: "Zephyr: Devicetree Syntax and Structure", url: "https://docs.zephyrproject.org/latest/build/dts/intro-syntax-structure.html", accessed: "2026-08-24", use: "device nodes、unit addresses、register regions、interrupts 與 hardware description。" },
+      { key: "S18", title: "NXP UM10204: I2C-bus Specification and User Manual, Rev. 7", url: "https://community.nxp.com/pwmxy87654/attachments/pwmxy87654/nxp-designs/931/1/UM10204.pdf", accessed: "2026-08-24", use: "SDA/SCL、START/STOP、address、ACK/NACK、arbitration、clock stretching 與 timing。" },
+      { key: "S19", title: "Bosch X_CAN Protocol Controller", url: "https://www.bosch-semiconductors.com/products/ip-modules/can-ip-modules/x-can/", accessed: "2026-08-24", use: "Classical CAN、CAN FD、CAN XL、identifier arbitration 與目前 ISO 11898 protocol context。" },
+      { key: "S20", title: "Zephyr: System Power Management", url: "https://docs.zephyrproject.org/latest/services/pm/system.html", accessed: "2026-08-24", use: "power-state policy、minimum residency、exit latency、next event 與 device power constraints。" },
+      { key: "S21", title: "Arm CMSIS Core: Power Management Functions", url: "https://arm-software.github.io/CMSIS_6/latest/Core/group__intrinsic__CPU__gr.html", accessed: "2026-08-24", use: "WFI/WFE、barriers 與 processor low-power entry primitives。" },
+      { key: "S22", title: "MCUboot Bootloader Design", url: "https://docs.mcuboot.com/design.html", accessed: "2026-08-24", use: "signed image validation、primary/secondary slots、test/confirm/revert、power-loss recovery 與 downgrade prevention。" },
+      { key: "S23", title: "NIST IR 8259 Rev. 1: Foundational Cybersecurity Activities for IoT Device Manufacturers", url: "https://csrc.nist.gov/pubs/ir/8259/r1/final", accessed: "2026-08-24", use: "2026 final revision 的 device cybersecurity lifecycle、risk、support 與 capability foundation。" },
+      { key: "S24", title: "NIST IoT Device Cybersecurity Capability Catalogs", url: "https://pages.nist.gov/IoT-Device-Cybersecurity-Requirement-Catalogs/", accessed: "2026-08-24", use: "device identification、configuration、data protection、interface access、software update 與 state awareness。" }
+    ]
   }
 ];
