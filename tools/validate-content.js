@@ -33,7 +33,7 @@ assert(fourthEdition.chapters.length === 13, "Fourth edition must contain 13 map
 assert(new Set(fourthEdition.chapters.map((item) => item.chapter)).size === 13, "Fourth edition chapter numbers must be unique");
 assert(fourthEdition.weekMap.length === 18, "Every course week needs a fourth edition mapping");
 assert(new Set(fourthEdition.weekMap.map((item) => item.week)).size === 18, "Fourth edition week mappings must be unique");
-assert(chapterDetails.length >= 10, "At least ten detailed self-study chapters are required");
+assert(chapterDetails.length >= 11, "At least eleven detailed self-study chapters are required");
 assert(new Set(chapterDetails.map((item) => item.chapter)).size === chapterDetails.length, "Detailed chapter numbers must be unique");
 
 for (const chapter of chapterDetails) {
@@ -142,6 +142,14 @@ assert(chapterTen.sections.filter((item) => item.figure).length >= 13, "Chapter 
 assert(chapterTen.workedExamples.length >= 11, "Chapter 10 needs at least eleven worked examples");
 assert(chapterTen.exercises.length >= 18, "Chapter 10 needs at least eighteen exercises with solutions");
 assert(chapterTen.sources.length >= 20, "Chapter 10 needs broad authoritative source coverage");
+
+const chapterEleven = chapterDetails.find((chapter) => chapter.chapter === 11);
+assert(chapterEleven, "Chapter 11 detailed performance-analysis material is missing");
+assert(chapterEleven.sections.length >= 13, "Chapter 11 needs at least thirteen complete concept sections");
+assert(chapterEleven.sections.filter((item) => item.figure).length >= 13, "Chapter 11 needs at least thirteen verifiable diagrams");
+assert(chapterEleven.workedExamples.length >= 13, "Chapter 11 needs at least thirteen worked examples");
+assert(chapterEleven.exercises.length >= 18, "Chapter 11 needs at least eighteen exercises with solutions");
+assert(chapterEleven.sources.length >= 25, "Chapter 11 needs broad authoritative source coverage");
 
 for (const mapping of fourthEdition.weekMap) {
   assert(mapping.chapters.length >= 1, `Week ${mapping.week} needs at least one fourth edition chapter`);
@@ -521,6 +529,40 @@ assert(1 / 4 + 2 / 10 + 1 / 20 === 0.5, "Chapter 10 task-utilization exercise fa
 assert(Math.abs(1100 / 115_200 - 0.009548611111111112) < 1e-15, "Chapter 10 UART exercise failed");
 assert(5 * 9 / 100_000 === 450e-6, "Chapter 10 I2C exercise failed");
 assert(Math.abs((30 * 5 + 0.2 * 195) / 200 - 0.945) < 1e-12, "Chapter 10 power exercise failed");
+
+assert(600 * 0.025 === 15, "Chapter 11 Little's Law example failed");
+const chapterElevenCiMargin = 2.131 * (4 / Math.sqrt(16));
+assert(Math.abs(chapterElevenCiMargin - 2.131) < 1e-12, "Chapter 11 confidence-interval margin failed");
+assert(Math.abs(100 - chapterElevenCiMargin - 97.869) < 1e-12, "Chapter 11 confidence-interval lower bound failed");
+assert(Math.abs(100 + chapterElevenCiMargin - 102.131) < 1e-12, "Chapter 11 confidence-interval upper bound failed");
+assert(1.2e9 * 1.8 === 2.16e9 && 2.16e9 / 3e9 === 0.72, "Chapter 11 CPU-time equation failed");
+const chapterElevenWeightedCpi = 0.5 * 1 + 0.3 * 2 + 0.2 * 3;
+assert(Math.abs(chapterElevenWeightedCpi - 1.7) < 1e-12, "Chapter 11 weighted-CPI example failed");
+assert(Math.abs(chapterElevenWeightedCpi / 1.3 - 1.3076923076923077) < 1e-12, "Chapter 11 CPI speedup example failed");
+const chapterElevenCpiStack = 1 + 0.12 * 0.08 * 12 + 0.25 * 0.04 * 40;
+assert(Math.abs(chapterElevenCpiStack - 1.5152) < 1e-12, "Chapter 11 CPI-stack example failed");
+assert(3e9 / 1.5 / 1e6 === 2000 && 3e9 / 1 / 1e6 === 3000, "Chapter 11 MIPS comparison failed");
+assert(Math.abs(Math.cbrt(1.2 * 0.9 * 1.5) - 1.174460292350659) < 1e-12, "Chapter 11 geometric-mean example failed");
+assert(80e6 * (2 / 0.8) === 200e6 && 0.8 / 2 === 0.4, "Chapter 11 PMU multiplex scaling failed");
+assert(3e9 / 2e9 === 1.5 && 2e9 / 3e9 === 2 / 3 && 1e6 / 20e6 === 0.05, "Chapter 11 PMU ratio example failed");
+const chapterElevenSampleMargin = 1.96 * Math.sqrt(0.42 * 0.58 / 100_000);
+assert(Math.abs(chapterElevenSampleMargin - 0.003059107320771862) < 1e-15, "Chapter 11 sampling margin failed");
+assert(Math.min(600, 60 * 4) === 240 && 600 / 60 === 10, "Chapter 11 Roofline example failed");
+const chapterElevenAmdahl = 1 / (0.65 + 0.35 / 4);
+assert(Math.abs(chapterElevenAmdahl - 1.3559322033898304) < 1e-12, "Chapter 11 Amdahl example failed");
+assert(Math.abs(1 / 0.65 - 1.5384615384615383) < 1e-12, "Chapter 11 Amdahl upper bound failed");
+assert(80 * 2 === 160 && 66 * 1.2 === 79.2 && 2 / 1.2 === 5 / 3, "Chapter 11 energy and EDP example failed");
+
+assert(800 * 0.04 === 32, "Chapter 11 Little's Law exercise failed");
+assert(2.4e9 * 1.25 / 2.5e9 === 1.2, "Chapter 11 CPU-time exercise failed");
+assert(Math.abs(1 / 0.8 - 1.25) < 1e-12, "Chapter 11 runtime-reduction exercise failed");
+assert(Math.abs(Math.cbrt(0.8 * 1 * 1.25) - 1) < 1e-12, "Chapter 11 normalized benchmark exercise failed");
+assert(45e6 * (1.5 / 0.5) === 135e6, "Chapter 11 counter-scaling exercise failed");
+assert(Math.min(2000, 250 * 5) === 1250, "Chapter 11 Roofline exercise failed");
+const chapterElevenParallelSpeedup = 1 / (0.1 + 0.9 / 8);
+assert(Math.abs(chapterElevenParallelSpeedup - 4.705882352941176) < 1e-12, "Chapter 11 parallel-speedup exercise failed");
+assert(Math.abs(chapterElevenParallelSpeedup / 8 - 0.588235294117647) < 1e-12, "Chapter 11 parallel-efficiency exercise failed");
+assert(50 * 1.5 === 75 && 70 * 1 === 70, "Chapter 11 energy comparison exercise failed");
 
 const homepage = path.join(root, "index.html");
 const editionPage = path.join(root, "fourth-edition-map.html");

@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>第 11 章 效能量測與分析 | 計算機組織</title>
-  <meta name="description" content="計算機組織第 11 章 效能量測與分析完整章節教材。">
+  <title>第 11 章 效能量測與分析：從時間證據到可重現的最佳化 | 計算機組織完整自學教材</title>
+  <meta name="description" content="計算機組織第 11 章完整自學教材：效能量測與分析：從時間證據到可重現的最佳化，包含推導、圖表、例題、練習與詳解。">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23006d77'/%3E%3Cpath d='M14 18h36v28H14z' fill='%23f6bd60' stroke='%2320231f' stroke-width='4'/%3E%3Cpath d='M22 28h20M22 36h14' stroke='%2320231f' stroke-width='4'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="../styles.css">
 </head>
@@ -57,168 +57,277 @@
   </nav>
   <main class="page-main">
     <section id="content" class="content" tabindex="-1">
-      <article class="chapter-overview-page">
-      <nav class="breadcrumb" aria-label="麵包屑"><a href="../index.html">課程首頁</a><a href="../fourth-edition-map.html">第 4 版對照</a><span>第 11 章</span></nav>
-      <header class="chapter-overview-hero">
-        <p class="eyebrow">Chapter 11</p>
-        <h2>第 11 章<br>效能量測與分析</h2>
-        <p class="chapter-english">Performance Measurement and Analysis</p>
-        <p>以效能方程式、平均值、benchmark、MIPS/FLOPS 指標與 CPU 最佳化建立量測方法。正確比較必須固定 workload，並區分 latency、throughput 與局部改善比例。</p>
-      </header>
-      <div class="chapter-integrated-reading"><section class="chapter-topic" id="topic-1">
-    <header class="chapter-topic-head">
-      <p class="eyebrow">Core topic 01</p>
-      <h2>計算機效能評估</h2>
-      <p>效能不是單一規格值，而是工作量、每項工作所需週期與每個週期長度的乘積。先把因素拆開，才能判斷最佳化真正改變了哪一項。</p>
-    </header>
-    <figure class="learning-figure">
-    <h4>CPU 執行時間的三個乘數</h4>
-    <div class="factor-diagram"><div><strong>Instruction Count</strong><span>演算法、編譯器、ISA</span></div><span class="factor-op" aria-hidden="true">×</span><div><strong>CPI</strong><span>指令組合、hazard、cache miss</span></div><span class="factor-op" aria-hidden="true">×</span><div><strong>Cycle Time</strong><span>關鍵路徑、電路技術</span></div></div>
-    <figcaption>CPU Time = Instruction Count × CPI × Clock Cycle Time。三項任一降低都可能加速，但也可能彼此牽制。</figcaption>
+      <article class="chapter-page">
+        <nav class="breadcrumb" aria-label="麵包屑"><a href="../index.html">課程首頁</a><a href="../fourth-edition-map.html">第 4 版對照</a><span>第 11 章</span></nav>
+        <header class="chapter-hero">
+          <p class="eyebrow">Chapter 11 · Revised 2026-08-25</p>
+          <h2>第 11 章<br>效能量測與分析：從時間證據到可重現的最佳化</h2>
+          <p class="chapter-english">Performance Measurement and Analysis: From Timing Evidence to Reproducible Optimization</p>
+          <p>效能不是處理器型號、GHz 或單一 benchmark 分數，而是指定系統在指定條件下完成指定工作的可觀察結果。同一系統可能有較短 single-request latency，卻在多使用者時有較低 throughput；平均時間改善，p99 tail latency 反而惡化；CPU cycles 下降，energy 或 memory traffic 卻上升。本章建立一條可重現的證據鏈：先定義 workload、輸入與成功條件，再選 latency、throughput、CPU time、energy 等 metric；接著控制環境、重複量測並量化不確定性；最後以 instruction count、CPI、PMU counters、profile、AMAT、Roofline 與 scalability model 尋找瓶頸。所有最佳化都必須回到相同 baseline 重測，並同時確認 correctness，才能把『數字變了』提升為可信的因果結論。</p>
+          <dl class="chapter-meta"><div><dt>教材對照</dt><dd>第 11 章 Performance Measurement and Analysis</dd></div><div><dt>預估時間</dt><dd>約 300–360 分鐘</dd></div><div><dt>更新日期</dt><dd>2026-08-25</dd></div></dl>
+        </header>
+        <section class="chapter-outcomes">
+          <h3>完成本章後應能做到</h3>
+          <ol><li>能區分 response time、latency、throughput、utilization、tail percentile、speedup 與 efficiency。</li><li>能建立包含 workload、SUT、環境、warm-up、repetition、correctness 與 uncertainty 的量測協定。</li><li>能推導 CPU Time=IC×CPI×cycle time，並對 instruction mix 求 weighted CPI。</li><li>能把 CPI 分解為 base、branch、cache、TLB、resource 與其他 stall contributions。</li><li>能解釋 GHz、IPC、MIPS、FLOPS、percent-of-peak 等派生指標的適用邊界。</li><li>能比較 SPECspeed、SPECrate、MLPerf scenarios 與 microbenchmark 的 workload/metric contract。</li><li>能正確使用 cycles、instructions、branches、misses 等 PMU counters 並辨識 multiplexing 和 skid。</li><li>能區分 instrumentation、sampling、tracing 與 statistical profiling 的觀察成本與歸因能力。</li><li>能以 AMAT、bandwidth、operational intensity 與 Roofline 判斷 memory-bound 或 compute-bound。</li><li>能套用 Amdahl&#039;s Law、Gustafson&#039;s Law、parallel efficiency 與 scaling overhead。</li><li>能以 energy、average power、performance per watt 與 energy-delay product比較時間/能源折衷。</li><li>能形成一次只改變可解釋因素、可回復且可重現的最佳化閉環。</li></ol>
+        </section>
+
+        <nav class="chapter-toc" aria-label="本章目錄"><h3>本章路徑</h3><a href="#section-1">1. 效能問題必須先指定工作、邊界與 metric</a><a href="#section-2">2. 可重現量測是一個受控實驗</a><a href="#section-3">3. CPU performance equation 把時間拆成三個可追蹤因子</a><a href="#section-4">4. CPI stack 把總 cycles 歸因到事件機率與 penalty</a><a href="#section-5">5. GHz、IPC、MIPS 與 FLOPS 都是有條件的派生指標</a><a href="#section-6">6. Benchmark suite 是 workload、規則與報告格式的合約</a><a href="#section-7">7. PMU counters 提供事件證據，但不是自動因果分析</a><a href="#section-8">8. Instrumentation、sampling 與 tracing 回答不同歸因問題</a><a href="#section-9">9. Memory performance 要同時看 latency、bandwidth 與資料重用</a><a href="#section-10">10. Pipeline 與 branch 最佳化必須回到 weighted cost</a><a href="#section-11">11. Amdahl&#039;s Law 量化局部改善的全域上限</a><a href="#section-12">12. Parallel scaling 要分 strong、weak 與 contention</a><a href="#section-13">13. 時間、能源與最佳化閉環必須一起驗證</a><a href="#worked-examples">逐步例題</a><a href="#exercises">分級練習與詳解</a><a href="#glossary">術語表</a></nav>
+        <div class="chapter-reading"><section class="chapter-section" id="section-1">
+      <h3>1. 效能問題必須先指定工作、邊界與 metric</h3>
+      <p>任何『哪台比較快』都至少缺少 workload、input size、completion boundary 與 metric。response time 可以是 request 到 response、process start 到 exit，或 device event 到 actuator update；throughput 則是單位時間完成的 work。兩者可同時變好，也可能互相取捨。batching 常提高 throughput，卻讓第一筆工作等待更久。</p><p>平均 latency 隱藏分布尾端。互動服務常同時報 median、p90、p95、p99 與 maximum，因為少數 queueing、page fault 或 contention events 會決定使用者最差體驗。MLPerf Inference 6.0 的 Server scenario 以 Poisson arrivals 測可維持 throughput，並要求 benchmark-specific 99th-percentile latency constraint；Offline scenario 則一次送入大量 samples，主要量 throughput。</p><p>utilization 是資源忙碌比例，不是完成率；100% CPU 可能完成很多工作，也可能 spin、retry 或等待 cache misses。若系統長期穩定，Little&#039;s Law 以 L=λW 連結平均在系統中的工作數 L、throughput λ 與平均 response time W。它不直接給 tail latency，也要求 observation boundary 和穩定狀態一致。</p>
+      <figure class="learning-figure">
+    <h4>同一 workload 的不同效能觀察</h4>
+    <div class="diagram-table-wrap"><table class="diagram-table"><thead><tr><th>Metric</th><th>單位</th><th>越大/小越好</th><th>回答</th><th>容易漏掉</th></tr></thead><tbody><tr><td>Latency/response time</td><td>s, ms, ns</td><td>小</td><td>一筆工作多久</td><td>tail distribution</td></tr><tr><td>Throughput</td><td>jobs/s, QPS, GB/s</td><td>大</td><td>單位時間完成多少</td><td>latency/quality</td></tr><tr><td>Utilization</td><td>% busy</td><td>非單調</td><td>資源忙多久</td><td>是否做 useful work</td></tr><tr><td>Tail percentile</td><td>p95/p99 time</td><td>小</td><td>高比例請求的上界</td><td>更稀有 tails</td></tr><tr><td>Energy</td><td>J/work</td><td>小</td><td>完成工作耗能</td><td>time/power boundary</td></tr></tbody></table></div>
+    <figcaption>metric 必須和成功條件一起報告；高 throughput 但錯誤輸出、超過 tail SLO 或品質不足都不是有效結果。</figcaption>
   </figure>
-    <section class="chapter-topic-block">
-      <h3>學習成果</h3>
-      <ul><li>能計算 CPU execution time。</li><li>能區分 response time 與 throughput。</li><li>能用 Amdahl&#039;s Law 判斷最佳化上限。</li></ul>
-    </section>
-    <section class="chapter-topic-block">
-      <h3>核心概念</h3>
-      <ul class="concept-list"><li><strong>CPU execution time：</strong>CPU Time = Instruction Count × CPI × Clock Cycle Time，也等於 Instruction Count × CPI / Clock Rate。這個公式把軟體、ISA、編譯器與硬體設計放在同一張表中。</li><li><strong>CPI：</strong>Cycles Per Instruction 是平均每個指令需要的時脈週期數。不同指令類型可能 CPI 不同，因此常用加權平均：CPI = Σ(指令類型比例 × 該類型 CPI)。</li><li><strong>Amdahl&#039;s Law：</strong>若某部分佔總時間比例 F，被加速 S 倍，整體 speedup = 1 / ((1 - F) + F / S)。只加速少數部分，整體效能提升會很快遇到上限。</li></ul>
-    </section>
-    <section class="chapter-topic-block">
-      <h3>概念推導</h3>
-      <div class="deep-dive-grid"><section class="deep-dive"><h4>三個乘數各由誰影響</h4><p>Instruction Count 受演算法、程式、編譯器與 ISA 影響；CPI 受指令組合、資料路徑、pipeline hazard 與 memory stall 影響；Clock Cycle Time 受最慢組合邏輯路徑與電路技術影響。</p><p>比較處理器時必須使用同一工作負載。若程式、編譯器選項或輸入資料不同，三個乘數可能一起改變，單看 clock rate 或核心數沒有足夠資訊。</p></section><section class="deep-dive"><h4>平均值、Speedup 與 Amdahl 上限</h4><p>平均 CPI 是動態指令比例的加權平均，不是各類 CPI 的普通平均。若 load 佔 25% 且成本很高，它對總時間的影響必須乘上 0.25。</p><p>Amdahl&#039;s Law 把總時間分為可改善與不可改善兩部分。即使可改善部分變成無限快，整體 speedup 仍不會超過 1/(1-F)。因此最佳化的第一步是量測時間比例，而不是先挑看起來最先進的元件。</p></section></div>
-    </section>
-    <section class="chapter-topic-block">
-      <h3>補充說明</h3>
-      <p>不要只看 clock rate。較高頻率若伴隨較高 CPI 或更多指令數，不一定更快。效能比較必須指定工作負載，並同時考慮 instruction count、CPI 與 clock rate。</p><p>Response time 是單一任務完成時間，使用者通常直接感受到它；throughput 是單位時間完成多少工作，伺服器與批次系統常關心它。</p><p>最佳化前應先量測。若記憶體等待佔 40%，ALU 變快 10 倍也不會讓整體快 10 倍。</p>
-    </section>
-    <section class="worked-example chapter-topic-worked">
-      <p class="eyebrow">Worked example</p>
-      <h3>先求平均 CPI，再求 CPU Time</h3>
-      <p>某程式有 10^9 條指令：ALU 50%（CPI 1）、load/store 30%（CPI 2）、branch 20%（CPI 3），clock rate 為 2 GHz。</p>
-      <ol><li>平均 CPI = 0.50×1 + 0.30×2 + 0.20×3 = 1.7。</li><li>總 cycles = 10^9 × 1.7 = 1.7×10^9 cycles。</li><li>CPU Time = 1.7×10^9 / 2×10^9 = 0.85 秒。</li><li>若只把 branch CPI 從 3 降到 1，新的平均 CPI 為 1.3，CPU Time 為 0.65 秒。</li></ol>
-      <p class="worked-result"><strong>結論：</strong>Speedup = 0.85/0.65 ≈ 1.31，而不是 3 倍，因為 branch 只佔全部指令的 20%。</p>
-    </section>
-    <section class="chapter-topic-block">
-      <h3>程式與計算例題</h3>
-      <h4>CPU Time 計算</h4>
-      <pre><code>Program A: 2.0e9 instructions, CPI = 1.5, clock = 3 GHz
-CPU time = 2.0e9 × 1.5 / 3.0e9 = 1.0 s</code></pre>
-      <p>若另一台 CPU clock 較低但 CPI 也更低，仍可能更快。</p>
-    </section>
-    <section class="misconception-panel chapter-topic-misconceptions">
-      <h3>常見誤解</h3>
-      <ul><li>將 GHz 直接當成程式效能。</li><li>對不同指令類型的 CPI 做未加權平均。</li><li>把 speedup 30% 誤寫成執行時間減少 30%；兩者分母不同。</li></ul>
-    </section>
-    <section class="self-check chapter-topic-check">
-      <h3>自我檢核</h3>
-      <details><summary>1. 一段程式變成原來的 2 倍快，新時間是多少？</summary><p>Speedup = Told/Tnew = 2，所以 Tnew = Told/2，時間減少 50%。</p></details><details><summary>2. 若可改善部分 F=0.8，即使它無限快，最大 speedup 是多少？</summary><p>1/(1-0.8)=5。剩下 20% 的不可改善時間形成上限。</p></details>
-    </section>
-  </section><section class="chapter-topic" id="topic-2">
-    <header class="chapter-topic-head">
-      <p class="eyebrow">Core topic 02</p>
-      <h2>Pipeline Hazard 的種類與基本解決方法</h2>
-      <p>Hazard 是下一條指令在預定 cycle 無法取得正確資料或正確 PC。處理方式只有三類：提早提供結果、延後使用者，或推測後在錯誤時清除。</p>
-    </header>
-    <figure class="learning-figure">
-    <h4>Load-use Hazard 的一個 Stall</h4>
-    <div class="diagram-table-wrap"><table class="timeline-table"><thead><tr><th>Instruction</th><th>Cycle 1</th><th>Cycle 2</th><th>Cycle 3</th><th>Cycle 4</th><th>Cycle 5</th><th>Cycle 6</th><th>Cycle 7</th><th>Cycle 8</th></tr></thead><tbody><tr><th>lw</th><td class="stage-if">IF</td><td class="stage-id">ID</td><td class="stage-ex">EX</td><td class="stage-mem">MEM</td><td class="stage-wb">WB</td><td class="stage-empty"></td><td class="stage-empty"></td><td class="stage-empty"></td></tr><tr><th>add</th><td class="stage-empty"></td><td class="stage-if">IF</td><td class="stage-id">ID</td><td class="stage-stall">STALL</td><td class="stage-ex">EX</td><td class="stage-mem">MEM</td><td class="stage-wb">WB</td><td class="stage-empty"></td></tr><tr><th>next</th><td class="stage-empty"></td><td class="stage-empty"></td><td class="stage-if">IF</td><td class="stage-stall">STALL</td><td class="stage-id">ID</td><td class="stage-ex">EX</td><td class="stage-mem">MEM</td><td class="stage-wb">WB</td></tr></tbody></table></div>
-    <figcaption>lw 資料在 cycle 4 的 MEM 結束後可 forwarding 給 add 在 cycle 5 的 EX。</figcaption>
+      <p class="source-ref">資料基礎：<a href="#source-S1">S1</a>、<a href="#source-S2">S2</a>、<a href="#source-S3">S3</a></p>
+    </section><section class="chapter-section" id="section-2">
+      <h3>2. 可重現量測是一個受控實驗</h3>
+      <p>量測協定先固定 system under test（SUT）：hardware model/firmware、core/thread count、memory、OS/kernel、compiler/version/flags、libraries、power policy、frequency governor、NUMA placement 與 background load。workload 要保存 source/binary hash、input、seed、command、environment 和 correctness oracle。未揭露條件的數字無法公平比較。</p><p>warm-up 可讓 code/data cache、JIT、page mappings、runtime pools 和 thermal state 接近欲觀察狀態；但 cold-start 本身若是產品需求，就不能丟棄。重複量測應交錯 baseline/candidate 的執行順序，降低 temperature、battery 或 background drift。Google Benchmark 支援 minimum warm-up、minimum run time、repetitions 與 random interleaving，反映這些實驗需求。</p><p>樣本平均值的 95% confidence interval 在近似常態且標準差未知時可寫為 x̄±t(0.975,n−1)s/√n。interval 描述估計方法的長期 coverage，不表示這次算出的固定 interval 有 95% probability 包含真值。skewed latency 應同時保存 raw samples、percentiles；比較兩版本若能在同一次受控狀態成對執行，paired differences 通常比兩組獨立平均更能消除共同噪聲。</p>
+      <figure class="learning-figure">
+    <h4>效能實驗的可重現資料鏈</h4>
+    <div class="flow-diagram"><span class="flow-node">freeze question + metric</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">record SUT + software</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">validate workload output</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">warm/cold policy</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">interleave repetitions</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">store raw measurements</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">estimate uncertainty</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">publish conditions + conclusion</span></div>
+    <figcaption>只有最後平均值不足以重現；raw results、commands、configuration 與 correctness evidence 都是量測的一部分。</figcaption>
   </figure>
-    <section class="chapter-topic-block">
-      <h3>學習成果</h3>
-      <ul><li>辨識 structural、data、control hazards。</li><li>理解 forwarding 與 stall。</li><li>能處理 load-use hazard 與 branch penalty。</li></ul>
-    </section>
-    <section class="chapter-topic-block">
-      <h3>核心概念</h3>
-      <ul class="concept-list"><li><strong>Structural hazard：</strong>硬體資源不足造成衝突，例如同一 cycle 需要同一個 memory 同時取指令與讀資料。可用分離 instruction/data memory 或增加資源解決。</li><li><strong>Data hazard：</strong>後續指令需要前一指令尚未寫回的結果。常見解法是 forwarding/bypassing；若資料仍來不及，如 load-use，就必須 stall。</li><li><strong>Control hazard：</strong>branch/jump 改變 PC，使下一個要取的指令不確定。解法包含 stall、predict not taken、branch prediction 與延遲槽等。</li></ul>
-    </section>
-    <section class="chapter-topic-block">
-      <h3>概念推導</h3>
-      <div class="deep-dive-grid"><section class="deep-dive"><h4>RAW 與 Forwarding 的時序條件</h4><p>五級 in-order MIPS 最常見的是 read-after-write。ALU 結果在 EX 後可從 EX/MEM 或 MEM/WB register forwarding 到下一指令的 EX input，不必等到 WB 寫回 register file。</p><p>Load 的資料到 MEM 結束才取得。緊接的使用者在下一 cycle 進 EX 時仍太早，因此即使有 forwarding，典型 load-use pair 仍需一個 stall。</p></section><section class="deep-dive"><h4>Control Hazard 與精確狀態</h4><p>Branch 結果確定前，fetch 不知道正確下一個 PC。Predict-not-taken 可先取 PC+4；若判斷錯誤，必須 flush 已進入 pipeline 的錯誤路徑指令。</p><p>Flush 的關鍵是阻止錯誤指令更新架構狀態，例如將它們的 RegWrite、MemWrite 控制變為 0。只丟棄指令文字而未清除控制，仍可能破壞結果。</p></section></div>
-    </section>
-    <section class="chapter-topic-block">
-      <h3>補充說明</h3>
-      <p>Data hazard 的核心是 producer-consumer distance。ALU 結果通常 EX 後可 forward；load 的資料要到 MEM 後才可用，因此緊接使用通常需要一個 stall。</p><p>Forwarding 不等於不用 hazard detection。硬體仍需比較 pipeline registers 中的 rs/rt/rd，判斷是否改 ALU input mux。</p><p>Branch 越頻繁、prediction 越差，pipeline 效益越容易被 penalty 吃掉。</p>
-    </section>
-    <section class="worked-example chapter-topic-worked">
-      <p class="eyebrow">Worked example</p>
-      <h3>估算 Branch Misprediction 對 CPI 的影響</h3>
-      <p>Branch 佔 20%，misprediction rate 10%，每次錯誤 penalty 3 cycles，base CPI=1。</p>
-      <ol><li>每條指令成為錯誤 branch 的機率 = 0.20×0.10 = 0.02。</li><li>平均額外 cycles/instruction = 0.02×3 = 0.06。</li><li>新 CPI = 1+0.06 = 1.06。</li></ol>
-      <p class="worked-result"><strong>結論：</strong>Penalty 必須乘 branch frequency 與 misprediction rate，不能對所有指令直接加 3。</p>
-    </section>
-    <section class="chapter-topic-block">
-      <h3>程式與計算例題</h3>
-      <h4>Load-use hazard</h4>
-      <pre><code>lw  $t0, 0($s1)
-add $t2, $t0, $s3  # needs loaded data immediately</code></pre>
-      <p>即使有 forwarding，load data 通常到 MEM stage 結束才可用，因此 add 的 EX stage 需要延後。</p>
-    </section>
-    <section class="misconception-panel chapter-topic-misconceptions">
-      <h3>常見誤解</h3>
-      <ul><li>認為 forwarding 能消除所有 RAW hazards。</li><li>把 stall 與 flush 當成相同動作。</li><li>計算 branch cost 時漏乘 branch frequency。</li></ul>
-    </section>
-    <section class="self-check chapter-topic-check">
-      <h3>自我檢核</h3>
-      <details><summary>1. 為何 lw 後立刻使用通常仍需 stall？</summary><p>Load data 到 MEM 結束才可用，比下一指令原定 EX 所需時間晚一個 cycle。</p></details><details><summary>2. Flush 應如何避免錯誤指令改變狀態？</summary><p>將錯誤指令後續會寫 register 或 memory 的控制訊號清為 0。</p></details>
-    </section>
-  </section><section class="chapter-topic" id="topic-3">
-    <header class="chapter-topic-head">
-      <p class="eyebrow">Core topic 03</p>
-      <h2>計算機組織整體架構總整理與應用案例</h2>
-      <p>完整系統分析要把程式、動態指令、pipeline 與 memory behavior 串成同一條證據鏈。先量測瓶頸，再改變一個可解釋因素，最後用 CPU Time 或 AMAT 驗證改善。</p>
-    </header>
-    <figure class="learning-figure">
-    <h4>跨層效能證據鏈</h4>
-    <div class="flow-diagram"><span class="flow-node">Source 與演算法</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Compiler 產生指令</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">ISA 動態指令流</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Pipeline stalls</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">Cache / Memory stalls</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">CPI 與 CPU Time</span></div>
-    <figcaption>每一層都能提出假設，但最後要回到可量測的時間、CPI、miss rate 或 instruction count。</figcaption>
+      <p class="source-ref">資料基礎：<a href="#source-S4">S4</a>、<a href="#source-S5">S5</a>、<a href="#source-S6">S6</a>、<a href="#source-S7">S7</a></p>
+    </section><section class="chapter-section" id="section-3">
+      <h3>3. CPU performance equation 把時間拆成三個可追蹤因子</h3>
+      <p>CPU execution time=CPU clock cycles×clock cycle time=IC×CPI/f，其中 IC 是 dynamic instruction count，CPI 是每 instruction 平均 cycles，f 是 clock rate。dynamic 表示 loop 每次執行都計數；source lines 或 static instructions 不能替代 IC。elapsed time 還包含 scheduling、I/O、blocking 等非 running CPU time，必須先說 metric 是 CPU time 或 wall-clock time。</p><p>三個因子互相耦合。compiler optimization 可降低 IC 卻使用 latency 較長的 instructions；wider pipeline 或高 frequency 可能縮短 cycle time，卻提高 branch penalty 或 power throttling；vectorization 可能增加單條 instruction 的工作，讓 IC 減少但每 instruction 含義改變。因此不能單獨以 IC、CPI 或 GHz 宣告程式更快。</p><p>若 instruction classes i 的比例為 fi、class CPI 為 CPIi，weighted CPI=ΣfiCPIi，且 Σfi=1。若給的是 class counts Ni，則 CPI=Σ(Ni×CPIi)/ΣNi。比例可能因 compiler、input 和 microarchitecture 改變；將不同 ISA 的 instruction counts 直接比較，尤其容易忽略每條 instruction 所做工作不同。</p>
+      <figure class="learning-figure">
+    <h4>CPU Time 的三因子證據</h4>
+    <div class="factor-diagram"><div><strong>Instruction Count</strong><span>algorithm + ISA + compiler + input</span></div><span class="factor-op" aria-hidden="true">×</span><div><strong>Cycles / Instruction</strong><span>pipeline + dependencies + memory</span></div><span class="factor-op" aria-hidden="true">×</span><div><strong>Seconds / Cycle</strong><span>clock period = 1/frequency</span></div></div>
+    <figcaption>總時間是三者乘積；最佳化若改變其中多項，要用新乘積而不是只觀察最顯眼的因子。</figcaption>
   </figure>
-    <section class="chapter-topic-block">
-      <h3>學習成果</h3>
-      <ul><li>整合 ISA、datapath、pipeline、cache。</li><li>能用完整路徑解釋程式效能瓶頸。</li><li>能建立可重算的跨層效能模型。</li></ul>
-    </section>
-    <section class="chapter-topic-block">
-      <h3>核心概念</h3>
-      <ul class="concept-list"><li><strong>整體路徑：</strong>一行程式經編譯成指令，指令由 PC 取出，經 decode 讀暫存器，在 ALU 計算，可能存取 cache/memory，最後寫回暫存器或記憶體。</li><li><strong>效能瓶頸：</strong>瓶頸可能來自指令數太多、CPI 過高、branch misprediction、cache miss、資料相依造成 stall，或演算法本身不具 locality。</li><li><strong>軟硬體共同設計：</strong>編譯器、資料結構、演算法與硬體設計會互相影響。例如 loop tiling 可改善 cache locality；branchless code 可減少 control hazard。</li></ul>
-    </section>
-    <section class="chapter-topic-block">
-      <h3>概念推導</h3>
-      <div class="deep-dive-grid"><section class="deep-dive"><h4>從 Profile 到因果假設</h4><p>Profile 告訴我們時間集中在哪些函式、指令或 memory events，但相關不等於因果。若 cache misses 與慢函式同時出現，仍需檢查存取模式、working set 與 stall cycles 是否一致。</p><p>好的最佳化假設應能預測可觀察變化，例如 loop interchange 應降低跨列存取、提高 spatial locality，進而降低 miss rate 或 memory stall CPI。</p></section><section class="deep-dive"><h4>跨層折衷</h4><p>降低 instruction count 不一定降低 CPU time；較複雜指令可能提高 CPI 或 clock period。提高 block size 可能降低 compulsory miss，卻增加 miss penalty 與 cache pollution。</p><p>因此每次結論都要指出固定了哪些條件。效能數字若沒有 workload、輸入大小、編譯選項與硬體組態，就難以重現或比較。</p></section></div>
-    </section>
-    <section class="chapter-topic-block">
-      <h3>補充說明</h3>
-      <p>期末專題可選擇一段程式或一個硬體主題，分析它與本課程概念的連結。好的專題不是堆名詞，而是能清楚展示問題、假設、方法、結果與限制。</p><p>真實系統中效能分析常用 profiling。先知道時間花在哪裡，再選擇從演算法、編譯、ISA 或記憶體行為下手。</p><p>本節可把所有公式與圖整合成一頁總表：CPU Time、pipeline speedup、AMAT、address breakdown、hazard 類型。</p>
-    </section>
-    <section class="worked-example chapter-topic-worked">
-      <p class="eyebrow">Worked example</p>
-      <h3>Row-major 矩陣的存取順序</h3>
-      <p>C 程式以 row-major 儲存 B，內層迴圈固定 j、遞增 k，存取 B[k][j]。</p>
-      <ol><li>相鄰 k 會跨到 B 的下一列，位址間距是一整列大小。</li><li>若一列大於 cache block，連續 iterations 很少使用同一 block 的鄰近元素。</li><li>交換迴圈或使用 blocking，可讓短時間內重用一小塊 A、B、C。</li><li>驗證時比較最佳化前後的 miss rate、memory stall cycles 與總 CPU time。</li></ol>
-      <p class="worked-result"><strong>結論：</strong>最佳化的理由不是『巢狀迴圈比較快』，而是存取順序更符合 memory layout 與 cache block。</p>
-    </section>
-    <section class="chapter-topic-block">
-      <h3>程式與計算例題</h3>
-      <h4>矩陣乘法案例</h4>
-      <pre><code>for (i)
-  for (j)
-    for (k)
-      C[i][j] += A[i][k] * B[k][j];</code></pre>
-      <p>若 B 以 row-major 儲存，內層固定 j、改變 k 會跨列存取，spatial locality 較差；調整迴圈或 blocking 可改善 cache 行為。</p>
-    </section>
-    <section class="misconception-panel chapter-topic-misconceptions">
-      <h3>常見誤解</h3>
-      <ul><li>只報 speedup，沒有說明 workload 與 baseline。</li><li>把 profile 的相關性直接當成因果。</li><li>一次改很多因素，導致無法解釋改善來源。</li></ul>
-    </section>
-    <section class="self-check chapter-topic-check">
-      <h3>自我檢核</h3>
-      <details><summary>1. Loop blocking 主要改善哪一種行為？</summary><p>讓一小塊資料在被替換前重複使用，提升 temporal locality，也常改善 spatial locality。</p></details><details><summary>2. Instruction count 降低是否保證 CPU time 降低？</summary><p>不保證；CPI 或 clock cycle time 可能同時增加。</p></details>
-    </section>
-  </section></div>
-      <nav class="chapter-adjacent" aria-label="相鄰章節">
-        <a href="chapter-10.html"><span>第 10 章</span><strong>嵌入式系統專題</strong></a><a href="chapter-12.html"><span>第 12 章</span><strong>網路組織與架構</strong></a>
-      </nav>
-    </article>
+      <p class="source-ref">資料基礎：<a href="#source-S8">S8</a>、<a href="#source-S9">S9</a></p>
+    </section><section class="chapter-section" id="section-4">
+      <h3>4. CPI stack 把總 cycles 歸因到事件機率與 penalty</h3>
+      <p>平均 CPI 可分成 base CPI 與多種 stall CPI：CPI=CPIbase+CPIbranch+CPIL1+CPILLC+CPITLB+...。對 branch，常用 contribution=branch frequency×misprediction rate×misprediction penalty；對 data cache，可用 loads/stores per instruction×miss rate×effective miss penalty。所有 rate 的 denominator 必須一致。</p><p>local miss rate 以進入該層的 accesses 為 denominator；global miss rate 以全部 accesses 為 denominator。若 L1 miss rate=5%、L2 local miss rate=10%，到 main memory 的 global rate=0.5%，不能把 10%直接乘每條 instruction。memory-level parallelism 又可能重疊 misses，使 observed stall cycles 小於 misses×isolated latency。</p><p>CPI stack 是模型，不是硬體唯一真相。PMU 的 cycles stalled、cache references、misses 可能使用 model-specific event definitions；speculation 可讓執行過但未 retire 的工作被某些 counters 計入。先用 algebra 建立預測，再以多個互相約束的 counters 和 elapsed time closure 檢查，避免用單一 event 直接宣告因果。</p>
+      <figure class="learning-figure">
+    <h4>CPI=1.5152 的 contribution stack</h4>
+    <div class="hierarchy-diagram"><div style="--level:0"><strong>Base 1.0000</strong><span>理想 retire/execution cost</span></div><div style="--level:1"><strong>Branch 0.1152</strong><span>0.12×0.08×12</span></div><div style="--level:2"><strong>L1 data miss 0.4000</strong><span>0.25×0.04×40</span></div><div style="--level:3"><strong>Total 1.5152</strong><span>各互斥/已校正 contribution 相加</span></div><div style="--level:4"><strong>Closure check</strong><span>IC×CPI/f 是否接近 measured CPU time</span></div></div>
+    <figcaption>若事件可重疊或 counter 定義重複，不能直接相加；圖中的數字只適用明示的簡化模型。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S9">S9</a>、<a href="#source-S10">S10</a>、<a href="#source-S11">S11</a></p>
+    </section><section class="chapter-section" id="section-5">
+      <h3>5. GHz、IPC、MIPS 與 FLOPS 都是有條件的派生指標</h3>
+      <p>IPC=instructions/cycles，是 CPI 的倒數只在相同 instruction population 上具有直觀意義。out-of-order CPU 可因 workload ILP、cache、branch 和 frequency 不同得到不同 IPC；同一程式的 IPC 高不保證 wall time短，因為 IC 和 frequency 仍在方程式中。issue width 是 ceiling，也不等於 retired IPC。</p><p>MIPS=instruction count/(time×10^6)=frequency/(CPI×10^6)。不同 ISA、compiler 或 vector width 的 instruction 做不同工作，因此 MIPS 可能獎勵需要更多簡單 instructions 的系統。MFLOPS/GFLOPS 只適合 floating-point work，還需明訂 precision、operation counting（例如 FMA 算幾個 FLOPs）與 correctness。peak FLOPS 是資源上限，不是任何 workload 的預測。</p><p>percent improvement 和 speedup 的 denominator 不同。time reduction r=(Told−Tnew)/Told；speedup S=Told/Tnew=1/(1−r)。時間減少 20% 對應 1.25× speedup，而 20% speedup 代表 Tnew=Told/1.2，只減少約16.67%。比較報告應優先給 raw time、work 和完整 ratio，再附百分比。</p>
+      <figure class="learning-figure">
+    <h4>常見派生指標的安全使用範圍</h4>
+    <div class="diagram-table-wrap"><table class="diagram-table"><thead><tr><th>指標</th><th>公式</th><th>適合</th><th>不能單獨推出</th></tr></thead><tbody><tr><td>IPC</td><td>instructions/cycles</td><td>同 workload 的 retire efficiency</td><td>跨 ISA完成時間</td></tr><tr><td>MIPS</td><td>IC/time/10⁶</td><td>同 ISA/程式的輔助值</td><td>有用工作量</td></tr><tr><td>GFLOPS</td><td>FP ops/time/10⁹</td><td>明訂 precision/op count 的 kernel</td><td>accuracy 或 latency</td></tr><tr><td>Percent of peak</td><td>attained/peak</td><td>同資源 ceiling 下利用率</td><td>瓶頸原因</td></tr><tr><td>Speedup</td><td>Told/Tnew</td><td>同 work/boundary 的相對時間</td><td>絕對可接受性</td></tr></tbody></table></div>
+    <figcaption>任何 rate 都要交代 numerator 如何計數、denominator 是 CPU time 或 elapsed time，以及 correctness 是否相同。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S8">S8</a>、<a href="#source-S9">S9</a>、<a href="#source-S12">S12</a></p>
+    </section><section class="chapter-section" id="section-6">
+      <h3>6. Benchmark suite 是 workload、規則與報告格式的合約</h3>
+      <p>benchmark 的代表性取決於目標 workload。microbenchmark 隔離 function、instruction 或 memory pattern，適合建立機制上界，卻不代表整個 application；application suite較接近真實工作，但歸因較難。最可信的選擇順序是自己的 production workload，其次是行為相似的標準 suite，再以 microbenchmark 解釋機制。</p><p>2026 年 5 月發布的 SPEC CPU 2026 包含 52 個 compute-intensive benchmarks，刻意著重 processor、memory hierarchy 和 compiler，不測 network、graphics 或一般 I/O。SPECspeed 執行每 benchmark 一份，使用 reference time/SUT time 表示 time-based performance；SPECrate 以多份 copies測 throughput。各 benchmark ratios 以 geometric mean 合成，且 base/peak、hardware/software/tuning 要完整揭露。</p><p>MLPerf Inference 6.0 同時約束 model、dataset、quality target、load generation、latency 與 throughput。Server、Offline、SingleStream 等 scenarios 回答不同部署問題，不能把 Offline samples/s 當成 interactive p99 latency。標準結果可比較的原因不是名稱響亮，而是 input、correctness、run rules、audit/compliance 和 disclosure 共同限制自由度。</p>
+      <figure class="learning-figure">
+    <h4>現代 benchmark contract 的差異</h4>
+    <div class="diagram-table-wrap"><table class="diagram-table"><thead><tr><th>Benchmark/scenario</th><th>Workload boundary</th><th>主要 metric</th><th>必要共同條件</th><th>不代表</th></tr></thead><tbody><tr><td>SPECspeed 2026</td><td>compute-intensive suite；每項一份</td><td>reference/SUT time ratio</td><td>validated output + disclosure</td><td>network/I/O service</td></tr><tr><td>SPECrate 2026</td><td>多 copies throughput</td><td>copies×reference/SUT time</td><td>copies/rules/config</td><td>single-request latency</td></tr><tr><td>MLPerf Server</td><td>Poisson-arrival inference</td><td>max QPS under p99 limit</td><td>quality + latency + LoadGen</td><td>offline batch ceiling</td></tr><tr><td>MLPerf Offline</td><td>large batch at start</td><td>samples/s</td><td>quality + fixed data/rules</td><td>tail latency</td></tr><tr><td>Microbenchmark</td><td>isolated operation</td><td>ns/op or ops/s</td><td>prevent dead-code + warm-up</td><td>whole-application speed</td></tr></tbody></table></div>
+    <figcaption>suite 名稱、版本、scenario、division、metric 和 configuration 都是結果識別的一部分。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S1">S1</a>、<a href="#source-S2">S2</a>、<a href="#source-S3">S3</a>、<a href="#source-S13">S13</a>、<a href="#source-S14">S14</a></p>
+    </section><section class="chapter-section" id="section-7">
+      <h3>7. PMU counters 提供事件證據，但不是自動因果分析</h3>
+      <p>Performance Monitoring Unit（PMU）以有限 hardware counters 計數 cycles、instructions retired、branches、branch misses、cache/TLB events 或 model-specific microarchitectural events。RISC-V 定義 cycle、instret 與 hpmcounter CSRs，Intel/Arm 也有 architectural 和 model-specific events；同名 `cache-misses` 在不同平台未必代表同一 cache level或條件。</p><p>Linux perf_events 讓工具設定 counting 或 sampling。若 requested events 超過 physical counter slots，kernel 會 multiplex；`time_enabled` 與 `time_running` 不同時，estimated count=value×time_enabled/time_running。scaled estimate 假設 sampled interval 具有代表性，短 phase 或 phase-changing workload 可能違反此假設。</p><p>counter ratios 要先檢查 denominator：IPC=instructions/cycles；branch miss rate=branch-misses/branches；MPKI=misses/(instructions/1000)。user/kernel、per-thread/system-wide、CPU migration、SMT sibling、virtualization 和 frequency scaling 都會改變 boundary。PMU sampling還可能 skid，使 sample IP 落在觸發 event 之後；precise-event support 依架構而異。</p>
+      <figure class="learning-figure">
+    <h4>從硬體事件到可解釋 ratio</h4>
+    <div class="flow-diagram"><span class="flow-node">choose event + denominator</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">bind process/CPU/domain</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">PMU counts limited slots</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">kernel may multiplex</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">read value + enabled/running</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">scale if justified</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">derive IPC/miss rate/MPKI</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">cross-check time + phases</span></div>
+    <figcaption>counter value離開 event definition、scope 與 running fraction 就沒有完整意義；ratio 也必須和 workload phase 對齊。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S10">S10</a>、<a href="#source-S11">S11</a>、<a href="#source-S15">S15</a>、<a href="#source-S16">S16</a>、<a href="#source-S17">S17</a></p>
+    </section><section class="chapter-section" id="section-8">
+      <h3>8. Instrumentation、sampling 與 tracing 回答不同歸因問題</h3>
+      <p>instrumentation 在 function entry/exit、basic block 或自訂 event 明確記錄資料，可取得 call count、exact path 或 duration，但每次事件都增加 instructions、cache traffic 和 timing perturbation。sampling 由 timer 或 PMU overflow 定期/按事件擷取 instruction pointer/call stack，以部分觀察估計 hot code；overhead較低但短函式可能沒有 sample。</p><p>tracing 記錄帶 timestamp 的 event sequence，適合 scheduler、I/O、lock、interrupt 與 distributed request 的因果順序；資料量和 storage overhead 可能很大。statistical profile 顯示『樣本在哪裡』，call graph 顯示 caller/callee，trace 顯示『何時發生』。工具輸出必須回到問題：CPU hotspot、off-CPU wait、cache miss attribution 或 tail request path需要不同資料。</p><p>sample proportion p̂ 的標準誤近似 √(p̂(1−p̂)/n)。若 100,000 samples 中 42%落在 function A，95% normal margin約 0.306 percentage points；但這只量化 random sampling error，不包含 biased sampling、unwinding failure、phase omission、symbol mismatch 和 profiler overhead。先比較 profiler on/off 的 total time，是基本 observer-effect check。</p>
+      <figure class="learning-figure">
+    <h4>效能觀察工具的解析度與成本</h4>
+    <div class="diagram-table-wrap"><table class="diagram-table"><thead><tr><th>方法</th><th>典型資料</th><th>優勢</th><th>主要成本/偏差</th><th>適合問題</th></tr></thead><tbody><tr><td>Wall timer</td><td>start/end time</td><td>簡單、低干擾</td><td>無歸因</td><td>是否更快</td></tr><tr><td>Instrumentation</td><td>exact calls/regions</td><td>精確 count/path</td><td>每事件 overhead</td><td>哪個 region 花時</td></tr><tr><td>PMU counting</td><td>aggregate events</td><td>低成本機制證據</td><td>event/denominator歧義</td><td>CPI/miss/branch</td></tr><tr><td>Sampling</td><td>IP/call stack samples</td><td>低成本 hotspot</td><td>sampling error/skid</td><td>CPU time在哪裡</td></tr><tr><td>Tracing</td><td>timestamped sequence</td><td>順序與等待因果</td><td>大量資料/perturbation</td><td>tail、lock、I/O path</td></tr></tbody></table></div>
+    <figcaption>更細的觀察通常付出更高 overhead；先用粗量測定位，再縮小範圍提高解析度。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S5">S5</a>、<a href="#source-S10">S10</a>、<a href="#source-S18">S18</a>、<a href="#source-S19">S19</a></p>
+    </section><section class="chapter-section" id="section-9">
+      <h3>9. Memory performance 要同時看 latency、bandwidth 與資料重用</h3>
+      <p>AMAT=hit time+miss rate×miss penalty 適合單一 blocking access 的平均模型；多層 cache 要逐層展開 local rates。現代 out-of-order core 可同時維持多個 misses，prefetch 也可能提前搬移，因而 application elapsed time 取決於 memory-level parallelism、bandwidth saturation 與 dependency critical path，不只孤立 DRAM latency。</p><p>bandwidth=bytes/time，必須指明 useful payload、requested bytes 或 actual memory traffic。write allocate、eviction、coherence、page walk 和 prefetch 都可能增加 actual bytes。STREAM-like bandwidth ceiling 取決於 access pattern、NUMA placement、threads 和 memory channels；small working set 命中 cache時不能拿結果宣稱 DRAM bandwidth。</p><p>Roofline 以 operational intensity I=operations/bytes moved through a chosen memory boundary，給出 attainable performance≤min(peak compute, bandwidth×I)。ridge point=peak/bandwidth。I 低時 memory-bound，增加 compute units 無助；tiling/fusion/reuse 可提高 I。模型是 ceiling 而非精確預測，instruction dependencies、latency、vector utilization 和 load imbalance 仍可使結果低於 roof。</p>
+      <figure class="learning-figure">
+    <h4>Peak=1 TFLOP/s、bandwidth=100 GB/s 的 Roofline</h4>
+    <div class="diagram-table-wrap"><table class="diagram-table"><thead><tr><th>Operational intensity</th><th>Bandwidth roof</th><th>Compute roof</th><th>Ceiling</th><th>分類</th></tr></thead><tbody><tr><td>1 FLOP/B</td><td>100 GFLOP/s</td><td>1000 GFLOP/s</td><td>100 GFLOP/s</td><td>memory-bound</td></tr><tr><td>4 FLOP/B</td><td>400 GFLOP/s</td><td>1000 GFLOP/s</td><td>400 GFLOP/s</td><td>memory-bound</td></tr><tr><td>6 FLOP/B</td><td>600 GFLOP/s</td><td>1000 GFLOP/s</td><td>600 GFLOP/s</td><td>memory-bound</td></tr><tr><td>10 FLOP/B</td><td>1000 GFLOP/s</td><td>1000 GFLOP/s</td><td>1000 GFLOP/s</td><td>ridge</td></tr><tr><td>20 FLOP/B</td><td>2000 GFLOP/s</td><td>1000 GFLOP/s</td><td>1000 GFLOP/s</td><td>compute-bound</td></tr></tbody></table></div>
+    <figcaption>單位使用十進位 GB/s、GFLOP/s；若 memory boundary改為 cache 或 HBM，bytes 與 bandwidth roof 都要重算。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S8">S8</a>、<a href="#source-S20">S20</a>、<a href="#source-S21">S21</a></p>
+    </section><section class="chapter-section" id="section-10">
+      <h3>10. Pipeline 與 branch 最佳化必須回到 weighted cost</h3>
+      <p>branch cost不是每條 instruction 固定加 penalty，而是 branch frequency×misprediction rate×recovery penalty。降低 miss rate 可藉 layout、profile-guided optimization、減少 unpredictable control flow或改善 data representation；branchless transformation 若增加 instructions、long dependency chain 或無條件做昂貴工作，可能反而變慢。</p><p>data dependency限制 instruction-level parallelism。loop unrolling 可減少 branch overhead並暴露 independent operations，vectorization 可讓一條 instruction處理多 elements；但 register pressure、code size、alignment、tail handling 和 memory bandwidth可能抵消收益。optimization manual 的 latency/throughput table 是 microarchitecture-specific resource model，不是所有 CPU 的 ISA 保證。</p><p>PGO 以代表性 training workload 收集 edge frequencies或samples，再讓 compiler調整 inlining、layout、branch weights等決策。profile 不代表部署 workload時會形成 profile mismatch。LLVM 文件特別強調 training benchmark 必須涵蓋實際使用；產生、merge、使用 profile 後仍需獨立 evaluation input，避免只對 training set最佳化。</p>
+      <figure class="learning-figure">
+    <h4>20% branches、10% mispredict、3-cycle penalty 的平均影響</h4>
+    <div class="diagram-table-wrap"><table class="diagram-table"><thead><tr><th>尺度</th><th>instructions</th><th>branches</th><th>mispredicts</th><th>penalty</th><th>extra cycles</th><th>base cycles</th><th>total</th></tr></thead><tbody><tr><td>100 instructions</td><td>100</td><td>20</td><td>2</td><td>3 each</td><td>6</td><td>100</td><td>106</td></tr><tr><td>Per instruction</td><td>1</td><td>0.20</td><td>0.02</td><td>×3</td><td>+0.06</td><td>1.00</td><td>CPI 1.06</td></tr></tbody></table></div>
+    <figcaption>期望值以大量 dynamic instructions 解讀；單次短程式的 mispredict count 仍是整數且可能偏離期望。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S9">S9</a>、<a href="#source-S22">S22</a>、<a href="#source-S23">S23</a>、<a href="#source-S24">S24</a></p>
+    </section><section class="chapter-section" id="section-11">
+      <h3>11. Amdahl&#039;s Law 量化局部改善的全域上限</h3>
+      <p>若原時間中 fraction F 可被加速 S 倍，其餘不變，normalized new time=(1−F)+F/S，overall speedup=1/((1−F)+F/S)。F 必須由原 baseline time 定義，不是 instruction fraction或新版本時間比例。若改善後瓶頸轉移，重新 profile 時 fractions 會改變。</p><p>當 S→∞，maximum speedup=1/(1−F)。這表示 95% time 可無限加速的上限是20×，而 5%不可改善時間成為全部。optimization priority 可用可改善 time contribution排序；一個很慢但只占0.1%的函式，即使快100倍也只帶來約1.001× overall speedup。</p><p>Amdahl也適用 cache、I/O、accelerator與compiler。若 accelerator kernel本身快20倍，但 transfer/setup仍在不可改善部分，end-to-end speedup受限。分段計時必須互斥且總和能 closure 到 end-to-end time；若 asynchronous overlap，簡單 fractions相加可能重複計時，需改用 critical path。</p>
+      <figure class="learning-figure">
+    <h4>局部改善如何形成全域上限</h4>
+    <div class="hierarchy-diagram"><div style="--level:0"><strong>Original time = 1</strong><span>unaffected 0.65 + target 0.35</span></div><div style="--level:1"><strong>Target 4× faster</strong><span>0.35/4 = 0.0875</span></div><div style="--level:2"><strong>New time</strong><span>0.65 + 0.0875 = 0.7375</span></div><div style="--level:3"><strong>Overall speedup</strong><span>1/0.7375 ≈ 1.3559×</span></div><div style="--level:4"><strong>Infinite target speed</strong><span>limit = 1/0.65 ≈ 1.5385×</span></div></div>
+    <figcaption>局部4×沒有變成全程4×；unaffected 65%決定明確上限。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S25">S25</a>、<a href="#source-S26">S26</a></p>
+    </section><section class="chapter-section" id="section-12">
+      <h3>12. Parallel scaling 要分 strong、weak 與 contention</h3>
+      <p>strong scaling固定 problem size；以 N workers執行時間 TN，speedup S=T1/TN，efficiency E=S/N。Amdahl理想式S=1/((1−p)+p/N)忽略 communication、synchronization、imbalance和resource contention，因此實測通常更低。superlinear speedup可能來自 aggregate cache容量改變，需解釋而非直接視為錯誤。</p><p>weak scaling讓 problem size隨 workers增加，使每 worker work近似固定；理想時間保持不變。Gustafson&#039;s Law以固定parallel-run time中的serial fraction s估計scaled speedup SG=N−s(N−1)。它和Amdahl回答不同問題，不是互相推翻。報告必須寫清problem size、workers、threads/copies與baseline。</p><p>scaling curve的kneepoint常由shared memory bandwidth、last-level cache、lock、queue、NUMA link或I/O飽和形成。throughput增加但p99 latency急升，表示queueing正在累積。只報aggregate CPU utilization無法分辨load imbalance；應同時看per-thread work、run queue、stall、bandwidth與barrier wait。</p>
+      <figure class="learning-figure">
+    <h4>p=0.92 的理想 strong scaling</h4>
+    <div class="diagram-table-wrap"><table class="diagram-table"><thead><tr><th>Workers N</th><th>Amdahl speedup</th><th>Efficiency</th><th>Ideal linear</th><th>差距來源</th></tr></thead><tbody><tr><td>1</td><td>1.000</td><td>100.0%</td><td>1×</td><td>baseline</td></tr><tr><td>2</td><td>1.852</td><td>92.6%</td><td>2×</td><td>serial 8%</td></tr><tr><td>4</td><td>3.226</td><td>80.6%</td><td>4×</td><td>serial term</td></tr><tr><td>8</td><td>5.128</td><td>64.1%</td><td>8×</td><td>serial term</td></tr><tr><td>16</td><td>7.273</td><td>45.5%</td><td>16×</td><td>serial term</td></tr><tr><td>∞</td><td>12.500</td><td>→0</td><td>∞</td><td>1/0.08 ceiling</td></tr></tbody></table></div>
+    <figcaption>表是無額外overhead的上界；communication與contention加入後只會使同一workload更慢。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S25">S25</a>、<a href="#source-S26">S26</a>、<a href="#source-S27">S27</a></p>
+    </section><section class="chapter-section" id="section-13">
+      <h3>13. 時間、能源與最佳化閉環必須一起驗證</h3>
+      <p>energy=∫P(t)dt，若只用平均功率可寫E=Pavg×T。faster code可能提高instantaneous power卻因時間縮短而省energy；也可能race to idle失敗而同時增power與energy。performance per watt適合固定work/quality的throughput比較，energy per work適合單次成本；兩者都需相同measurement boundary。</p><p>Energy-Delay Product（EDP）=E×T，同時懲罰energy與time；ED²P更重視latency。Linux powercap以`energy_uj`累積counter與`max_energy_range_uj`呈現wrap range，差值計算要處理counter wrap。SPEC CPU 2026可選擇報告performance與energy metrics，MLPerf也有QPS/W或joules/stream等scenario-specific power metrics。</p><p>可靠最佳化循環是：保存baseline、提出機制假設、預測哪些metric/counter會變、只改一個可解釋因素、確認output、重複量測與uncertainty、檢查secondary metrics，最後才保留變更。若結果不符預測，先撤回並更新模型。速度提升但correctness、tail、memory、energy或portability退化，都必須明確作為tradeoff，不可藏在單一speedup後。</p>
+      <figure class="learning-figure">
+    <h4>可回復的效能最佳化閉環</h4>
+    <div class="flow-diagram"><span class="flow-node">versioned baseline</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">profile + bottleneck model</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">predict metric changes</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">one controlled change</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">correctness gate</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">repeat + confidence</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">time/tail/energy/memory check</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">keep or revert + document</span></div>
+    <figcaption>closed loop要求每次變更都能回到baseline；『更快』只有在相同work與正確結果下才成立。</figcaption>
+  </figure>
+      <p class="source-ref">資料基礎：<a href="#source-S3">S3</a>、<a href="#source-S6">S6</a>、<a href="#source-S28">S28</a>、<a href="#source-S29">S29</a></p>
+    </section></div>
+        <section class="chapter-worked-list" id="worked-examples"><h2>逐步例題</h2><section class="worked-example chapter-worked">
+      <p class="eyebrow">Worked example 1</p>
+      <h3>例題一：由 throughput 與 response time 求在途工作</h3>
+      <p><strong>題目：</strong>穩定服務平均完成 600 requests/s，平均 response time 25 ms。依 Little&#039;s Law 求平均在系統中的 requests。</p>
+      <ol><li>確認 throughput 與 response time 使用同一 system boundary。</li><li>λ=600 requests/s。</li><li>W=25 ms=0.025 s。</li><li>L=λW=600×0.025。</li><li>L=15 requests。</li><li>這是長期平均，不表示每個瞬間或p99都恰好有15筆。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>平均約15個requests同時在系統中。</p>
+    </section><section class="worked-example chapter-worked">
+      <p class="eyebrow">Worked example 2</p>
+      <h3>例題二：計算平均時間的95% confidence interval</h3>
+      <p><strong>題目：</strong>16次獨立量測平均100 ms、sample standard deviation 4 ms；使用t(0.975,15)=2.131，求mean的95% CI。</p>
+      <ol><li>n=16，√n=4。</li><li>standard error=s/√n=4/4=1 ms。</li><li>margin=t×SE=2.131×1=2.131 ms。</li><li>lower=100−2.131=97.869 ms。</li><li>upper=100+2.131=102.131 ms。</li><li>interval依賴獨立/近似常態與固定protocol假設，不是tail latency interval。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>95% CI約為[97.869, 102.131] ms。</p>
+    </section><section class="worked-example chapter-worked">
+      <p class="eyebrow">Worked example 3</p>
+      <h3>例題三：由IC、CPI與clock求CPU time</h3>
+      <p><strong>題目：</strong>程式retire 1.2×10^9 instructions，CPI=1.8，clock=3 GHz。求cycles與CPU time。</p>
+      <ol><li>IC=1.2×10^9。</li><li>cycles=IC×CPI。</li><li>cycles=1.2×10^9×1.8=2.16×10^9。</li><li>f=3×10^9 cycles/s。</li><li>CPU time=2.16×10^9/(3×10^9)=0.72 s。</li><li>這不自動包含process未在CPU執行時的I/O或scheduler wait。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>2.16×10^9 cycles，CPU time=0.72 s。</p>
+    </section><section class="worked-example chapter-worked">
+      <p class="eyebrow">Worked example 4</p>
+      <h3>例題四：求weighted CPI與branch改善</h3>
+      <p><strong>題目：</strong>ALU 50%@CPI1、load/store 30%@CPI2、branch 20%@CPI3；若branch CPI降為1，前後CPI與speedup是多少？</p>
+      <ol><li>old CPI=0.5×1+0.3×2+0.2×3。</li><li>old CPI=0.5+0.6+0.6=1.7。</li><li>new CPI=0.5×1+0.3×2+0.2×1=1.3。</li><li>固定IC與clock時，speedup=old CPI/new CPI。</li><li>speedup=1.7/1.3≈1.30769。</li><li>branch局部3×只作用於20% instructions，整體不是3×。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>CPI由1.7降至1.3，整體speedup約1.308×。</p>
+    </section><section class="worked-example chapter-worked">
+      <p class="eyebrow">Worked example 5</p>
+      <h3>例題五：建立CPI contribution stack</h3>
+      <p><strong>題目：</strong>base CPI=1；branch frequency=12%、mispredict=8%、penalty=12 cycles；memory instructions=25%、L1 miss=4%、effective penalty=40 cycles。求total CPI。</p>
+      <ol><li>branch events/instruction=0.12×0.08=0.0096。</li><li>branch contribution=0.0096×12=0.1152 CPI。</li><li>L1 misses/instruction=0.25×0.04=0.01。</li><li>memory contribution=0.01×40=0.4 CPI。</li><li>total=1+0.1152+0.4=1.5152。</li><li>此加法假設兩類penalty不重疊，且effective penalty已處理下層命中與MLP。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>簡化total CPI=1.5152。</p>
+    </section><section class="worked-example chapter-worked">
+      <p class="eyebrow">Worked example 6</p>
+      <h3>例題六：判斷MIPS為何會誤導</h3>
+      <p><strong>題目：</strong>CPU A以4 GHz、CPI2執行某ISA；CPU B以3 GHz、CPI1執行另一ISA。求MIPS，並說明何者完成同一工作較快仍缺什麼。</p>
+      <ol><li>MIPS=f/(CPI×10^6)。</li><li>A=4×10^9/(2×10^6)=2000 MIPS。</li><li>B=3×10^9/(1×10^6)=3000 MIPS。</li><li>B的MIPS較高。</li><li>但time=IC×CPI/f，仍缺每台完成同一工作所需dynamic IC。</li><li>跨ISA的instruction語意/工作量不同，所以不能只由3000&gt;2000判定end-to-end更快。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>A=2000 MIPS、B=3000 MIPS；缺少同work的IC與實測時間，不能下最終結論。</p>
+    </section><section class="worked-example chapter-worked">
+      <p class="eyebrow">Worked example 7</p>
+      <h3>例題七：以geometric mean合成benchmark ratios</h3>
+      <p><strong>題目：</strong>三個benchmark相對baseline ratios為1.20、0.90、1.50。求geometric mean與arithmetic mean。</p>
+      <ol><li>geometric mean=(1.20×0.90×1.50)^(1/3)。</li><li>乘積=1.62。</li><li>cube root(1.62)≈1.17446。</li><li>arithmetic mean=(1.20+0.90+1.50)/3=1.20。</li><li>ratio資料用geometric mean可保持reciprocal/reference-scale性質。</li><li>仍需報個別ratios，因0.90表示其中一項實際退化。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>geometric mean≈1.1745，arithmetic mean=1.20。</p>
+    </section><section class="worked-example chapter-worked">
+      <p class="eyebrow">Worked example 8</p>
+      <h3>例題八：校正multiplexed PMU counter</h3>
+      <p><strong>題目：</strong>某event raw value=80 million，time_enabled=2.0 s、time_running=0.8 s。求scaled estimate與running fraction。</p>
+      <ol><li>running fraction=time_running/time_enabled。</li><li>fraction=0.8/2.0=0.40=40%。</li><li>scale factor=time_enabled/time_running=2.5。</li><li>scaled value=80M×2.5=200M。</li><li>60%時間counter未排到physical slot。</li><li>若event rate隨phase劇烈改變，200M只是依代表性假設的估計。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>running fraction=40%，scaled estimate=200 million events。</p>
+    </section><section class="worked-example chapter-worked">
+      <p class="eyebrow">Worked example 9</p>
+      <h3>例題九：由PMU counts求IPC與branch miss rate</h3>
+      <p><strong>題目：</strong>cycles=3.0×10^9、instructions=4.5×10^9、branches=8.0×10^8、branch misses=4.0×10^7。求IPC、CPI與miss rate。</p>
+      <ol><li>IPC=instructions/cycles=4.5/3.0=1.5。</li><li>CPI=cycles/instructions=3.0/4.5≈0.6667。</li><li>兩者互為倒數，1/1.5≈0.6667。</li><li>branch miss rate=40M/800M。</li><li>miss rate=0.05=5%。</li><li>若counts scope或multiplexing不同，這些ratios不可直接相除。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>IPC=1.5、CPI≈0.6667、branch miss rate=5%。</p>
+    </section><section class="worked-example chapter-worked">
+      <p class="eyebrow">Worked example 10</p>
+      <h3>例題十：估計sampling proportion的不確定性</h3>
+      <p><strong>題目：</strong>100,000個profile samples中42%位於function A，以normal approximation求約95% margin。</p>
+      <ol><li>p̂=0.42，n=100,000。</li><li>SE=√(p̂(1−p̂)/n)。</li><li>SE=√(0.42×0.58/100000)≈0.0015609。</li><li>95% margin≈1.96×SE≈0.003059。</li><li>換成percentage points約0.306。</li><li>approx interval約41.694%到42.306%；這不包含systematic sampling bias。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>random-sampling 95% margin約±0.306 percentage points。</p>
+    </section><section class="worked-example chapter-worked">
+      <p class="eyebrow">Worked example 11</p>
+      <h3>例題十一：用Roofline判斷瓶頸</h3>
+      <p><strong>題目：</strong>peak compute=1 TFLOP/s、memory bandwidth=100 GB/s、kernel intensity=6 FLOP/byte。求ceiling與ridge point。</p>
+      <ol><li>bandwidth roof=100 GB/s×6 FLOP/B。</li><li>=600 GFLOP/s。</li><li>compute roof=1000 GFLOP/s。</li><li>ceiling=min(600,1000)=600 GFLOP/s。</li><li>ridge intensity=1000/100=10 FLOP/B。</li><li>6&lt;10，所以kernel在此boundary屬memory-bound。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>ceiling=600 GFLOP/s；ridge=10 FLOP/B，屬memory-bound。</p>
+    </section><section class="worked-example chapter-worked">
+      <p class="eyebrow">Worked example 12</p>
+      <h3>例題十二：Amdahl局部最佳化</h3>
+      <p><strong>題目：</strong>原時間35%部分加速4倍，其餘不變。求overall speedup與無限加速上限。</p>
+      <ol><li>F=0.35，S=4。</li><li>new normalized time=(1−0.35)+0.35/4。</li><li>=0.65+0.0875=0.7375。</li><li>speedup=1/0.7375≈1.35593。</li><li>S→∞時target term歸零。</li><li>maximum=1/0.65≈1.53846。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>4×局部改善得到約1.356×全域speedup；理論上限約1.538×。</p>
+    </section><section class="worked-example chapter-worked">
+      <p class="eyebrow">Worked example 13</p>
+      <h3>例題十三：比較時間、能源與EDP</h3>
+      <p><strong>題目：</strong>baseline為40 W、2.0 s；candidate為55 W、1.2 s，完成相同工作。求energy、speedup與EDP。</p>
+      <ol><li>baseline energy=40×2.0=80 J。</li><li>candidate energy=55×1.2=66 J。</li><li>speedup=2.0/1.2≈1.6667×。</li><li>baseline EDP=80×2.0=160 J·s。</li><li>candidate EDP=66×1.2=79.2 J·s。</li><li>EDP reduction=(160−79.2)/160=50.5%；candidate功率較高但時間與energy都較低。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>candidate為1.667×快、energy少17.5%，EDP少50.5%。</p>
+    </section></section>
+        <section class="chapter-misconceptions misconception-panel"><h2>常見誤解與修正</h2><div><article><h4>GHz較高的CPU一定執行程式較快。</h4><p>時間同時取決於IC、CPI與frequency；高frequency也可能伴隨不同CPI、throttling或ISA。</p></article><article><h4>Latency與throughput是同一個指標的倒數。</h4><p>只有特定serial/no-queue模型才可能如此；concurrency、batching與queueing會使兩者獨立。</p></article><article><h4>平均latency下降就代表所有request更快。</h4><p>分布可能改變，p95/p99或maximum仍可能惡化。</p></article><article><h4>重跑多次取最小值最能代表硬體能力。</h4><p>任意取best會產生selection bias；aggregation與run rule應事前固定並保留raw runs。</p></article><article><h4>Confidence interval表示真值有95%機率落在這個固定區間。</h4><p>95%描述重複抽樣方法的coverage；這次區間算出後真值固定。</p></article><article><h4>降低instruction count保證CPU time下降。</h4><p>CPI或cycle time可能同時上升，仍須重算完整乘積。</p></article><article><h4>IPC越高就能跨CPU直接判定越快。</h4><p>IPC依instruction population與workload；frequency、IC與每條instruction工作仍不同。</p></article><article><h4>MIPS能公平比較不同ISA。</h4><p>不同ISA完成同一工作所需instructions及每條語意不同。</p></article><article><h4>標準benchmark能代表所有應用。</h4><p>suite只代表規則定義的workloads；SPEC CPU明確不測network與一般I/O。</p></article><article><h4>PMU event名稱相同就跨CPU語意相同。</h4><p>architectural/model-specific event definitions、cache level與speculation條件可不同。</p></article><article><h4>Multiplexed counter縮放後就是精確真值。</h4><p>縮放假設counter運行片段代表未運行片段；phase變化會導致偏差。</p></article><article><h4>Profiler顯示最熱函式，所以它一定是根因。</h4><p>hotspot是時間位置；根因可能是callee、cache、lock、I/O或不必要工作。</p></article><article><h4>Cache misses乘DRAM latency一定等於stall cycles。</h4><p>MLP、prefetch、out-of-order overlap與下層cache會改變effective penalty。</p></article><article><h4>未通過Roofline compute roof就一定是memory-bound。</h4><p>只有位於bandwidth roof附近且intensity低才支持此判斷；其他bottlenecks也會低於兩個roofs。</p></article><article><h4>Branchless code一定比branch快。</h4><p>它可能增加IC、dependencies或無條件昂貴工作；結果取決於predictability與replacement cost。</p></article><article><h4>Amdahl fraction可以用instruction比例代替。</h4><p>F定義為原baseline time fraction；不同instructions耗時不同。</p></article><article><h4>更多threads會線性加速。</h4><p>serial work、communication、contention、imbalance與bandwidth都會降低efficiency。</p></article><article><h4>功率較高就一定耗能較多。</h4><p>energy=power×time；較高power若大幅縮短時間仍可能降低energy。</p></article></div></section>
+        <section class="chapter-exercises self-check" id="exercises"><h2>分級練習與完整解答</h2><p>先完成 state、公式或推理，再展開答案核對。每題解答都列出判斷依據。</p><details>
+      <summary><span>基礎</span>1. Latency、throughput與utilization各回答什麼問題？</summary>
+      <div><h4>完整解答</h4><ol><li>latency是一筆work的完成時間；throughput是單位時間完成work數。</li><li>utilization是資源busy比例，不保證busy期間完成useful work。</li></ol></div>
+    </details><details>
+      <summary><span>基礎</span>2. 為何cold-start與steady-state benchmark不能混成同一平均？</summary>
+      <div><h4>完整解答</h4><ol><li>cold start含page fault、JIT、cache fill與初始化；steady state觀察不同狀態。</li><li>兩者若都是需求應分開報告；混合比例會任意改變平均。</li></ol></div>
+    </details><details>
+      <summary><span>基礎</span>3. CPU time與elapsed time的boundary有何不同？</summary>
+      <div><h4>完整解答</h4><ol><li>CPU time計process實際在CPU上執行的時間。</li><li>elapsed time從外部start到completion，包含schedule、I/O與blocking等待。</li></ol></div>
+    </details><details>
+      <summary><span>基礎</span>4. SPECspeed與SPECrate 2026主要差異是什麼？</summary>
+      <div><h4>完整解答</h4><ol><li>SPECspeed每benchmark一份，主要比較完成時間ratio。</li><li>SPECrate執行多copies，metric衡量單位時間work throughput。</li></ol></div>
+    </details><details>
+      <summary><span>基礎</span>5. PMU counting與sampling各產生何種資料？</summary>
+      <div><h4>完整解答</h4><ol><li>counting給指定boundary內aggregate event totals。</li><li>sampling在event overflow/period取得IP或call stack，用部分觀察估計hot locations。</li></ol></div>
+    </details><details>
+      <summary><span>基礎</span>6. Amdahl&#039;s Law中的F為何必須以原時間定義？</summary>
+      <div><h4>完整解答</h4><ol><li>公式把原normalized time拆成F與1−F。</li><li>改善後fractions已重新分配；instruction proportion也不等於time contribution。</li></ol></div>
+    </details><details>
+      <summary><span>計算</span>7. 800 QPS且平均response time 40 ms，依Little&#039;s Law平均在途requests多少？</summary>
+      <div><h4>完整解答</h4><ol><li>W=0.040 s。</li><li>L=λW=800×0.040=32 requests。</li></ol></div>
+    </details><details>
+      <summary><span>計算</span>8. IC=2.4×10^9、CPI=1.25、clock=2.5 GHz，CPU time多少？</summary>
+      <div><h4>完整解答</h4><ol><li>cycles=2.4×10^9×1.25=3.0×10^9。</li><li>time=3.0×10^9/2.5×10^9=1.2 s。</li></ol></div>
+    </details><details>
+      <summary><span>計算</span>9. Instruction mix為60%@CPI1、25%@CPI2、15%@CPI4，weighted CPI多少？</summary>
+      <div><h4>完整解答</h4><ol><li>CPI=0.60×1+0.25×2+0.15×4。</li><li>=0.60+0.50+0.60=1.70。</li></ol></div>
+    </details><details>
+      <summary><span>計算</span>10. 時間由10 s降到8 s，time reduction與speedup各是多少？</summary>
+      <div><h4>完整解答</h4><ol><li>reduction=(10−8)/10=20%。</li><li>speedup=10/8=1.25×。</li></ol></div>
+    </details><details>
+      <summary><span>計算</span>11. Ratios 0.8、1.0、1.25的geometric mean是多少？</summary>
+      <div><h4>完整解答</h4><ol><li>乘積=0.8×1.0×1.25=1。</li><li>cube root(1)=1，表示multiplicative中心為1，但個別結果仍有退化/改善。</li></ol></div>
+    </details><details>
+      <summary><span>計算</span>12. Counter value=45M、enabled=1.5 s、running=0.5 s，scaled estimate多少？</summary>
+      <div><h4>完整解答</h4><ol><li>scale factor=1.5/0.5=3。</li><li>scaled=45M×3=135M；running fraction=1/3。</li></ol></div>
+    </details><details>
+      <summary><span>計算</span>13. Peak=2 TFLOP/s、bandwidth=250 GB/s、intensity=5 FLOP/B，Roofline ceiling多少？</summary>
+      <div><h4>完整解答</h4><ol><li>bandwidth roof=250×5=1250 GFLOP/s。</li><li>min(2000,1250)=1250 GFLOP/s，ridge=2000/250=8 FLOP/B。</li></ol></div>
+    </details><details>
+      <summary><span>計算</span>14. p=0.9、N=8的Amdahl ideal speedup與efficiency是多少？</summary>
+      <div><h4>完整解答</h4><ol><li>S=1/(0.1+0.9/8)=1/0.2125≈4.7059。</li><li>E=S/8≈0.5882=58.82%。</li></ol></div>
+    </details><details>
+      <summary><span>計算</span>15. 50 W運行1.5 s與35 W運行2.0 s，哪個energy較少？</summary>
+      <div><h4>完整解答</h4><ol><li>第一個energy=50×1.5=75 J。</li><li>第二個=35×2=70 J，所以低功率較慢方案仍少5 J。</li></ol></div>
+    </details><details>
+      <summary><span>進階</span>16. 為何PMU cache misses與stall cycles不應直接視為一對一因果？</summary>
+      <div><h4>完整解答</h4><ol><li>misses可能被prefetch、MLP或out-of-order重疊，未完全阻塞retirement。</li><li>event也可能包含speculative、不同cache level或scope；需搭配latency、bandwidth與dependency evidence。</li></ol></div>
+    </details><details>
+      <summary><span>進階</span>17. 如何驗證loop tiling改善是由locality而非量測噪聲造成？</summary>
+      <div><h4>完整解答</h4><ol><li>事前預測miss/traffic/operational intensity變化，固定compiler與input，交錯重複baseline/candidate。</li><li>確認output相同，再比較raw time uncertainty、cache misses、bytes與CPI closure。</li></ol></div>
+    </details><details>
+      <summary><span>整合</span>18. Candidate平均快8%，但p99慢25%、energy少5%，應如何呈現結論？</summary>
+      <div><h4>完整解答</h4><ol><li>分別報mean、p99與energy的raw values/ratios及uncertainty，不合成單一『更快』。</li><li>是否採用取決於workload SLO與能源目標；若p99是硬性限制，candidate目前不合格。</li></ol></div>
+    </details></section>
+        <section class="chapter-glossary" id="glossary"><h2>本章術語表</h2><div class="diagram-table-wrap"><table><tbody><tr><th>System under test</th><td>被量測的hardware、software與configuration完整邊界。</td></tr><tr><th>Latency</th><td>單筆operation/request從指定start到completion的時間。</td></tr><tr><th>Response time</th><td>包含service與queue/wait的端到端完成時間。</td></tr><tr><th>Throughput</th><td>單位時間完成的有效工作量。</td></tr><tr><th>Utilization</th><td>資源處於busy狀態的時間比例。</td></tr><tr><th>Tail latency</th><td>高percentile如p95/p99所代表的延遲尾端。</td></tr><tr><th>Little&#039;s Law</th><td>穩定系統中平均在途工作L=throughput λ×平均時間W。</td></tr><tr><th>Warm-up</th><td>在正式量測前建立欲觀察cache/JIT/thermal等狀態的執行期。</td></tr><tr><th>Baseline</th><td>所有candidate以相同work與protocol比較的版本/組態。</td></tr><tr><th>Confidence interval</th><td>以指定coverage程序估計population parameter的不確定範圍。</td></tr><tr><th>Standard error</th><td>sample statistic跨重複抽樣的估計標準差。</td></tr><tr><th>Instruction count</th><td>workload實際執行/retire的dynamic instructions數。</td></tr><tr><th>CPI</th><td>Cycles Per Instruction，平均每retired instruction所對應cycles。</td></tr><tr><th>IPC</th><td>Instructions Per Cycle，指定scope中的retired instructions/cycles。</td></tr><tr><th>CPI stack</th><td>把total CPI分解為base與各stall/event contributions的模型。</td></tr><tr><th>MIPS</th><td>Millions of Instructions Per Second，跨ISA代表性有限的rate。</td></tr><tr><th>FLOPS</th><td>Floating-Point Operations Per Second，需明訂precision與operation counting。</td></tr><tr><th>Speedup</th><td>相同工作下Told/Tnew的相對效能。</td></tr><tr><th>Microbenchmark</th><td>隔離小型operation或機制以量測latency/throughput的workload。</td></tr><tr><th>SPECspeed</th><td>SPEC CPU 2026以一份benchmark的reference/SUT time ratio建立的time-based metric。</td></tr><tr><th>SPECrate</th><td>SPEC CPU 2026以多copies衡量work-per-time的throughput metric。</td></tr><tr><th>Geometric mean</th><td>n個正ratios乘積的n次方根，適合合成normalized ratios。</td></tr><tr><th>PMU</th><td>Performance Monitoring Unit，以hardware counters觀察cycles與microarchitectural events。</td></tr><tr><th>Multiplexing</th><td>多events分享有限PMU slots、各自只在部分enabled time運行。</td></tr><tr><th>MPKI</th><td>Misses Per Kilo Instructions，每千instructions的event miss數。</td></tr><tr><th>Skid</th><td>sample recorded instruction位置落後於實際counter overflow觸發位置。</td></tr><tr><th>Instrumentation</th><td>插入明確measurement events以取得exact counts/regions的方法。</td></tr><tr><th>Sampling</th><td>以部分週期/event observations估計時間或事件分布的方法。</td></tr><tr><th>Tracing</th><td>保存timestamped event sequence以重建因果/等待路徑的方法。</td></tr><tr><th>Observer effect</th><td>量測工具本身改變被量測時間或行為。</td></tr><tr><th>AMAT</th><td>Average Memory Access Time，以hit/miss條件成本估算平均access time。</td></tr><tr><th>Memory-level parallelism</th><td>多筆memory misses同時outstanding並重疊latency的程度。</td></tr><tr><th>Operational intensity</th><td>指定memory boundary下operations/bytes moved。</td></tr><tr><th>Roofline</th><td>以min(peak compute, bandwidth×intensity)形成performance ceiling的模型。</td></tr><tr><th>Amdahl&#039;s Law</th><td>以原時間可改善fraction與局部speedup計算overall speedup上限。</td></tr><tr><th>Strong scaling</th><td>固定problem size增加workers以縮短時間。</td></tr><tr><th>Weak scaling</th><td>隨workers增加problem size、維持每worker work近似固定。</td></tr><tr><th>Parallel efficiency</th><td>speedup/workers，衡量線性scaling利用程度。</td></tr><tr><th>Energy-delay product</th><td>energy×delay，同時懲罰能耗與完成時間的複合metric。</td></tr><tr><th>PGO</th><td>Profile-Guided Optimization，以代表性execution profile引導compiler決策。</td></tr></tbody></table></div></section>
+        <section class="chapter-sources"><h2>技術來源與延伸閱讀</h2><p>各節所引用的架構、規格與技術資料如下。</p><ol><li id="source-S1"><a href="https://www.spec.org/cpu2026/docs/overview.html" rel="noreferrer">S1 · SPEC CPU 2026 Overview</a><p>最新CPU suite、SPECspeed/SPECrate、ratio、geometric mean、repeat selection、scope與限制。（查閱：2026-08-25）</p></li><li id="source-S2"><a href="https://www.spec.org/cpu2026/docs/runrules.html" rel="noreferrer">S2 · SPEC CPU 2026 Run and Reporting Rules</a><p>可重現性、build/run conditions、base/peak、disclosure、correctness、performance與energy metrics。（查閱：2026-08-25）</p></li><li id="source-S3"><a href="https://github.com/mlcommons/inference_policies/blob/master/inference_rules.adoc" rel="noreferrer">S3 · MLPerf Inference v6.0 Rules</a><p>Server/Offline/SingleStream scenarios、LoadGen、tail latency、throughput、quality與confidence rules。（查閱：2026-08-25）</p></li><li id="source-S4"><a href="https://google.github.io/benchmark/user_guide.html" rel="noreferrer">S4 · Google Benchmark User Guide</a><p>warm-up、minimum time、repetitions、random interleaving、manual timing、statistics與dead-code防護。（查閱：2026-08-25）</p></li><li id="source-S5"><a href="https://itl.nist.gov/div898/handbook/eda/section3/eda352.htm" rel="noreferrer">S5 · NIST Engineering Statistics Handbook: Confidence Limits for the Mean</a><p>t confidence interval、standard error、sample size與coverage正確解讀。（查閱：2026-08-25）</p></li><li id="source-S6"><a href="https://itl.nist.gov/div898/handbook/prc/section3/prc312.htm" rel="noreferrer">S6 · NIST Confidence Intervals for Differences Between Means</a><p>paired/unpaired comparisons、difference uncertainty與零差異判斷。（查閱：2026-08-25）</p></li><li id="source-S7"><a href="https://www.tpc.org/tpc_documents_current_versions/current_specifications5.asp?mode=TPC-MEMBER" rel="noreferrer">S7 · TPC Current Benchmark Specifications</a><p>2026 active transaction/database benchmark versions、fair use、audit與full disclosure context。（查閱：2026-08-25）</p></li><li id="source-S8"><a href="https://notes.cs61c.org/content/pipeline/" rel="noreferrer">S8 · UC Berkeley CS61C Course Notes: Performance Metrics</a><p>CPU performance equation、latency/throughput、speedup與instruction/cycle/time factorization。（查閱：2026-08-25）</p></li><li id="source-S9"><a href="https://www.intel.com/content/www/us/en/developer/articles/technical/intel64-and-ia32-architectures-optimization.html" rel="noreferrer">S9 · Intel 64 and IA-32 Optimization Reference Manual</a><p>current microarchitecture optimization、instruction latency/throughput、branch、memory與measurement principles。（查閱：2026-08-25）</p></li><li id="source-S10"><a href="https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html" rel="noreferrer">S10 · Intel 64 and IA-32 Software Developer Manuals, Version 092</a><p>2026-08-19 performance monitoring architecture、PMU sharing、events與model-specific scope。（查閱：2026-08-25）</p></li><li id="source-S11"><a href="https://www.man7.org/linux/man-pages/man2/perf_event_open.2.html" rel="noreferrer">S11 · Linux perf_event_open(2)</a><p>counter groups、sampling、time_enabled/time_running、multiplex scaling、lost samples與PMU constraints。（查閱：2026-08-25）</p></li><li id="source-S12"><a href="https://www.spec.org/cpu2026/Docs/result-fields.html" rel="noreferrer">S12 · SPEC CPU 2026 Result Fields</a><p>metric名稱、time/throughput interpretation、benchmark counts、base/peak與result disclosure欄位。（查閱：2026-08-25）</p></li><li id="source-S13"><a href="https://mlcommons.org/2026/04/mlperf-inference-v6-0-results/" rel="noreferrer">S13 · MLCommons Releases MLPerf Inference v6.0</a><p>2026-04最新inference suite版本、更新workloads與current deployment context。（查閱：2026-08-25）</p></li><li id="source-S14"><a href="https://docs.mlcommons.org/inference/submission/" rel="noreferrer">S14 · MLPerf Inference Submission Guide</a><p>SUT、categories、scenarios、LoadGen、accuracy-only/performance-only與submission artifacts。（查閱：2026-08-25）</p></li><li id="source-S15"><a href="https://docs.riscv.org/reference/isa/_attachments/riscv-privileged.pdf" rel="noreferrer">S15 · RISC-V Privileged Architecture: Hardware Performance Monitor</a><p>cycle、instret、hpmcounter、mhpmevent、counter inhibit與privilege-mode counting semantics。（查閱：2026-08-25）</p></li><li id="source-S16"><a href="https://developer.arm.com/community/arm-community-blogs/b/architectures-and-processors-blog/posts/profile-firmware-with-performance-monitor-unit-in-armv8-a-cpu" rel="noreferrer">S16 · Arm: Profile Firmware with the PMU</a><p>Armv8-A PMU cycle/event counters、Exception Level filters與firmware profiling。（查閱：2026-08-25）</p></li><li id="source-S17"><a href="https://docs.kernel.org/admin-guide/perf-security.html" rel="noreferrer">S17 · Linux Kernel: Perf Events and Tool Security</a><p>perf_events data categories、scope、PMU/uncore data與security access boundary。（查閱：2026-08-25）</p></li><li id="source-S18"><a href="https://docs.kernel.org/admin-guide/workload-tracing.html" rel="noreferrer">S18 · Linux Kernel: Workload Tracing</a><p>perf counting/sampling、kernel subsystem tracing與workload attribution workflow。（查閱：2026-08-25）</p></li><li id="source-S19"><a href="https://docs.kernel.org/trace/user_events.html" rel="noreferrer">S19 · Linux Kernel: User Events Tracing</a><p>application-defined trace events、timestamps、ftrace/perf integration與event overhead boundary。（查閱：2026-08-25）</p></li><li id="source-S20"><a href="https://www2.eecs.berkeley.edu/Pubs/TechRpts/2008/Archive/EECS-2008-134.pdf" rel="noreferrer">S20 · Roofline: An Insightful Visual Performance Model</a><p>operational intensity、compute roof、bandwidth roof、ridge point與bottleneck analysis原始模型。（查閱：2026-08-25）</p></li><li id="source-S21"><a href="https://amcr.lbl.gov/departments/computer-science-department/ppan/roofline-performance-model/" rel="noreferrer">S21 · Berkeley Lab Roofline Model</a><p>Roofline現代應用、data movement、attained performance與optimization interpretation。（查閱：2026-08-25）</p></li><li id="source-S22"><a href="https://llvm.org/docs/HowToBuildWithPGO.html" rel="noreferrer">S22 · LLVM Profile-Guided Optimization</a><p>instrumented profile generation、training benchmark代表性、merge/use/evaluation PGO workflow。（查閱：2026-08-25）</p></li><li id="source-S23"><a href="https://llvm.org/docs/CommandGuide/llvm-profgen.html" rel="noreferrer">S23 · LLVM llvm-profgen</a><p>perf/ETM sample-based profile generation、symbolization與sample PGO data flow。（查閱：2026-08-25）</p></li><li id="source-S24"><a href="https://llvm.org/docs/MemProf.html" rel="noreferrer">S24 · LLVM MemProf</a><p>allocation hotness/lifetime/access profile與memory-layout guided optimization。（查閱：2026-08-25）</p></li><li id="source-S25"><a href="https://doi.org/10.1145/1465482.1465560" rel="noreferrer">S25 · Gene Amdahl: Validity of the Single Processor Approach</a><p>固定workload局部改善與serial fraction上限的原始論文。（查閱：2026-08-25）</p></li><li id="source-S26"><a href="https://course.ece.cmu.edu/~ece600/fall16/references/gustafson.pdf" rel="noreferrer">S26 · John Gustafson: Reevaluating Amdahl&#039;s Law</a><p>fixed-time/scaled workload、Gustafson speedup與Amdahl假設差異的原始論文。（查閱：2026-08-25）</p></li><li id="source-S27"><a href="https://www.openmp.org/wp-content/uploads/OpenMP-API-Specification-6-0.pdf" rel="noreferrer">S27 · OpenMP API Specification 6.0</a><p>threads、worksharing、synchronization、timing routines與shared-memory scaling semantics。（查閱：2026-08-25）</p></li><li id="source-S28"><a href="https://docs.kernel.org/power/powercap/powercap.html" rel="noreferrer">S28 · Linux Kernel Power Capping Framework</a><p>energy_uj、counter range、power zones、RAPL與measurement/control boundaries。（查閱：2026-08-25）</p></li><li id="source-S29"><a href="https://github.com/mlcommons/inference_policies/blob/master/MLPerf_Audit_Guidelines.adoc" rel="noreferrer">S29 · MLPerf Inference Audit Guidelines</a><p>QPS/W、joules/stream、power/time alignment、scenario metrics、accuracy與audit consistency。（查閱：2026-08-25）</p></li></ol></section>
+      </article>
     </section>
   </main>
   <footer class="footer">
