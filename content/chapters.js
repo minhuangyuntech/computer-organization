@@ -3235,7 +3235,7 @@ const chapterDetails = [
           "程式以 strip mining 處理任意長度 N：每輪 `vsetvli` 依剩餘 elements 和 hardware capacity 設定 VL，vector load/compute/store 只處理 active elements，再把 index 增加 VL。最後一輪可自然使用較小 VL，避免為固定 SIMD width 另寫 scalar tail。vector-length agnostic binary 因而能在不同 VLEN implementations 上運作。",
           "mask register 讓每個 element 可選擇是否更新，適合 conditionals 與 tail；但 masked-off lanes 不產生有用 operation，不能視為滿利用率。vector chaining、memory stride、gather/scatter、bank conflicts 與 memory bandwidth 會使 peak lane count 與實際 throughput 出現差距。"
         ],
-        figure: { type: "bits", title: "VLEN=256、SEW=32、LMUL=1 的 vector register", totalBits: 256, items: [{ label: "e0", bits: 32 }, { label: "e1", bits: 32 }, { label: "e2", bits: 32 }, { label: "e3", bits: 32 }, { label: "e4", bits: 32 }, { label: "e5", bits: 32 }, { label: "e6", bits: 32 }, { label: "e7", bits: 32 }], caption: "此設定 VLMAX=8 elements；實際 VL 可小於 8，例如最後一輪只啟用 3 個 elements。" },
+        figure: { type: "bits", title: "VLEN=256、SEW=32、LMUL=1 的 vector register", totalBits: 256, items: [{ label: "e0", bits: 32, detail: "element 0" }, { label: "e1", bits: 32, detail: "element 1" }, { label: "e2", bits: 32, detail: "element 2" }, { label: "e3", bits: 32, detail: "element 3" }, { label: "e4", bits: 32, detail: "element 4" }, { label: "e5", bits: 32, detail: "element 5" }, { label: "e6", bits: 32, detail: "element 6" }, { label: "e7", bits: 32, detail: "element 7" }], caption: "此設定 VLMAX=8 elements；實際 VL 可小於 8，例如最後一輪只啟用 3 個 elements。" },
         sourceRefs: ["S5", "S6"]
       },
       {
@@ -3486,7 +3486,7 @@ const chapterDetails = [
           "C 的 `volatile` 告訴 compiler 每次 expression 都要真的發生 access，避免把 polling read 快取在 register 或刪除 output write；它不保證 atomicity、不建立跨 core/device 的 ordering，也不等於 thread synchronization。當 architecture 或 peripheral contract 要求完成前一筆 write、刷新 pipeline 或限制 memory reordering 時，還需要 DMB、DSB、ISB 或平台 API 定義的 barrier。",
           "read-modify-write 必須符合 register semantics。對一般 RW register，可用 `(old & ~mask) | value` 更新欄位；對 W1C status，先 read 再 OR 後 write 可能意外清除其他已置位事件。reserved bits 通常要保留 reset/value 規則，access width 與 alignment 也不可任意改變。正確 driver 的單位是規格定義的 transaction，不只是 C assignment。"
         ],
-        figure: { type: "bits", title: "32-bit 控制暫存器的欄位範例", totalBits: 32, items: [{ label: "RES", bits: 16 }, { label: "DIV", bits: 8 }, { label: "MODE", bits: 4 }, { label: "IRQ_EN", bits: 1 }, { label: "DMA_EN", bits: 1 }, { label: "START", bits: 1 }, { label: "ENABLE", bits: 1 }], caption: "更新 MODE 或 DIV 時要以欄位 mask 保留其他 bits；真正 access policy 必須以該元件 reference manual 為準。" },
+        figure: { type: "bits", title: "32-bit 控制暫存器的欄位範例", totalBits: 32, items: [{ label: "RES", bits: 16, detail: "reserved; preserve" }, { label: "DIV", bits: 8, detail: "clock divider" }, { label: "MODE", bits: 4, detail: "operating mode" }, { label: "IRQ_EN", bits: 1, detail: "interrupt enable" }, { label: "DMA_EN", bits: 1, detail: "DMA request enable" }, { label: "START", bits: 1, detail: "start command" }, { label: "ENABLE", bits: 1, detail: "peripheral enable" }], caption: "更新 MODE 或 DIV 時要以欄位 mask 保留其他 bits；真正 access policy 必須以該元件 reference manual 為準。" },
         sourceRefs: ["S1", "S2", "S3"]
       },
       {
@@ -3975,6 +3975,247 @@ const chapterDetails = [
       { key: "S27", title: "OpenMP API Specification 6.0", url: "https://www.openmp.org/wp-content/uploads/OpenMP-API-Specification-6-0.pdf", accessed: "2026-08-25", use: "threads、worksharing、synchronization、timing routines與shared-memory scaling semantics。" },
       { key: "S28", title: "Linux Kernel Power Capping Framework", url: "https://docs.kernel.org/power/powercap/powercap.html", accessed: "2026-08-25", use: "energy_uj、counter range、power zones、RAPL與measurement/control boundaries。" },
       { key: "S29", title: "MLPerf Inference Audit Guidelines", url: "https://github.com/mlcommons/inference_policies/blob/master/MLPerf_Audit_Guidelines.adoc", accessed: "2026-08-25", use: "QPS/W、joules/stream、power/time alignment、scenario metrics、accuracy與audit consistency。" }
+    ]
+  },
+  {
+    chapter: 12,
+    title: "網路組織與架構：從 frame 到端到端連線",
+    english: "Network Organization and Architecture: From Frames to End-to-End Connections",
+    revised: "2026-08-26",
+    readingTime: "約 320–380 分鐘",
+    intro: "網路不是一條把資料送到遠端的抽象管線，而是一連串具有不同位址、封裝、佇列與故障邊界的系統。應用程式交付 bytes 後，傳輸層建立程序到程序的語意，網路層選擇跨網路路徑，鏈路層在每一跳重建 frame，實體層才把位元轉成電或光訊號。本章由一個封包的生命週期出發，逐步推導 transmission、propagation、processing、queueing delay，建立 Ethernet switching、CIDR、IPv4/IPv6、ARP/Neighbor Discovery、longest-prefix forwarding 與 routing 的完整模型，再以 TCP sequence space、RTO、flow/congestion control、BDP 及現代 QUIC/TLS/HTTP 收束端到端效能。所有位址、長度、offset、window 與時間例題均可獨立重算。",
+    outcomes: [
+      "能沿 TCP/IP 分層追蹤 application data、segment、datagram 與 frame 的封裝與解除封裝。",
+      "能分開計算 transmission、propagation、processing 與 queueing delay，並辨認 store-and-forward 影響。",
+      "能用 Shannon capacity 說明 bandwidth、SNR 與理論 channel capacity 的關係。",
+      "能解讀 Ethernet frame、MAC address、EtherType、MTU、FCS 與 on-wire overhead。",
+      "能手算 learning switch 的 MAC table 更新、flooding、forwarding 與 filtering。",
+      "能由 IPv4 prefix length 求 subnet mask、network、broadcast、host range 與 address count。",
+      "能比較 IPv4 與 IPv6 header、TTL/Hop Limit、checksum、extension header 與 fragmentation。",
+      "能判斷目的地在本地或遠端，並說明 ARP、IPv6 ND 與 default gateway 的角色。",
+      "能依 longest-prefix match 從 forwarding table 選出 next hop 與 output interface。",
+      "能以 Dijkstra 與 Bellman–Ford 的核心 recurrence 推導 link-state 與 distance-vector route。",
+      "能解讀 UDP/TCP ports、TCP sequence/acknowledgment、receiver window 與連線狀態。",
+      "能計算 TCP RTO、bandwidth-delay product、window-limited throughput 與 congestion window 的效果。",
+      "能把 DNS、TLS、HTTP 與 QUIC 放回分層資料路徑，分析建立連線的 RTT 成本與安全邊界。"
+    ],
+    sections: [
+      {
+        title: "1. 分層是端點間的邏輯協定，也是相鄰層的服務契約",
+        paragraphs: [
+          "TCP/IP stack 常以 application、transport、internet 與 link 四層描述；OSI 七層可提供更細的功能名稱，但實際 Internet 協定不必逐層一一對應。peer layers 是邏輯關係：來源 TCP header 由目的 TCP 解讀；中間 Ethernet switch 不需要理解 HTTP body，普通 IP router 也不以 TCP port 決定基本轉送。",
+          "encapsulation 是把上層 PDU 放進下層 payload。HTTP message 可成為 TCP byte stream 的一部分，TCP segment 成為 IP payload，IP datagram 再成為 Ethernet payload。每過一個 router，IP datagram通常保留端到端 source/destination address，但 link header 與 trailer會依下一段鏈路移除並重建；TTL/Hop Limit等逐跳欄位則改變。",
+          "multiplexing 讓多個上層共用同一層：EtherType辨認IPv4、IPv6等payload，IP Protocol/IPv6 Next Header辨認TCP或UDP，transport destination port辨認socket所屬服務。demultiplexing依這些欄位逐層上送。header不是免費資訊；小payload會讓header比例升高，padding、preamble與inter-frame gap還會增加真正line occupancy。"
+        ],
+        figure: { type: "matrix", title: "一筆 HTTPS 資料的四層封裝", columns: ["層", "資料單位", "主要識別", "本層提供", "典型範圍"], rows: [["Application", "message", "URL / name", "資料語意", "process"], ["Transport", "segment/datagram", "ports + protocol", "process-to-process", "end hosts"], ["Internet", "IP datagram", "IP prefix/address", "跨網路轉送", "routers"], ["Link", "frame", "MAC + EtherType", "單一鏈路交付", "one hop"], ["Physical", "symbols/bits", "encoding/channel", "訊號傳輸", "medium"]], caption: "資料向下封裝、向上解除封裝；每層的位址與故障範圍不同。" },
+        sourceRefs: ["S1", "S2"]
+      },
+      {
+        title: "2. Packet switching 的時間由四種 delay 與每一跳 serialization 組成",
+        paragraphs: [
+          "一個 packet 在一條 link 的 nodal delay 可寫成 dnodal=dproc+dqueue+dtrans+dprop。processing包含header parse與table lookup；queueing取決於同時競爭output link的traffic；transmission delay=L/R，是把L bits逐一推上R bit/s鏈路所需時間；propagation delay=d/s，是訊號跨越距離d、以媒介速度s前進的時間。",
+          "transmission和propagation最容易混淆。把1500-byte frame送入100 Mbit/s link需要120 microseconds，與線長無關；訊號穿越1000 km光纖，若速度近似2×10^8 m/s，需要5 ms，與packet長度無關。提高link rate只縮短L/R，不會消除跨洋propagation或router queueing。",
+          "store-and-forward switch通常收完整packet後才由下一link傳出，所以同速、無排隊的k條links至少承擔k次L/R，加上每段propagation與中間processing。長訊息切成多個packets後可pipeline：第一包仍經完整end-to-end delay，後續包能同時占據不同links；總完成時間不能把每包延遲單純相乘。"
+        ],
+        figure: { type: "flow", title: "一跳 packet delay 的可加總部分", items: [{ label: "Process", detail: "parse + lookup" }, { label: "Queue", detail: "wait for output" }, { label: "Transmit", detail: "L/R" }, { label: "Propagate", detail: "distance/speed" }, { label: "Next node", detail: "repeat per hop" }], caption: "queueing通常最不穩定；其餘三項可由明示參數先建立下界。" },
+        sourceRefs: ["S2", "S3"]
+      },
+      {
+        title: "3. Physical channel 的 bit rate 受頻寬、訊號品質與編碼共同限制",
+        paragraphs: [
+          "媒介可為twisted pair、coaxial cable、fiber或wireless spectrum；bit不是以抽象0/1直接飛行，而是由voltage、light intensity、phase、frequency等symbols承載。bandwidth B以Hz描述通道可通過的頻率範圍，bit rate以bit/s描述資訊速率，兩者不是同一單位。調變讓一個symbol可代表多個bits，但可區分的levels越多，越容易受noise影響。",
+          "對含additive noise的理想化channel，Shannon capacity C=B log2(1+S/N)給出可靠通訊的理論上限。S/N必須使用線性power ratio；若給SNRdB，先用10^(SNRdB/10)轉換。公式不指定實際modulation或error-correcting code，也不保證達到上限，只說任何可靠方案都不能長期超過此bound。",
+          "line rate、payload throughput與goodput要分開。line rate包含frame header、FCS、preamble、coding overhead與idle規則；payload throughput扣除協定overhead；goodput再扣掉重傳與應用不需要的bytes。1 Gbit/s Ethernet不代表application每秒必定收到125 MB，CPU、switch、receiver window及storage也可能形成瓶頸。"
+        ],
+        figure: { type: "matrix", title: "通道與可觀察速率不可混用", columns: ["量", "單位", "決定因素", "包含overhead", "用途"], rows: [["Bandwidth", "Hz", "channel response", "不適用", "頻域範圍"], ["Symbol rate", "baud", "symbols/s", "encoding相關", "訊號變化"], ["Line rate", "bit/s", "PHY/MAC", "是", "link規格"], ["Payload throughput", "bit/s", "frame效率", "扣link overhead", "協定資料"], ["Goodput", "bit/s", "loss/retransmit/app", "只算有用資料", "應用效果"]], caption: "同一條link可同時具有1 Gbit/s line rate與較低的payload throughput、goodput。" },
+        sourceRefs: ["S3", "S4"]
+      },
+      {
+        title: "4. Ethernet frame 建立單一鏈路的位址、型別、邊界與錯誤偵測",
+        paragraphs: [
+          "Ethernet MAC frame的核心欄位是6-byte destination、6-byte source、2-byte Type/Length、payload與4-byte Frame Check Sequence。EtherType 0x0800表示IPv4，0x86DD表示IPv6。標準Ethernet payload通常至少46 bytes、最多1500 bytes；不足minimum時加入padding，但padding不屬於上層IP total length。",
+          "FCS通常使用CRC偵測傳輸錯誤。sender把frame bits視為polynomial並附加remainder，receiver重算後以不符判定corruption；CRC是error detection，不是cryptographic integrity，也不自行修正錯誤。壞frame通常在link層丟棄，是否重傳由特定link protocol或較高層決定。",
+          "on-wire occupancy還包括7-byte preamble、1-byte start frame delimiter及frame間至少12-byte time的interpacket gap。對1500-byte payload，從destination到FCS是1518 bytes，若把8-byte preamble/SFD與12-byte gap納入時槽則為1538 byte-times。VLAN tag會再加入4 bytes，因此計算必須先明示boundary。"
+        ],
+        figure: { type: "matrix", title: "標準 Ethernet frame 的欄位邊界", columns: ["欄位", "長度", "主要用途", "是否屬MAC frame", "每hop改變"], rows: [["Preamble + SFD", "8 B", "clock sync + start", "否", "是"], ["Destination MAC", "6 B", "link receiver", "是", "是"], ["Source MAC", "6 B", "link sender", "是", "是"], ["Type/Length", "2 B", "payload protocol", "是", "可能"], ["Payload + pad", "46–1500 B", "upper-layer PDU", "是", "內容通常保留"], ["FCS", "4 B", "CRC detection", "是", "重算"], ["Interpacket gap", "12 byte-times", "medium idle", "否", "每link"]], caption: "1518-byte frame與1538-byte slot不是矛盾，而是計量boundary不同。" },
+        sourceRefs: ["S4", "S5"]
+      },
+      {
+        title: "5. Learning bridge 由來源學習、目的查找與loop-free topology形成LAN",
+        paragraphs: [
+          "Ethernet switch/bridge收到frame時先把source MAC與ingress port寫入forwarding database；若destination已知且位於另一port，就只forward該port；若destination與source在同port則filter；未知unicast、broadcast及部分multicast會flood到同VLAN內除ingress外的ports。table entries會aging，讓移動主機可重新學習。",
+          "switch不是router。它在bridged LAN內處理MAC frames，通常不遞減IP TTL；router終止一段link frame、查IP prefix，再為下一hop建立新frame。VLAN以邏輯broadcast domain分割同一switch fabric；802.1Q tag攜帶VLAN identifier與priority資訊，access/trunk的tag處理依配置而定。",
+          "任意bridging loop會讓broadcast或unknown unicast不斷複製，因Ethernet header沒有像IP TTL的通用hop limit。Spanning Tree類控制機制會選出無loop的active topology，或現代fabric使用其他loop-aware forwarding。資料平面table lookup與控制平面topology建立必須分開理解。"
+        ],
+        figure: { type: "matrix", title: "Learning switch 的四種目的處理", columns: ["Destination狀態", "MAC table結果", "動作", "輸出範圍", "同時學習source"], rows: [["Known remote", "port ≠ ingress", "forward", "one port", "是"], ["Known local", "port = ingress", "filter", "none", "是"], ["Unknown unicast", "no entry", "flood", "VLAN內其他ports", "是"], ["Broadcast", "FF:FF:FF:FF:FF:FF", "flood", "VLAN內其他ports", "是"]], caption: "學習依source、轉送依destination；把兩個方向顛倒會得到錯誤table。" },
+        sourceRefs: ["S4", "S6"]
+      },
+      {
+        title: "6. CIDR prefix 把 IPv4 address 分成可聚合的network與host部分",
+        paragraphs: [
+          "IPv4 address是32 bits。CIDR表示法a.b.c.d/p指出前p bits為prefix，subnet mask即前p bits為1、其餘為0。network address=IP bitwise AND mask；同一prefix的address count=2^(32−p)。傳統subnet中all-zero host部分是network address，all-one host部分是directed broadcast，因此一般unicast host count為2^(32−p)−2；/31與/32有特殊用途，不能機械套用。",
+          "subnetting從host部分再借bits建立較小prefix。例如/24切成四個/26，每段有64 addresses，起點在最後octet以64遞增。判斷192.0.2.130/26時，130落在128–191 block，所以network=192.0.2.128、broadcast=.191、一般host=.129到.190。",
+          "aggregation把多個連續、對齊的prefix合成較短prefix，減少routing table entries。能否合併不只看address連續，還要看binary high bits相同及route policy/next hop一致。CIDR address不自帶class A/B/C；看到第一octet就使用classful default mask會破壞現代prefix判斷。"
+        ],
+        figure: { type: "bits", title: "192.0.2.130/26 的位元切分", totalBits: 32, items: [{ label: "Network prefix", bits: 26, detail: "11000000 00000000 00000010 10" }, { label: "Host field", bits: 6, detail: "000010 = host offset 2" }], caption: "prefix固定到192.0.2.128；6-bit host field提供64個address positions。" },
+        sourceRefs: ["S9", "S12"]
+      },
+      {
+        title: "7. IPv4 與 IPv6 都提供 best-effort datagram，但 header 與 fragmentation 邊界不同",
+        paragraphs: [
+          "IPv4 base header通常20 bytes，IHL允許options增加長度；Total Length含header與payload。router每hop遞減TTL，若成為0便丟棄並通常回ICMP Time Exceeded；因TTL改變，IPv4 header checksum也需更新。Protocol指出上層TCP、UDP或ICMP。IP本身不承諾交付、順序、唯一性或固定延遲。",
+          "IPv4 router在DF未設定且next-hop MTU較小時可fragment。除最後一片外，fragment data長度必須是8-byte倍數，Fragment Offset也以8 bytes為單位；destination才reassemble。任一fragment遺失會讓整個upper-layer datagram無法完成，且middlebox處理使fragmentation脆弱，現代端點通常依Path MTU調整packet size。",
+          "IPv6 fixed header為40 bytes，使用128-bit addresses、Next Header、Payload Length與Hop Limit，沒有IPv4 header checksum。intermediate routers不做IPv6 fragmentation；source可使用Fragment extension header。IPv6要求link MTU至少1280 bytes，並鼓勵application配合path MTU，不能把IPv4與IPv6 fragmentation行為混為一談。"
+        ],
+        figure: { type: "matrix", title: "IPv4 與 IPv6 forwarding-relevant 欄位", columns: ["特性", "IPv4", "IPv6", "每hop處理", "常見誤解"], rows: [["Address", "32 bits", "128 bits", "查prefix", "長度不等於安全性"], ["Base header", "通常20 B", "40 B", "parse", "IPv6不一定總overhead較少"], ["Loop bound", "TTL", "Hop Limit", "decrement", "不是精確秒數"], ["Header checksum", "16-bit", "none", "IPv4更新", "payload仍靠上層/link"], ["Fragmentation", "source/router", "source only", "IPv6 router不切片", "reassembly在destination"]], caption: "兩者都採逐datagram best-effort forwarding，但固定header與fragmentation責任不同。" },
+        sourceRefs: ["S10", "S11", "S26"]
+      },
+      {
+        title: "8. ARP 與 IPv6 Neighbor Discovery 只解析下一跳，不解析整條路徑",
+        paragraphs: [
+          "IPv4 sender先用prefix判斷destination是否on-link。若同subnet，next-hop IP就是destination IP；若off-link，next-hop IP是default gateway。ARP request以broadcast詢問某IPv4對應的link address，owner以ARP reply回覆，結果進入有期限的cache。真正Ethernet destination MAC永遠是當前link上的next hop，不是遠端Internet server的MAC。",
+          "每經router，incoming frame被移除；router依destination IP做forwarding，再解析新next hop的MAC並建立outgoing frame。因此端到端IP destination通常不變，但source/destination MAC逐hop改變。NAT或tunnel會另外改寫/封裝network-layer欄位，那是不同機制。",
+          "IPv6 Neighbor Discovery使用ICMPv6 Neighbor Solicitation/Advertisement與multicast，並整合router discovery、prefix discovery、neighbor reachability及redirect等功能。ND不只是把ARP換成IPv6 address；Router Advertisement還可提供on-link prefix與autoconfiguration相關資訊。ARP/ND cache miss會增加首包延遲，cache entry也不是永久真理。"
+        ],
+        figure: { type: "flow", title: "遠端目的地的下一跳解析", items: [{ label: "Host 10.0.1.10/24", detail: "dest 10.0.2.20" }, { label: "Prefix compare", detail: "off-link" }, { label: "ARP for gateway", detail: "10.0.1.1 → MAC R1" }, { label: "Ethernet frame", detail: "dst MAC R1" }, { label: "IP datagram", detail: "dst IP 10.0.2.20" }], caption: "host解析gateway的MAC；它不會在本地LAN詢問遠端host的MAC。" },
+        sourceRefs: ["S7", "S8", "S1"]
+      },
+      {
+        title: "9. Router 以 longest-prefix match 把 destination 映射到 next hop",
+        paragraphs: [
+          "forwarding plane對每個packet執行：驗證header、更新TTL/Hop Limit、以destination address查Forwarding Information Base、選output interface/next hop、處理MTU與queue，最後建立新link frame。routing plane則透過static configuration或routing protocols計算可達性，再把結果安裝進FIB。",
+          "多個prefix都可能match同一destination，longest-prefix match選p最大的entry，因為它最specific。例如10.1.2.200同時match0.0.0.0/0、10.0.0.0/8、10.1.0.0/16與10.1.2.0/24，應選/24。default route /0只在沒有更specific route時接住其餘address。",
+          "software可用prefix trie，high-speed routers常使用最佳化tree、hash組合或TCAM；實作不同不改變LPM語意。next hop可能是直接connected destination、另一router或discard action。routing table顯示的protocol/metric不一定等同hardware FIB實際entry，除錯時要辨認觀察的是RIB、FIB或neighbor table。"
+        ],
+        figure: { type: "hierarchy", title: "10.1.2.200 的 longest-prefix selection", items: [{ label: "0.0.0.0/0", detail: "match → default R0" }, { label: "10.0.0.0/8", detail: "match → R1" }, { label: "10.1.0.0/16", detail: "match → R2" }, { label: "10.1.2.0/24", detail: "match → R3" }, { label: "Selected", detail: "/24 is longest → R3" }], caption: "metric只在候選route的prefix等條件下比較；較短prefix不會因metric小而壓過較specific route。" },
+        sourceRefs: ["S9", "S12"]
+      },
+      {
+        title: "10. Link-state、distance-vector 與 path-vector 解決不同控制範圍",
+        paragraphs: [
+          "link-state protocol讓router散布local links與cost，區域內router建立相近topology database，再以Dijkstra從自己為root計算shortest-path tree。初始化D(source)=0，其餘∞；每次固定目前最小tentative distance的node，再relax其edges：D(v)=min(D(v),D(u)+c(u,v))。OSPF是典型link-state IGP。",
+          "distance-vector不需完整topology；node x依鄰居v通告的distance更新Dx(y)=min_v{c(x,v)+Dv(y)}，本質是distributed Bellman–Ford。RIP以hop count為metric。資訊局部、實作簡單，但failure後可能形成loop與count-to-infinity，需split horizon、poisoning、hold-down等機制改善收斂。",
+          "Internet由多個Autonomous Systems組成，跨AS不只追求numerically shortest path，還必須表達policy。BGP通告prefix與AS_PATH等attributes，屬path-vector；AS_PATH也協助loop detection。OSPF cost、RIP hops與BGP policy不可放進同一張數字表直接比較，因它們的scope與決策目標不同。"
+        ],
+        figure: { type: "matrix", title: "三類 routing control model", columns: ["模型", "交換資訊", "典型演算法/協定", "主要scope", "核心風險"], rows: [["Link-state", "links + costs", "Dijkstra / OSPF", "one AS/area", "flooding/database一致性"], ["Distance-vector", "distance via neighbors", "Bellman–Ford / RIP", "small domain", "loop/count-to-infinity"], ["Path-vector", "prefix + path attributes", "BGP", "between ASes", "policy與收斂"]], caption: "forwarding依FIB逐packet執行；這三類機制是在控制平面產生route。" },
+        sourceRefs: ["S13", "S14", "S3"]
+      },
+      {
+        title: "11. UDP 保留 message 邊界；TCP 建立有序可靠的 byte stream",
+        paragraphs: [
+          "UDP header只有source port、destination port、length與checksum，提供process multiplexing及datagram boundary，但不保證delivery、order、duplicate suppression或congestion response。application若需要這些語意必須自行建立或使用另一transport。port number是transport demultiplex key，不是process ID，也不代表流量可信。",
+          "TCP connection由local/remote IP、local/remote port及protocol共同辨識。TCP把application bytes編號；segment Sequence Number通常是本segment第一個data byte的序號，Acknowledgment Number是receiver下一個期望byte。ACK是cumulative，表示此前連續bytes已收到；segment boundary不會保留給application，send兩次不保證receive兩次。",
+          "three-way handshake以SYN交換initial sequence numbers並確認雙向可達，之後state machine處理ESTABLISHED與close。checksum涵蓋pseudo-header、TCP header與data；retransmission、sequence space、ACK與timer共同從不可靠IP建立可靠stream。可靠不等於低延遲，重傳與head-of-line blocking仍會延後後續bytes。"
+        ],
+        figure: { type: "flow", title: "TCP cumulative acknowledgment 的 byte-space", items: [{ label: "SYN seq=1000", detail: "SYN consumes one" }, { label: "Data seq=1001", detail: "500 bytes" }, { label: "Receiver", detail: "bytes 1001–1500" }, { label: "ACK=1501", detail: "next expected" }, { label: "Duplicate segment", detail: "discard data, repeat ACK" }], caption: "ACK值不是已收到最後byte，而是下一個期望byte；SYN與FIN各占一個sequence number。" },
+        sourceRefs: ["S15", "S16", "S25"]
+      },
+      {
+        title: "12. TCP 的 timer、flow control 與 congestion control 限制不同",
+        paragraphs: [
+          "RTO必須高於典型RTT又能追蹤變化。RFC 6298以SRTT與RTTVAR平滑samples：首次R時SRTT=R、RTTVAR=R/2；後續先以RTTVAR=(1−β)RTTVAR+β|SRTT−R'|，再以SRTT=(1−α)SRTT+αR'，α=1/8、β=1/4；RTO=SRTT+max(G,4RTTVAR)，且計算後RTO小於1秒可round up到1秒。timeout後採exponential backoff。",
+          "receiver advertised window rwnd是flow control，防止sender超過receiver buffer；congestion window cwnd由sender依network feedback維護，保護共享path。實際可在途資料受min(rwnd,cwnd)及已發未ACK bytes限制。slow start、congestion avoidance、loss/ECN response調整cwnd；CUBIC是現代廣泛部署且已標準化的演算法，但不是TCP唯一合法控制器。",
+          "BDP=path bottleneck bandwidth×RTT，近似填滿pipe所需in-flight bits。若window W小於BDP且application有足夠資料，window-limited throughput上限約W/RTT。高BDP path需要TCP window scale讓rwnd超過原16-bit欄位範圍；但盲目增大buffer/window可能提高queueing與tail latency，不能把最大in-flight等同最佳值。"
+        ],
+        figure: { type: "hierarchy", title: "TCP sender 的三重發送上限", items: [{ label: "Application data", detail: "是否有bytes可送" }, { label: "Receiver window rwnd", detail: "receiver buffer capacity" }, { label: "Congestion window cwnd", detail: "path capacity estimate" }, { label: "Flight size", detail: "sent but not acknowledged" }, { label: "Send allowance", detail: "min(rwnd,cwnd) − flight" }], caption: "rwnd保護receiver，cwnd保護network；任一較小都可能限制throughput。" },
+        sourceRefs: ["S17", "S18", "S19", "S20"]
+      },
+      {
+        title: "13. DNS、TLS、HTTP 與 QUIC 把名稱、安全與應用語意疊在傳輸之上",
+        paragraphs: [
+          "DNS把domain name查成resource records。stub resolver通常問recursive resolver；cache miss時resolver可依root、TLD、authoritative hierarchy取得答案並依TTL cache。DNS message可經UDP或TCP等transport；DNS TTL是cache lifetime，和IP TTL/Hop Limit完全不同。name解析成功也不保證後續route、port或application可用。",
+          "TLS 1.3在reliable transport上提供peer authentication、confidentiality與integrity；certificate驗證把public key綁到name，並依trust anchors與validity等規則建立信任。HTTP Semantics定義method、status、fields與representation，不等於固定wire framing；HTTP/1.1、HTTP/2與HTTP/3可承載相近語意卻使用不同mapping。",
+          "QUIC在UDP之上整合secure handshake、reliable streams、loss detection與congestion control，HTTP/3使用QUIC。streams有各自ordered delivery，可減少TCP connection層head-of-line blocking；但同一路徑的packet loss與congestion仍存在。分析網頁載入時應列出DNS cache、connection reuse、handshake、request/response、content transfer各自是否發生，而不是固定宣稱需要某個RTT數。"
+        ],
+        figure: { type: "flow", title: "一次新 HTTPS 名稱連線的條件式路徑", items: [{ label: "DNS", detail: "cache hit or hierarchy" }, { label: "Route + neighbor", detail: "FIB and ARP/ND" }, { label: "Transport", detail: "TCP or QUIC" }, { label: "Security", detail: "TLS authentication + keys" }, { label: "HTTP", detail: "request + representation" }], caption: "cache與connection reuse會略過部分階段；流程圖是依賴關係，不是固定封包數。" },
+        sourceRefs: ["S21", "S22", "S23", "S24"]
+      }
+    ],
+    workedExamples: [
+      { title: "例題一：封裝後的payload效率", prompt: "1000-byte application data由20-byte TCP、20-byte IPv4、14-byte Ethernet header與4-byte FCS承載，忽略padding、preamble與gap。求總bytes與效率。", steps: ["application payload=1000 B。", "transport後為1000+20=1020 B。", "IPv4 datagram為1020+20=1040 B。", "MAC frame由14-byte header、1040-byte payload、4-byte FCS組成。", "總長=14+1040+4=1058 B。", "application efficiency=1000/1058≈94.52%。"], result: "此boundary下總長1058 B，application payload效率約94.52%。" },
+      { title: "例題二：三條link的store-and-forward延遲", prompt: "1500-byte packet經3條100 Mbit/s links，總傳播距離1000 km、訊號速率2×10^8 m/s；2台中間switch各processing 20 µs，忽略queue。求第一包end-to-end delay。", steps: ["L=1500×8=12000 bits。", "每條transmission delay=L/R=12000/100,000,000=120 µs。", "3條links共3×120=360 µs。", "propagation=1,000,000/(2×10^8)=0.005 s=5 ms。", "processing=2×20=40 µs。", "total=360+5000+40=5400 µs=5.4 ms。"], result: "第一包store-and-forward end-to-end delay為5.4 ms。" },
+      { title: "例題三：由SNR dB求Shannon capacity", prompt: "channel bandwidth為20 MHz，SNR=20 dB。求Shannon capacity。", steps: ["先把dB轉linear ratio。", "S/N=10^(20/10)=100。", "C=B log2(1+S/N)。", "C=20×10^6×log2(101)。", "log2(101)≈6.65821。", "C≈133.164×10^6 bit/s。"], result: "理論capacity約133.16 Mbit/s；實作可靠速率必須低於此上限。" },
+      { title: "例題四：1500-byte Ethernet payload的on-wire效率", prompt: "Ethernet payload 1500 B，MAC header 14 B、FCS 4 B、preamble/SFD 8 B、interpacket gap 12 byte-times。求每frame slot與payload效率。", steps: ["MAC frame=14+1500+4=1518 B。", "preamble/SFD加8 byte-times。", "gap再加12 byte-times。", "slot occupancy=1518+8+12=1538 byte-times。", "payload efficiency=1500/1538。", "結果≈0.97529=97.53%。"], result: "每個最大payload frame占1538 byte-times，效率約97.53%。" },
+      { title: "例題五：手算learning switch table", prompt: "三port switch初始table空。依序收到P1: A→B、P2: B→A、P3: C→A。寫出每步學習與輸出。", steps: ["A→B由P1進入：學A→P1。", "B未知，因此flood到P2、P3。", "B→A由P2進入：學B→P2。", "A已知在P1，因此只forward P1。", "C→A由P3進入：學C→P3。", "A仍在P1，因此只forward P1；最終A/P1、B/P2、C/P3。"], result: "只有第一個unknown destination需要flood；後兩個frame都能unicast forward。" },
+      { title: "例題六：完整解出IPv4 /26 subnet", prompt: "求192.0.2.130/26的mask、network、broadcast、一般host範圍與數量。", steps: ["/26 mask前26 bits為1，即255.255.255.192。", "host bits=6，所以block size=2^6=64。", "最後octet blocks為0、64、128、192。", "130落在128–191，因此network=192.0.2.128。", "broadcast=192.0.2.191。", "host為.129–.190，共64−2=62個。"], result: "192.0.2.130/26屬192.0.2.128/26，一般可用host共62個。" },
+      { title: "例題七：IPv4 fragmentation與offset", prompt: "IPv4 payload 4000 B、header 20 B，next-hop MTU 1500 B且DF=0。求fragments。", steps: ["每片含20-byte header，非末片data上限=1500−20=1480 B。", "1480可被8整除，所以不需再向下對齊。", "前兩片data各1480 B，剩餘4000−2960=1040 B。", "total lengths為1500、1500、1060 B。", "offset units為8 B，所以offsets=0、1480/8=185、2960/8=370。", "MF依序為1、1、0。"], result: "三片為(data, offset, MF)=(1480,0,1)、(1480,185,1)、(1040,370,0)。" },
+      { title: "例題八：判斷ARP的target", prompt: "host 10.0.1.10/24要送至10.0.2.20，default gateway為10.0.1.1。它應ARP誰？", steps: ["local network=10.0.1.0/24。", "destination 10.0.2.20不match local /24。", "因此destination為off-link。", "IP destination仍填10.0.2.20。", "next-hop IP改選default gateway 10.0.1.1。", "ARP request詢問10.0.1.1的MAC，Ethernet destination使用gateway MAC。"], result: "ARP解析10.0.1.1，不是遠端10.0.2.20。" },
+      { title: "例題九：longest-prefix forwarding", prompt: "routes為default→R0、10/8→R1、10.1/16→R2、10.1.2/24→R3。destination 10.1.2.200走哪裡？", steps: ["/0 match所有address。", "前8 bits為10，因此10/8 match。", "前16 bits為10.1，因此10.1/16 match。", "前24 bits為10.1.2，因此10.1.2/24 match。", "四個matches中/24 prefix最長。", "選R3；不以R0或較短prefix metric取代。"], result: "destination經R3轉送。" },
+      { title: "例題十：Dijkstra shortest path", prompt: "undirected costs A–B=2、A–C=5、B–C=1、B–D=4、C–D=1。求A到D最短路徑。", steps: ["初始化D(A)=0，D(B)=2，D(C)=5，D(D)=∞。", "固定最小B=2。", "經B更新C=min(5,2+1)=3，D=min(∞,2+4)=6。", "固定C=3。", "經C更新D=min(6,3+1)=4。", "固定D=4，predecessors為D←C←B←A，所以path A-B-C-D。"], result: "A到D最短cost=4，路徑A→B→C→D。" },
+      { title: "例題十一：TCP sequence與cumulative ACK", prompt: "sender以SYN seq=1000建立連線後，傳500 bytes。無遺失時data seq與ACK是多少？", steps: ["SYN本身消耗一個sequence number。", "第一個data byte seq=1001。", "500 bytes涵蓋sequence 1001到1500。", "receiver下一個期望byte為1501。", "因此回ACK=1501。", "若同一segment重複到達，data不重複交付，ACK仍為1501。"], result: "data segment seq=1001、length=500；cumulative ACK=1501。" },
+      { title: "例題十二：依RFC 6298更新SRTT、RTTVAR與RTO", prompt: "clock granularity忽略。第一個RTT sample為120 ms，第二個為100 ms；α=1/8、β=1/4、K=4。求兩次估計與1-second lower bound後RTO。", steps: ["首次SRTT=120 ms。", "首次RTTVAR=120/2=60 ms。", "raw RTO=120+4×60=360 ms，依規則round up為1 s。", "第二次先更新RTTVAR=0.75×60+0.25×|120−100|=50 ms。", "再更新SRTT=0.875×120+0.125×100=117.5 ms。", "raw RTO=117.5+4×50=317.5 ms，仍round up為1 s。"], result: "第二個sample後SRTT=117.5 ms、RTTVAR=50 ms、規範下RTO=1 s。" },
+      { title: "例題十三：BDP與window-limited throughput", prompt: "path bottleneck為1 Gbit/s、RTT=40 ms。求BDP；若window只有64 KiB，估計throughput上限。", steps: ["BDP=1×10^9 bit/s×0.040 s。", "=40,000,000 bits。", "除8得5,000,000 bytes=5 MB（十進位）。", "64 KiB=65,536 bytes，遠小於BDP。", "window-limited rate≈65,536/0.040=1,638,400 B/s。", "乘8約13.1072 Mbit/s，只占1 Gbit/s的約1.31%。"], result: "填滿path約需5 MB in flight；64 KiB window最多約13.11 Mbit/s。" }
+    ],
+    misconceptions: [
+      ["OSI七層與TCP/IP四層必須逐層一一對應。", "OSI是reference model；Internet protocols的功能邊界不一定形成七個實作層。"],
+      ["router轉送時會保留原Ethernet header。", "router終止incoming link frame，為next hop建立新的link header/FCS。"],
+      ["bandwidth越高，propagation delay就越小。", "L/R受bit rate影響；distance/speed決定propagation。"],
+      ["1 Gbit/s就是application可用125 MB/s。", "frame/coding/retransmission與端點瓶頸使goodput較低。"],
+      ["CRC能修復所有bit errors。", "Ethernet FCS主要偵測錯誤；壞frame通常丟棄。"],
+      ["switch依source MAC決定輸出port。", "source用於學習，destination才用於forward/flood/filter。"],
+      ["VLAN tag就是一種IP subnet mask。", "VLAN分link-layer broadcast domain；IP prefix是network-layer routing boundary。"],
+      ["/24就是class C，因此可忽略CIDR。", "現代routing依明示prefix length，不依舊classful default。"],
+      ["每個IPv4 subnet永遠只能用2^h−2個host。", "/31 point-to-point與/32 host route等情況不能套一般規則。"],
+      ["IPv6沒有fragmentation。", "IPv6 source可使用Fragment header；intermediate router不fragment。"],
+      ["ARP會查到遠端server的MAC。", "off-link destination只解析local default gateway的MAC。"],
+      ["IP TTL精確表示packet還能存活幾秒。", "實務上每hop至少減1，主要是loop bound。"],
+      ["route metric較小一定勝過prefix較長的route。", "先做longest-prefix match，再依同prefix候選規則選route。"],
+      ["routing protocol對每個packet執行Dijkstra。", "控制平面計算route並安裝FIB；資料平面只做快速lookup。"],
+      ["UDP沒有連線，所以沒有port。", "UDP仍以source/destination ports demultiplex datagrams。"],
+      ["TCP ACK=1501表示byte 1501已收到。", "ACK number表示下一個期望byte，先前連續bytes已收到。"],
+      ["flow control與congestion control都是receiver window。", "rwnd保護receiver；cwnd由sender維護以保護network path。"],
+      ["DNS TTL與IP TTL是同一欄位。", "DNS TTL控制record cache；IP TTL/Hop Limit限制forwarding hops。"]
+    ],
+    exercises: [
+      { level: "基礎", question: "Application、transport、internet與link層各自最主要的識別欄位是什麼？", solution: ["application依協定使用name/URL等語意；transport以protocol與ports辨認端點程序。", "internet層依IP address/prefix轉送；link層以MAC與link-local type交付一跳。"] },
+      { level: "基礎", question: "Transmission delay與propagation delay各由哪些變數決定？", solution: ["transmission=L/R，取決於packet bits與link bit rate。", "propagation=d/s，取決於距離與訊號在媒介中的速度。"] },
+      { level: "基礎", question: "Learning switch收到unknown unicast時為何仍先學source？", solution: ["source address證明該sender可由ingress port到達，因此可更新table。", "destination尚未知才flood；學習與目的處理是兩個獨立步驟。"] },
+      { level: "基礎", question: "IPv4 TTL與IPv6 Hop Limit的共同目的，以及header checksum的差異為何？", solution: ["兩者逐hop遞減，避免packet在routing loop中永久循環。", "IPv4有header checksum並因TTL變化更新；IPv6 base header沒有header checksum。"] },
+      { level: "基礎", question: "RIB、FIB與neighbor table分別保存哪一類資訊？", solution: ["RIB保存routing protocols/static routes的控制平面候選。", "FIB保存可快速forward的prefix action；neighbor table把on-link next-hop IP映射到link address。"] },
+      { level: "基礎", question: "TCP receiver window與congestion window分別保護什麼？", solution: ["rwnd避免sender淹沒receiver buffer。", "cwnd限制注入network的in-flight data，以回應path congestion。"] },
+      { level: "計算", question: "900-byte application data加20-byte TCP、20-byte IPv4、14-byte Ethernet header與4-byte FCS，總長與application效率是多少？", solution: ["總長=900+20+20+14+4=958 B。", "效率=900/958≈93.95%。"] },
+      { level: "計算", question: "2000-byte packet放入10 Mbit/s link需要多少transmission delay？", solution: ["L=2000×8=16000 bits。", "L/R=16000/10,000,000=0.0016 s=1.6 ms。"] },
+      { level: "計算", question: "訊號跨越600 km、propagation speed為2×10^8 m/s，需要多久？", solution: ["600 km=600,000 m。", "d/s=600,000/(2×10^8)=0.003 s=3 ms。"] },
+      { level: "計算", question: "10 MHz channel的SNR為15 dB，Shannon capacity約多少？", solution: ["linear S/N=10^(15/10)≈31.6228。", "C=10^7 log2(1+31.6228)≈50.278 Mbit/s。"] },
+      { level: "計算", question: "完整解出198.51.100.77/27的mask、network、broadcast與一般host範圍。", solution: ["mask=255.255.255.224，block size=32；77落在64–95。", "network=.64、broadcast=.95、host=.65–.94，共30個。"] },
+      { level: "計算", question: "IPv4 payload 3000 B、header 20 B、MTU 1280 B時，求fragment data sizes與offsets。", solution: ["非末片上限floor((1280−20)/8)×8=1256 B。", "data為1256、1256、488 B；offset為0、157、314，MF為1、1、0。"] },
+      { level: "計算", question: "routes含172.16/12→A、172.16.8/21→B、172.16.8.128/25→C，目的172.16.8.200選誰？", solution: ["destination同時match /12、/21與/25。", "longest prefix為/25，因此選C。"] },
+      { level: "計算", question: "graph A–B=4、A–C=1、C–B=2、B–D=1、C–D=7，A到D shortest path為何？", solution: ["A→C cost1，再由C→B累積3。", "B→D後總cost4，優於A-C-D的8與A-B-D的5，所以path A-C-B-D。"] },
+      { level: "計算", question: "TCP segment seq=5000、data length=1200且連續收到，receiver應回多少ACK？", solution: ["data bytes序號為5000到6199。", "下一個期望byte為6200，所以ACK=6200。"] },
+      { level: "計算", question: "200 Mbit/s path、RTT=50 ms的BDP是多少bits與bytes？", solution: ["BDP=200×10^6×0.050=10,000,000 bits。", "除8得1,250,000 bytes=1.25 MB（十進位）。"] },
+      { level: "進階", question: "一個packet capture只看到目的MAC為router、目的IP為遠端server，這是否矛盾？說明兩個address的scope。", solution: ["不矛盾；MAC destination只標示目前link的next hop。", "IP destination標示端到端network-layer destination，通常跨router維持不變。"] },
+      { level: "整合", question: "首次開啟HTTPS服務很慢，但後續request快。列出至少四個首次才可能發生的網路狀態，並指出應如何分層量測。", solution: ["可能包含DNS cache miss、ARP/ND miss、transport handshake、TLS certificate/key handshake、route/connection establishment。", "分別量DNS、neighbor、connect、TLS與time-to-first-byte；再檢查connection reuse與content transfer，不能只用單一ping推論。"] }
+    ],
+    glossary: [
+      ["Protocol Data Unit", "某層依其協定格式處理的完整資料單位。"], ["Encapsulation", "把上層PDU放入下層payload並加入header/trailer。"], ["Demultiplexing", "依type、protocol、port等欄位把資料交給正確上層。"], ["Packet switching", "以離散packets共享links並逐packet轉送的架構。"], ["Transmission delay", "把L bits送上R bit/s link所需L/R。"], ["Propagation delay", "訊號走距離d、速度s所需d/s。"], ["Queueing delay", "packet等待output resource可用的時間。"], ["Store-and-forward", "node收到完整packet後才開始下一link傳輸。"], ["Bandwidth", "通道可承載的頻率範圍，單位Hz。"], ["Goodput", "單位時間真正交付給application的有用資料量。"], ["MAC address", "鏈路層介面識別，用於一個bridged domain內轉送。"], ["EtherType", "Ethernet欄位，用於識別payload protocol。"], ["FCS", "frame check sequence；Ethernet以CRC remainder偵測錯誤。"], ["MTU", "一條link可承載的最大network-layer packet size邊界。"], ["Learning bridge", "依incoming source MAC自動建立forwarding database的bridge。"], ["Flooding", "把frame複製到同domain內除ingress外的多個ports。"], ["VLAN", "在bridged network中建立邏輯broadcast domain的機制。"], ["CIDR", "以prefix length進行classless addressing與route aggregation。"], ["Subnet mask", "network prefix bits為1、host bits為0的32-bit mask。"], ["Prefix aggregation", "以共同high-order bits合併多個routes。"], ["Datagram", "由IP獨立處理的best-effort network-layer packet。"], ["TTL", "IPv4逐hop遞減的loop-limiting欄位。"], ["Hop Limit", "IPv6對應的逐hop loop-limiting欄位。"], ["Fragment Offset", "IPv4/IPv6 fragment在原payload中的位置，以8-byte units表示。"], ["ARP", "IPv4在link上把next-hop protocol address解析成link address的協定。"], ["Neighbor Discovery", "IPv6以ICMPv6進行neighbor、router、prefix與reachability discovery。"], ["Default gateway", "沒有更直接on-link route時使用的local router next hop。"], ["Longest-prefix match", "從所有matching routes選prefix length最大者。"], ["RIB", "Routing Information Base；控制平面route候選集合。"], ["FIB", "Forwarding Information Base；資料平面快速轉送表。"], ["Link-state", "散布link/cost並以完整topology計算route的模型。"], ["Distance-vector", "與鄰居交換distance並以Bellman–Ford更新的模型。"], ["Autonomous System", "在共同routing policy下管理的一組IP networks與routers。"], ["BGP", "Internet跨AS交換prefix與path attributes的path-vector protocol。"], ["Port", "transport層用來demultiplex endpoint service的16-bit欄位。"], ["Sequence Number", "TCP byte stream中segment第一個data byte的序號。"], ["Cumulative ACK", "確認某sequence之前所有連續bytes已收到的acknowledgment。"], ["RTO", "等待ACK後觸發retransmission的計時器值。"], ["Receiver window", "TCP receiver公告的flow-control buffer空間。"], ["Congestion window", "sender依path feedback維護的in-flight上限。"], ["Bandwidth-delay product", "bandwidth×RTT，近似填滿path的in-flight bits。"], ["DNS", "把domain names映射成resource records的分散式階層系統。"], ["TLS", "提供authentication、confidentiality與integrity的secure channel protocol。"], ["QUIC", "在UDP上整合secure handshake、reliable streams與congestion control的transport。"]
+    ],
+    sources: [
+      { key: "S1", title: "RFC 1122: Requirements for Internet Hosts — Communication Layers", url: "https://www.rfc-editor.org/info/rfc1122/", accessed: "2026-08-26", use: "Internet host分層、link/IP/transport service、datagram forwarding與端點架構。" },
+      { key: "S2", title: "Stanford CS144: Introduction to Computer Networking", url: "https://cs144.github.io/", accessed: "2026-08-26", use: "datagram、encapsulation、reliability、packet switching、routing與end-to-end教學模型。" },
+      { key: "S3", title: "MIT 6.02 Digital Communication Systems Resources", url: "https://www.ocw.mit.edu/courses/6-02-introduction-to-eecs-ii-digital-communication-systems-fall-2012/download/", accessed: "2026-08-26", use: "channel capacity、packet switching、MAC、routing與reliable transport公開課程資料。" },
+      { key: "S4", title: "IEEE Std 802.3-2022: Ethernet", url: "https://standards.ieee.org/ieee/802.3/10422/", accessed: "2026-08-26", use: "Ethernet MAC、PHY、speeds、frame與full/half-duplex標準範圍。" },
+      { key: "S5", title: "RFC 894: IP Datagrams over Ethernet Networks", url: "https://www.rfc-editor.org/info/rfc894/", accessed: "2026-08-26", use: "EtherType 0x0800、Ethernet payload、padding、1500-byte MTU與IPv4 encapsulation。" },
+      { key: "S6", title: "IEEE 802.1Q: Bridges and Bridged Networks", url: "https://1.ieee802.org/maintenance/", accessed: "2026-08-26", use: "MAC bridges、VLAN bridges、spanning tree與bridged-network architecture。" },
+      { key: "S7", title: "RFC 826: Ethernet Address Resolution Protocol", url: "https://www.rfc-editor.org/info/rfc826/", accessed: "2026-08-26", use: "IPv4 protocol address到48-bit Ethernet address的ARP request/reply mapping。" },
+      { key: "S8", title: "RFC 4861: Neighbor Discovery for IPv6", url: "https://www.rfc-editor.org/info/rfc4861/", accessed: "2026-08-26", use: "Neighbor/Router Discovery、prefix、reachability與link-layer address resolution。" },
+      { key: "S9", title: "RFC 4632: Classless Inter-domain Routing", url: "https://www.rfc-editor.org/info/rfc4632/", accessed: "2026-08-26", use: "CIDR prefixes、address assignment、route aggregation與longest-prefix背景。" },
+      { key: "S10", title: "RFC 791: Internet Protocol", url: "https://www.rfc-editor.org/info/rfc791/", accessed: "2026-08-26", use: "IPv4 header、TTL、checksum、fragment flags、8-byte offset與datagram service。" },
+      { key: "S11", title: "RFC 8200: Internet Protocol Version 6", url: "https://www.rfc-editor.org/info/rfc8200/", accessed: "2026-08-26", use: "IPv6 fixed header、extension headers、Hop Limit、source fragmentation與1280-byte minimum MTU。" },
+      { key: "S12", title: "RFC 1812: Requirements for IPv4 Routers", url: "https://www.rfc-editor.org/info/rfc1812/", accessed: "2026-08-26", use: "router forwarding、longest-prefix matching、TTL、MTU與next-hop behavior。" },
+      { key: "S13", title: "RFC 2328: OSPF Version 2", url: "https://www.rfc-editor.org/info/rfc2328/", accessed: "2026-08-26", use: "link-state database、Dijkstra shortest-path tree、areas與OSPF route計算。" },
+      { key: "S14", title: "RFC 4271: Border Gateway Protocol 4", url: "https://www.rfc-editor.org/info/rfc4271/", accessed: "2026-08-26", use: "BGP UPDATE、NLRI、AS_PATH、path attributes與inter-AS policy model。" },
+      { key: "S15", title: "RFC 9293: Transmission Control Protocol", url: "https://www.rfc-editor.org/info/rfc9293/", accessed: "2026-08-26", use: "TCP byte stream、sequence/ACK、state machine、checksum、window與retransmission requirements。" },
+      { key: "S16", title: "RFC 768: User Datagram Protocol", url: "https://www.rfc-editor.org/info/rfc768/", accessed: "2026-08-26", use: "UDP ports、length、checksum與transaction-oriented datagram service。" },
+      { key: "S17", title: "RFC 6298: Computing TCP's Retransmission Timer", url: "https://www.rfc-editor.org/info/rfc6298/", accessed: "2026-08-26", use: "SRTT、RTTVAR、RTO initialization/update、1-second bound與backoff。" },
+      { key: "S18", title: "RFC 7323: TCP Extensions for High Performance", url: "https://www.rfc-editor.org/info/rfc7323/", accessed: "2026-08-26", use: "window scale、timestamps、PAWS與high-BDP TCP behavior。" },
+      { key: "S19", title: "RFC 5681: TCP Congestion Control", url: "https://www.rfc-editor.org/info/rfc5681/", accessed: "2026-08-26", use: "slow start、congestion avoidance、fast retransmit與fast recovery baseline。" },
+      { key: "S20", title: "RFC 9438: CUBIC for Fast and Long-Distance Networks", url: "https://www.rfc-editor.org/info/rfc9438/", accessed: "2026-08-26", use: "current standardized CUBIC window growth、multiplicative decrease與high-BDP motivation。" },
+      { key: "S21", title: "RFC 9000: QUIC", url: "https://www.rfc-editor.org/info/rfc9000/", accessed: "2026-08-26", use: "UDP-based secure transport、streams、packetization、flow/congestion control與connection migration。" },
+      { key: "S22", title: "RFC 9110: HTTP Semantics", url: "https://www.rfc-editor.org/info/rfc9110/", accessed: "2026-08-26", use: "HTTP methods、status、fields、representations與version-independent semantics。" },
+      { key: "S23", title: "RFC 8446: TLS 1.3", url: "https://www.rfc-editor.org/info/rfc8446/", accessed: "2026-08-26", use: "authenticated key exchange、handshake、records、confidentiality與integrity。" },
+      { key: "S24", title: "RFC 1034: Domain Names — Concepts and Facilities", url: "https://www.rfc-editor.org/info/rfc1034/", accessed: "2026-08-26", use: "DNS hierarchy、resolver、name server、resource records、caching與TTL。" },
+      { key: "S25", title: "IANA Service Name and Port Number Registry", url: "https://www.iana.org/assignments/service-names-port-numbers", accessed: "2026-08-26", use: "current transport service names、TCP/UDP ports與system/user/dynamic ranges。" },
+      { key: "S26", title: "RFC 8900: IP Fragmentation Considered Fragile", url: "https://www.rfc-editor.org/info/rfc8900/", accessed: "2026-08-26", use: "IPv4/IPv6 fragmentation operational failure modes、middleboxes與Path MTU guidance。" }
     ]
   }
 ];

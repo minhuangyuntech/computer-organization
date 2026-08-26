@@ -33,7 +33,7 @@ assert(fourthEdition.chapters.length === 13, "Fourth edition must contain 13 map
 assert(new Set(fourthEdition.chapters.map((item) => item.chapter)).size === 13, "Fourth edition chapter numbers must be unique");
 assert(fourthEdition.weekMap.length === 18, "Every course week needs a fourth edition mapping");
 assert(new Set(fourthEdition.weekMap.map((item) => item.week)).size === 18, "Fourth edition week mappings must be unique");
-assert(chapterDetails.length >= 11, "At least eleven detailed self-study chapters are required");
+assert(chapterDetails.length >= 12, "At least twelve detailed self-study chapters are required");
 assert(new Set(chapterDetails.map((item) => item.chapter)).size === chapterDetails.length, "Detailed chapter numbers must be unique");
 
 for (const chapter of chapterDetails) {
@@ -61,6 +61,7 @@ for (const chapter of chapterDetails) {
     assert(figure.title && figure.caption, `Chapter ${chapter.chapter} figure metadata is incomplete`);
     if (figure.type === "bits") {
       assert(figure.items.reduce((sum, item) => sum + item.bits, 0) === figure.totalBits, `Chapter ${chapter.chapter} bit figure fields have the wrong total width`);
+      assert(figure.items.every((item) => item.label && item.bits > 0 && item.detail), `Chapter ${chapter.chapter} bit figure fields need labels, widths, and details`);
     }
     if (figure.type === "matrix") {
       assert(figure.rows.every((row) => row.length === figure.columns.length), `Chapter ${chapter.chapter} matrix figure has an inconsistent row width`);
@@ -150,6 +151,14 @@ assert(chapterEleven.sections.filter((item) => item.figure).length >= 13, "Chapt
 assert(chapterEleven.workedExamples.length >= 13, "Chapter 11 needs at least thirteen worked examples");
 assert(chapterEleven.exercises.length >= 18, "Chapter 11 needs at least eighteen exercises with solutions");
 assert(chapterEleven.sources.length >= 25, "Chapter 11 needs broad authoritative source coverage");
+
+const chapterTwelve = chapterDetails.find((chapter) => chapter.chapter === 12);
+assert(chapterTwelve, "Chapter 12 detailed network-architecture material is missing");
+assert(chapterTwelve.sections.length >= 13, "Chapter 12 needs at least thirteen complete concept sections");
+assert(chapterTwelve.sections.filter((item) => item.figure).length >= 13, "Chapter 12 needs at least thirteen verifiable diagrams");
+assert(chapterTwelve.workedExamples.length >= 13, "Chapter 12 needs at least thirteen worked examples");
+assert(chapterTwelve.exercises.length >= 18, "Chapter 12 needs at least eighteen exercises with solutions");
+assert(chapterTwelve.sources.length >= 25, "Chapter 12 needs broad authoritative source coverage");
 
 for (const mapping of fourthEdition.weekMap) {
   assert(mapping.chapters.length >= 1, `Week ${mapping.week} needs at least one fourth edition chapter`);
@@ -564,6 +573,68 @@ assert(Math.abs(chapterElevenParallelSpeedup - 4.705882352941176) < 1e-12, "Chap
 assert(Math.abs(chapterElevenParallelSpeedup / 8 - 0.588235294117647) < 1e-12, "Chapter 11 parallel-efficiency exercise failed");
 assert(50 * 1.5 === 75 && 70 * 1 === 70, "Chapter 11 energy comparison exercise failed");
 
+const chapterTwelveEncapsulationBytes = 1000 + 20 + 20 + 14 + 4;
+assert(chapterTwelveEncapsulationBytes === 1058, "Chapter 12 encapsulation byte count failed");
+assert(Math.abs(1000 / chapterTwelveEncapsulationBytes - 0.945179584120983) < 1e-15, "Chapter 12 encapsulation efficiency failed");
+const chapterTwelveStoreForward = 3 * (1500 * 8 / 100e6) + 1e6 / 2e8 + 2 * 20e-6;
+assert(Math.abs(chapterTwelveStoreForward - 0.0054) < 1e-15, "Chapter 12 store-and-forward delay failed");
+const chapterTwelveShannon = 20e6 * Math.log2(1 + 10 ** (20 / 10));
+assert(Math.abs(chapterTwelveShannon - 133_164_229.6550359) < 1e-6, "Chapter 12 Shannon-capacity example failed");
+assert(14 + 1500 + 4 + 8 + 12 === 1538, "Chapter 12 Ethernet slot size failed");
+assert(Math.abs(1500 / 1538 - 0.9752925877763329) < 1e-15, "Chapter 12 Ethernet efficiency failed");
+const chapterTwelveSwitchTable = new Map();
+const chapterTwelveSwitchTrace = [["P1", "A", "B"], ["P2", "B", "A"], ["P3", "C", "A"]];
+const chapterTwelveSwitchActions = chapterTwelveSwitchTrace.map(([port, source, destination]) => {
+  chapterTwelveSwitchTable.set(source, port);
+  return chapterTwelveSwitchTable.has(destination) ? chapterTwelveSwitchTable.get(destination) : "flood";
+});
+assert(chapterTwelveSwitchActions.join(",") === "flood,P1,P1", "Chapter 12 learning-switch trace failed");
+assert([...chapterTwelveSwitchTable.entries()].map((entry) => entry.join("/")).join(",") === "A/P1,B/P2,C/P3", "Chapter 12 learning-switch table failed");
+assert((130 & 0xc0) === 128 && (128 | 0x3f) === 191 && 2 ** 6 - 2 === 62, "Chapter 12 /26 subnet example failed");
+const chapterTwelveFragmentData = [1480, 1480, 4000 - 2960];
+const chapterTwelveFragmentOffsets = [0, 1480 / 8, 2960 / 8];
+assert(chapterTwelveFragmentData.join(",") === "1480,1480,1040", "Chapter 12 IPv4 fragment sizes failed");
+assert(chapterTwelveFragmentOffsets.join(",") === "0,185,370", "Chapter 12 IPv4 fragment offsets failed");
+assert(chapterTwelveFragmentData.map((bytes) => bytes + 20).join(",") === "1500,1500,1060", "Chapter 12 IPv4 fragment total lengths failed");
+assert((0x0a00010a & 0xffffff00) !== (0x0a000214 & 0xffffff00), "Chapter 12 remote-prefix decision failed");
+assert(Math.max(...[0, 8, 16, 24]) === 24, "Chapter 12 longest-prefix selection failed");
+const chapterTwelveGraph = { A: { B: 2, C: 5 }, B: { A: 2, C: 1, D: 4 }, C: { A: 5, B: 1, D: 1 }, D: { B: 4, C: 1 } };
+const chapterTwelveDistances = { A: 0, B: Infinity, C: Infinity, D: Infinity };
+const chapterTwelveVisited = new Set();
+while (chapterTwelveVisited.size < 4) {
+  const node = Object.keys(chapterTwelveDistances).filter((key) => !chapterTwelveVisited.has(key)).sort((a, b) => chapterTwelveDistances[a] - chapterTwelveDistances[b])[0];
+  chapterTwelveVisited.add(node);
+  for (const [neighbor, cost] of Object.entries(chapterTwelveGraph[node])) {
+    chapterTwelveDistances[neighbor] = Math.min(chapterTwelveDistances[neighbor], chapterTwelveDistances[node] + cost);
+  }
+}
+assert(chapterTwelveDistances.D === 4, "Chapter 12 Dijkstra example failed");
+assert(1001 + 500 === 1501, "Chapter 12 TCP cumulative ACK example failed");
+let chapterTwelveSrtt = 120;
+let chapterTwelveRttvar = 60;
+chapterTwelveRttvar = 0.75 * chapterTwelveRttvar + 0.25 * Math.abs(chapterTwelveSrtt - 100);
+chapterTwelveSrtt = 0.875 * chapterTwelveSrtt + 0.125 * 100;
+assert(chapterTwelveRttvar === 50 && chapterTwelveSrtt === 117.5, "Chapter 12 TCP RTT estimator failed");
+assert(chapterTwelveSrtt + 4 * chapterTwelveRttvar === 317.5 && Math.max(1000, 317.5) === 1000, "Chapter 12 TCP RTO lower bound failed");
+const chapterTwelveBdpBytes = 1e9 * 0.04 / 8;
+const chapterTwelveWindowRate = 65_536 / 0.04;
+assert(chapterTwelveBdpBytes === 5_000_000, "Chapter 12 bandwidth-delay product failed");
+assert(chapterTwelveWindowRate === 1_638_400 && chapterTwelveWindowRate * 8 === 13_107_200, "Chapter 12 window-limited throughput failed");
+
+assert(900 + 20 + 20 + 14 + 4 === 958 && Math.abs(900 / 958 - 0.9394572025052193) < 1e-15, "Chapter 12 encapsulation exercise failed");
+assert(2000 * 8 / 10e6 === 0.0016, "Chapter 12 transmission-delay exercise failed");
+assert(600_000 / 2e8 === 0.003, "Chapter 12 propagation-delay exercise failed");
+const chapterTwelveExerciseShannon = 10e6 * Math.log2(1 + 10 ** (15 / 10));
+assert(Math.abs(chapterTwelveExerciseShannon - 50_278_076.7335052) < 1e-6, "Chapter 12 Shannon-capacity exercise failed");
+assert((77 & 0xe0) === 64 && (64 | 0x1f) === 95 && 2 ** 5 - 2 === 30, "Chapter 12 /27 subnet exercise failed");
+const chapterTwelveExerciseFragmentMax = Math.floor((1280 - 20) / 8) * 8;
+assert(chapterTwelveExerciseFragmentMax === 1256, "Chapter 12 fragment-alignment exercise failed");
+assert([0, 1256 / 8, 2512 / 8].join(",") === "0,157,314" && 3000 - 2512 === 488, "Chapter 12 fragment-offset exercise failed");
+assert(Math.max(...[12, 21, 25]) === 25, "Chapter 12 LPM exercise failed");
+assert(1 + 2 + 1 === 4 && 4 < 1 + 7 && 4 < 4 + 1, "Chapter 12 shortest-path exercise failed");
+assert(5000 + 1200 === 6200, "Chapter 12 TCP ACK exercise failed");
+assert(200e6 * 0.05 === 10_000_000 && 10_000_000 / 8 === 1_250_000, "Chapter 12 BDP exercise failed");
+
 const homepage = path.join(root, "index.html");
 const editionPage = path.join(root, "fourth-edition-map.html");
 const chapterFiles = fourthEdition.chapters.map((chapter) => path.join(root, "chapters", `chapter-${String(chapter.chapter).padStart(2, "0")}.html`));
@@ -575,6 +646,7 @@ const visibleWeekClassification = /Week\s*\d|第\s*\d+\s*週|週次|weeks\//;
 
 for (const file of htmlFiles) {
   const html = fs.readFileSync(file, "utf8");
+  assert(!/>\s*(undefined|null)\s*</.test(html), `Unresolved generated value found in ${path.relative(root, file)}`);
   assert(!prohibited.test(html), `Teacher-facing wording found in ${path.relative(root, file)}`);
   assert(!siteGuidance.test(html), `Website usage guidance found in ${path.relative(root, file)}`);
   assert(html.includes("class=\"chapter-nav\""), `Missing chapter navigation in ${path.relative(root, file)}`);
@@ -629,7 +701,7 @@ assert(!visibleWeekClassification.test(editionHtml), "Fourth edition page still 
 assert((editionHtml.match(/class=\"chapter-card\"/g) || []).length === 13, "Fourth edition page must show 13 chapter cards");
 assert((editionHtml.match(/<details>/g) || []).length === 3, "Fourth edition page must show three MARIE self-checks");
 assert(chapterFiles.every((file) => fs.existsSync(file)), "Every chapter navigation item needs an independent HTML page");
-for (const chapterNumber of [12, 13]) {
+for (const chapterNumber of [13]) {
   const chapterHtml = fs.readFileSync(chapterFiles[chapterNumber - 1], "utf8");
   const standaloneStart = chapterHtml.indexOf("class=\"standalone-chapter-content\"");
   const standaloneEnd = chapterHtml.indexOf("class=\"chapter-adjacent\"", standaloneStart);
