@@ -1515,6 +1515,13 @@ p, li {
 .flow-node:nth-of-type(4n+1) { background: color-mix(in srgb, var(--accent-3) 36%, var(--panel)); }
 .flow-node:nth-of-type(4n+3) { background: color-mix(in srgb, var(--accent) 13%, var(--panel)); }
 
+.flow-node small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
 .flow-arrow,
 .factor-op {
   display: grid;

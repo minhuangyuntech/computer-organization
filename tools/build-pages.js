@@ -134,13 +134,23 @@ function diagram(figure) {
   let content = "";
 
   if (figure.type === "flow") {
-    content = `<div class="flow-diagram">${figure.items.map((item, index) => `${index ? `<span class="flow-arrow" aria-hidden="true">→</span>` : ""}<span class="flow-node">${esc(item)}</span>`).join("")}</div>`;
+    content = `<div class="flow-diagram">${figure.items.map((item, index) => {
+      const node = typeof item === "string"
+        ? esc(item)
+        : `<strong>${esc(item.label)}</strong><small>${esc(item.detail)}</small>`;
+      return `${index ? `<span class="flow-arrow" aria-hidden="true">→</span>` : ""}<span class="flow-node">${node}</span>`;
+    }).join("")}</div>`;
   } else if (figure.type === "factor") {
-    content = `<div class="factor-diagram">${figure.items.map((item, index) => `${index ? `<span class="factor-op" aria-hidden="true">×</span>` : ""}<div><strong>${esc(item.label)}</strong><span>${esc(item.detail)}</span></div>`).join("")}</div>`;
+    const items = figure.items || figure.factors;
+    content = `<div class="factor-diagram">${items.map((item, index) => `${index ? `<span class="factor-op" aria-hidden="true">×</span>` : ""}<div><strong>${esc(item.label)}</strong><span>${esc(item.detail)}</span></div>`).join("")}</div>`;
   } else if (figure.type === "bits") {
     content = `<div class="bit-diagram" style="--total-bits:${figure.totalBits}">${figure.items.map((item) => `<div class="bit-field" style="--field-bits:${item.bits}"><strong>${esc(item.label)}</strong><span>${esc(item.bits)} bit${item.bits > 1 ? "s" : ""}</span><small>${esc(item.detail)}</small></div>`).join("")}</div>`;
   } else if (figure.type === "hierarchy") {
-    content = `<div class="hierarchy-diagram">${figure.items.map((item, index) => `<div style="--level:${index}"><strong>${esc(item.label)}</strong><span>${esc(item.detail)}</span></div>`).join("")}</div>`;
+    const items = figure.items || [
+      { label: figure.root, detail: "root" },
+      ...figure.branches.map((branch) => ({ label: branch.label, detail: branch.children.join(" · ") }))
+    ];
+    content = `<div class="hierarchy-diagram">${items.map((item, index) => `<div style="--level:${index}"><strong>${esc(item.label)}</strong><span>${esc(item.detail)}</span></div>`).join("")}</div>`;
   } else if (figure.type === "matrix") {
     content = `<div class="diagram-table-wrap"><table class="diagram-table"><thead><tr>${figure.columns.map((column) => `<th>${esc(column)}</th>`).join("")}</tr></thead><tbody>${figure.rows.map((row) => `<tr>${row.map((cell) => `<td>${esc(cell)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
   } else if (figure.type === "timeline") {

@@ -69,6 +69,19 @@ for (const chapter of chapterDetails) {
     if (figure.type === "timeline") {
       assert(figure.rows.every((row) => row.cells.length === figure.columns.length), `Chapter ${chapter.chapter} timeline figure has an inconsistent row width`);
     }
+    if (figure.type === "flow") {
+      assert(figure.items.length >= 2, `Chapter ${chapter.chapter} flow figure needs at least two nodes`);
+      assert(figure.items.every((item) => typeof item === "string" || (item.label && item.detail)), `Chapter ${chapter.chapter} flow nodes need text or label/detail pairs`);
+    }
+    if (figure.type === "factor") {
+      const items = figure.items || figure.factors;
+      assert(items && items.length >= 2 && items.every((item) => item.label && item.detail), `Chapter ${chapter.chapter} factor figure is incomplete`);
+    }
+    if (figure.type === "hierarchy") {
+      const validItems = figure.items && figure.items.every((item) => item.label && item.detail);
+      const validBranches = figure.root && figure.branches && figure.branches.every((branch) => branch.label && branch.children.length);
+      assert(validItems || validBranches, `Chapter ${chapter.chapter} hierarchy figure is incomplete`);
+    }
   }
 }
 
@@ -159,6 +172,15 @@ assert(chapterTwelve.sections.filter((item) => item.figure).length >= 13, "Chapt
 assert(chapterTwelve.workedExamples.length >= 13, "Chapter 12 needs at least thirteen worked examples");
 assert(chapterTwelve.exercises.length >= 18, "Chapter 12 needs at least eighteen exercises with solutions");
 assert(chapterTwelve.sources.length >= 25, "Chapter 12 needs broad authoritative source coverage");
+
+const chapterThirteen = chapterDetails.find((chapter) => chapter.chapter === 13);
+assert(chapterThirteen, "Chapter 13 detailed storage-interface material is missing");
+assert(chapterThirteen.sections.length >= 13, "Chapter 13 needs at least thirteen complete concept sections");
+assert(chapterThirteen.sections.filter((item) => item.figure).length >= 13, "Chapter 13 needs at least thirteen verifiable diagrams");
+assert(chapterThirteen.workedExamples.length >= 13, "Chapter 13 needs at least thirteen worked examples");
+assert(chapterThirteen.exercises.length >= 18, "Chapter 13 needs at least eighteen exercises with solutions");
+assert(chapterThirteen.glossary.length >= 40, "Chapter 13 needs a broad storage-interface glossary");
+assert(chapterThirteen.sources.length >= 25, "Chapter 13 needs broad authoritative source coverage");
 
 for (const mapping of fourthEdition.weekMap) {
   assert(mapping.chapters.length >= 1, `Week ${mapping.week} needs at least one fourth edition chapter`);
@@ -635,6 +657,33 @@ assert(1 + 2 + 1 === 4 && 4 < 1 + 7 && 4 < 4 + 1, "Chapter 12 shortest-path exer
 assert(5000 + 1200 === 6200, "Chapter 12 TCP ACK exercise failed");
 assert(200e6 * 0.05 === 10_000_000 && 10_000_000 / 8 === 1_250_000, "Chapter 12 BDP exercise failed");
 
+assert(1_048_576 / 512 === 2048 && 4096 / 512 === 8, "Chapter 13 LBA and block-count example failed");
+assert(128 * 512 === 65_536 && 0x00102030 + 128 - 1 === 0x001020af, "Chapter 13 SCSI transfer-range example failed");
+assert(Math.abs((2 ** 30 * 8 / 6e9) - 1.4316557653333333) < 1e-12, "Chapter 13 SATA raw-time example failed");
+assert(Math.abs((2 ** 30 * 8 / 4.8e9) - 1.7895697066666667) < 1e-12, "Chapter 13 SATA encoded-time example failed");
+assert(4 * 12 === 48 && 48 / 8 === 6, "Chapter 13 SAS wide-port example failed");
+const chapterThirteenPcie4x4 = 16e9 * 4 * 128 / 130 / 8;
+assert(Math.abs(chapterThirteenPcie4x4 - 7_876_923_076.923077) < 1e-6, "Chapter 13 PCIe 4.0 x4 example failed");
+assert((6 + 3) % 8 === 1, "Chapter 13 NVMe circular-queue wrap failed");
+const chapterThirteenUsbLatencyIops = 1 / 80e-6;
+const chapterThirteenUsbLineIops = 10e9 / 8 / (128 * 1024);
+assert(Math.abs(chapterThirteenUsbLatencyIops - 12_500) < 1e-9, "Chapter 13 USB latency-limited IOPS failed");
+assert(Math.abs(chapterThirteenUsbLineIops - 9536.7431640625) < 1e-12, "Chapter 13 USB line-limited IOPS failed");
+const chapterThirteenIscsiSerialization = 256 * 1024 * 8 / 25e9;
+assert(Math.abs(chapterThirteenIscsiSerialization - 83.88608e-6) < 1e-15, "Chapter 13 iSCSI serialization example failed");
+assert(Math.abs(chapterThirteenIscsiSerialization + 120e-6 - 203.88608e-6) < 1e-15, "Chapter 13 iSCSI lower-bound example failed");
+assert(32 / 200e-6 === 160_000 && 160_000 * 4096 / 2 ** 20 === 625, "Chapter 13 Little's Law example failed");
+assert(Math.ceil(5 * 1024 / 64) === 80 && Math.ceil(80 / 8) === 10, "Chapter 13 multipart example failed");
+
+assert(6 * 1024 / 4 === 1536 && 1024 / 4 === 256, "Chapter 13 LBA exercise failed");
+assert(256 * 4096 === 1_048_576 && 4096 + 256 - 1 === 4351, "Chapter 13 SCSI exercise failed");
+assert(Math.abs(8e9 * 8 * 128 / 130 / 8 - 7_876_923_076.923077) < 1e-6, "Chapter 13 PCIe 3.0 x8 exercise failed");
+assert(16 / 500e-6 === 32_000 && 32_000 * 65_536 === 2_097_152_000, "Chapter 13 queue-depth exercise failed");
+assert(Math.abs(1024 * 1024 * 8 / 100e9 - 83.88608e-6) < 1e-15, "Chapter 13 fabric serialization exercise failed");
+assert(500_000 * 4096 * 8 === 16_384_000_000, "Chapter 13 device-throughput exercise failed");
+assert(40 + 20 + 150 + 90 === 300 && 150 / 300 === 0.5, "Chapter 13 end-to-end latency exercise failed");
+assert(Math.ceil(3.3 * 1024 / 128) === 27 && Math.abs(3.3 * 1024 - 26 * 128 - 51.2) < 1e-12, "Chapter 13 multipart exercise failed");
+
 const homepage = path.join(root, "index.html");
 const editionPage = path.join(root, "fourth-edition-map.html");
 const chapterFiles = fourthEdition.chapters.map((chapter) => path.join(root, "chapters", `chapter-${String(chapter.chapter).padStart(2, "0")}.html`));
@@ -701,15 +750,7 @@ assert(!visibleWeekClassification.test(editionHtml), "Fourth edition page still 
 assert((editionHtml.match(/class=\"chapter-card\"/g) || []).length === 13, "Fourth edition page must show 13 chapter cards");
 assert((editionHtml.match(/<details>/g) || []).length === 3, "Fourth edition page must show three MARIE self-checks");
 assert(chapterFiles.every((file) => fs.existsSync(file)), "Every chapter navigation item needs an independent HTML page");
-for (const chapterNumber of [13]) {
-  const chapterHtml = fs.readFileSync(chapterFiles[chapterNumber - 1], "utf8");
-  const standaloneStart = chapterHtml.indexOf("class=\"standalone-chapter-content\"");
-  const standaloneEnd = chapterHtml.indexOf("class=\"chapter-adjacent\"", standaloneStart);
-  const standaloneHtml = chapterHtml.slice(standaloneStart, standaloneEnd);
-  assert(standaloneStart >= 0, `Chapter ${chapterNumber} needs extended standalone content`);
-  assert((standaloneHtml.match(/class=\"chapter-topic-block\"/g) || []).length >= 5, `Chapter ${chapterNumber} needs at least five extended core topics`);
-  assert((standaloneHtml.match(/<details>/g) || []).length >= 4, `Chapter ${chapterNumber} needs at least four extended self-checks`);
-}
+assert(chapterDetails.length === 13, "All thirteen chapters need detailed self-study pages");
 const introductionHtml = fs.readFileSync(chapterFiles[0], "utf8");
 assert(introductionHtml.includes("class=\"chapter-schedule\""), "Introduction must contain the course schedule");
 assert((introductionHtml.match(/<tr><th>第 \d+ 週<\/th>/g) || []).length === 18, "Introduction course schedule must contain 18 weeks");

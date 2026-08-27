@@ -50,6 +50,7 @@ Repository 根目錄就是這個 `lectures/` 資料夾。GitHub Pages 目前從 
 
 ## 修訂紀錄
 
+- 2026-08-27：完成第 13 章「儲存系統與介面：從 I/O 命令到雲端物件」深度教材，新增 13 個概念單元、13 幅原創圖表、13 個逐步例題、18 題分級練習、58 個術語與 34 項權威來源；涵蓋 block/file/object 語意、端到端 I/O path、LBA/4K alignment、SCSI、SATA/AHCI/NCQ、SAS、PCIe 7.0、NVMe 2.4、USB BOT/UASP、SAN/iSCSI/NVMe-oF、Little's Law、flush/FUA 與 cloud object durability，並加入 LBA、transfer rate、queue、IOPS、durable ordering 與 multipart upload 可重算驗證；來源同步核對至 NIST SP 800-209 Rev. 1 初稿與 2026-08-04 NVMe 2.4 規格組，並修正 flow 圖的標籤與細節呈現。
 - 2026-08-26：完成第 12 章「網路組織與架構：從 frame 到端到端連線」深度教材，新增 13 個概念單元、13 幅原創圖表、13 個逐步例題、18 題分級練習、44 個術語與 26 項權威來源；涵蓋分層封裝、四種 delay、Shannon capacity、Ethernet、learning switch/VLAN、CIDR、IPv4/IPv6、ARP/ND、LPM、Dijkstra/OSPF/BGP、UDP/TCP、RTO、BDP、DNS/TLS/HTTP/QUIC，並加入 subnet、fragment、route、ACK/window 的可重算驗證；同時補齊第 9、10 章兩張位元圖的欄位說明，新增全站未定義值檢查。
 - 2026-08-25：完成第 11 章「效能量測與分析：從時間證據到可重現的最佳化」深度教材，新增 13 個概念單元、13 幅原創圖表、13 個逐步例題、18 題分級練習、40 個術語與 29 項權威來源；涵蓋 latency/throughput/tail latency、實驗設計與信賴區間、CPU time 與 CPI stack、SPEC CPU 2026、MLPerf Inference 6.0、PMU、sampling/tracing、Roofline、PGO、Amdahl/Gustafson、energy 與 EDP，並加入對應的可重算驗證。
 - 2026-08-24：完成第 10 章「嵌入式系統：從硬體邊界到可預測且可更新的裝置」深度教材，新增 13 個概念單元、13 幅原創圖表、11 個逐步例題、18 題分級練習、36 個術語與 24 項權威來源；另加入 MCU/FPGA/ASIC 成本、MMIO bit mask、SysTick、interrupt/DMA utilization、EDF/RM、response-time、Flash/SRAM、UART/I2C、平均功率與 signed A/B update 可重算驗證。

@@ -4217,5 +4217,256 @@ const chapterDetails = [
       { key: "S25", title: "IANA Service Name and Port Number Registry", url: "https://www.iana.org/assignments/service-names-port-numbers", accessed: "2026-08-26", use: "current transport service names、TCP/UDP ports與system/user/dynamic ranges。" },
       { key: "S26", title: "RFC 8900: IP Fragmentation Considered Fragile", url: "https://www.rfc-editor.org/info/rfc8900/", accessed: "2026-08-26", use: "IPv4/IPv6 fragmentation operational failure modes、middleboxes與Path MTU guidance。" }
     ]
+  },
+  {
+    chapter: 13,
+    title: "儲存系統與介面：從 I/O 命令到雲端物件",
+    english: "Storage Systems and Interfaces: From I/O Commands to Cloud Objects",
+    revised: "2026-08-27",
+    readingTime: "約 320–380 分鐘",
+    intro: "儲存裝置不只是保存位元的媒體，而是一組跨越應用程式、檔案系統、作業系統佇列、主機介面、控制器韌體與實體媒體的契約。一次 read 或 write 的正確性，同時取決於名稱如何映射到 block、命令何時完成、資料是否真正成為 non-volatile、佇列是否允許重排，以及故障發生在哪一層。本章由端到端 I/O 路徑出發，建立 block、file、object 三種存取模型，再逐步解析 SCSI、SATA、SAS、PCI Express、NVMe、USB mass storage、SAN、iSCSI、NVMe over Fabrics 與雲端物件儲存。效能部分以 queue depth、Little's Law、IOPS、throughput 與 tail latency 推導；可靠性部分則區分 completion、ordering、durability、integrity、availability 與 backup。所有傳輸率、LBA、ring queue、flush/FUA 與分段上傳例題均明示邊界，可獨立重算。",
+    outcomes: [
+      "能區分 block、file 與 object storage 的命名、操作單位、共享方式與一致性邊界。",
+      "能沿 application、filesystem、block layer、driver、host controller、device controller 與 media 追蹤完整 I/O。",
+      "能由 byte offset、logical block size 與 physical block size 計算 LBA、block count、alignment 與 read-modify-write。",
+      "能說明 SCSI initiator、target、logical unit、CDB、task、status 與 sense data 的關係。",
+      "能比較 SATA/ATA、SAS 與 USB Attached SCSI 的命令、傳輸、拓撲與佇列能力。",
+      "能由 PCIe generation、lane count 與 encoding overhead 計算單向理論資料率上限。",
+      "能解讀 NVMe submission/completion queue、doorbell、command identifier、namespace 與 queue pair。",
+      "能比較 SAN、NAS、iSCSI、Fibre Channel 與 NVMe over Fabrics 的 protocol stack 與故障邊界。",
+      "能以 IOPS=Q/L 與 throughput=IOPS×I/O size 分析 queue depth、latency、bandwidth 與飽和點。",
+      "能區分 command completion、cache flush、FUA、write ordering、power-loss protection 與真正 durable state。",
+      "能說明 error detection、end-to-end protection、redundancy、snapshot、versioning 與 backup 各自處理的風險。",
+      "能比較 local block、network block、network file 與 cloud object storage，依 workload 與 failure domain選擇架構。",
+      "能辨認規格標示的 line rate、協定 payload ceiling 與實際 application goodput，避免把介面速度當成裝置速度。"
+    ],
+    sections: [
+      {
+        title: "1. 儲存介面先定義語意，再決定資料如何搬運",
+        paragraphs: [
+          "block storage把裝置呈現為固定大小、以logical block address（LBA）編號的區塊陣列。主機發出read、write、flush等命令，裝置通常不理解檔名或目錄；partition、filesystem、allocation與permissions由主機軟體建立。因此同一block device若被兩個主機未經協調地同時掛載，一般filesystem metadata可能互相覆寫。",
+          "file storage把path或file handle、directory、byte range、locking與access control置於共享服務中。client不直接決定某個檔案位於哪些實體blocks，而是透過NFS、SMB等協定請server處理名稱與metadata。object storage則以bucket/container與object key識別整個object，metadata隨object保存；常見API以PUT/GET/HEAD/DELETE操作，通常不提供像local filesystem一樣的任意in-place byte overwrite。",
+          "三種模型不是速度分級，而是不同契約。同一SSD可在server內提供block device，再由filesystem輸出NAS file service，或由object service切分、複寫並以HTTP API提供objects。分析架構時要先問：名稱由誰管理、最小操作單位是什麼、哪些主體可同時存取、atomicity落在哪裡、失敗後誰負責恢復。"
+        ],
+        figure: { type: "matrix", title: "Block、file 與 object 的服務契約", columns: ["模型", "主要名稱", "典型操作", "共享協調者", "常見使用"], rows: [["Block", "LBA / namespace", "read/write/flush blocks", "host filesystem或cluster layer", "OS volume、database"], ["File", "path / file handle", "open/read/write/rename", "file server", "home directory、共享檔案"], ["Object", "bucket + key", "PUT/GET/HEAD/DELETE", "object service", "media、backup、data lake"]], caption: "媒體可以相同；外部可觀察的名稱、原子性與共享方式才是模型差異。" },
+        sourceRefs: ["S1", "S2", "S3"]
+      },
+      {
+        title: "2. 一次 I/O 是跨越軟體佇列、DMA 與裝置韌體的端到端交易",
+        paragraphs: [
+          "application呼叫read、write或memory-mapped access後，page cache可能直接滿足read，write也可能先只修改記憶體中的dirty pages。真正需要device I/O時，filesystem把file offset映射成blocks，block layer合併、分割或排程requests，driver再把protocol command與scatter-gather記憶體區段放入host-controller queue。",
+          "裝置取得命令後，通常以DMA在main memory與controller之間搬資料，不必讓CPU逐byte複製。IOMMU可限制裝置能存取的physical address範圍。controller韌體將logical request映射到media：HDD安排head movement，flash translation layer把LBA映射到NAND pages並執行garbage collection、wear leveling與error correction。",
+          "完成路徑反向返回：device更新completion entry或interrupt狀態，driver回收tag與DMA mapping，block layer完成request，filesystem/page cache更新狀態，等待中的thread才被喚醒。同步system call返回只表示該軟體契約已完成；若中間存在volatile write-back cache，它不必然表示資料已通過斷電測試。"
+        ],
+        figure: { type: "flow", title: "端到端 storage I/O path", items: [{ label: "Application", detail: "read / write / fsync" }, { label: "Filesystem", detail: "name + offset to blocks" }, { label: "Block layer", detail: "merge + queue + tag" }, { label: "Driver / HBA", detail: "command + DMA" }, { label: "Device controller", detail: "mapping + cache + ECC" }, { label: "Media", detail: "magnetic / flash / remote" }, { label: "Completion", detail: "CQ / interrupt / wakeup" }], caption: "cache hit可在前段結束；真正device I/O則跨越全部邊界後再回報完成。" },
+        sourceRefs: ["S4", "S5", "S6"]
+      },
+      {
+        title: "3. LBA、logical sector 與 physical block 共同決定對齊成本",
+        paragraphs: [
+          "block command通常以起始LBA與transfer length描述範圍。若logical block size為B bytes，byte offset x必須先檢查x mod B；對齊時start LBA=x/B，長度n bytes所需block count=n/B。若offset或length不是logical block倍數，上層必須讀取涵蓋範圍、修改其中bytes再寫回，或使用能表達byte range的更高層介面。",
+          "logical block是protocol可見單位，physical block是媒體實際更新或保護的較大單位。512e裝置可對外模擬512-byte logical sectors、內部以4096-byte physical sectors工作。若8個logical sectors沒有一起對齊到同一physical boundary，小寫入可能觸發read-modify-write；4Kn裝置則直接呈現4096-byte logical blocks，舊軟體若假設512 bytes會失敗。",
+          "NAND flash還有page與erase block層級：page可程式寫入，較大的erase block必須先erase才能重用。SSD controller藉FTL進行out-of-place update，所以host的單次4 KiB write可能造成額外內部搬移；write amplification是media寫入量除以host寫入量。alignment能避免一類額外工作，但不能消除garbage collection與wear leveling。"
+        ],
+        figure: { type: "bits", title: "4096-byte physical block 上的 512e 映射", totalBits: 32768, items: [{ label: "LBA 8", bits: 4096, detail: "512 B · physical offset 0" }, { label: "LBA 9", bits: 4096, detail: "512 B · physical offset 512" }, { label: "LBA 10", bits: 4096, detail: "512 B · physical offset 1024" }, { label: "LBA 11", bits: 4096, detail: "512 B · physical offset 1536" }, { label: "LBA 12", bits: 4096, detail: "512 B · physical offset 2048" }, { label: "LBA 13", bits: 4096, detail: "512 B · physical offset 2560" }, { label: "LBA 14", bits: 4096, detail: "512 B · physical offset 3072" }, { label: "LBA 15", bits: 4096, detail: "512 B · physical offset 3584" }], caption: "8×4096 bits=32768 bits=4096 bytes；一個4 KiB physical block承載8個512-byte logical sectors。" },
+        sourceRefs: ["S7", "S8"]
+      },
+      {
+        title: "4. SCSI 是命令與裝置模型，不等於某一種接頭",
+        paragraphs: [
+          "SCSI architecture model以application client、initiator port、service delivery subsystem、target port與logical unit描述命令流。initiator建立task並傳送Command Descriptor Block（CDB）；target中的logical unit執行命令，回傳status與可能的sense data。LUN識別logical unit，並不等同filesystem partition。",
+          "SCSI Primary Commands定義跨裝置共通的INQUIRY、REPORT LUNS、REQUEST SENSE等操作；SCSI Block Commands再定義READ、WRITE、SYNCHRONIZE CACHE等block-device命令。CDB中的opcode決定格式，LBA與transfer length欄位寬度依READ(10)、READ(16)等版本不同。完成狀態GOOD只說該task依當下契約成功；CHECK CONDITION會搭配sense key、additional sense code等資訊描述錯誤。",
+          "SCSI命令可由不同transport承載：SAS在serial attached fabric中傳遞SCSI，iSCSI把SCSI protocol data units放入TCP，USB Attached SCSI在USB transport上傳遞，Fibre Channel也能承載FCP。把SCSI理解為命令語言與task model，才能分開比較命令能力、transport延遲、拓撲與安全。"
+        ],
+        figure: { type: "flow", title: "SCSI task 的角色與回應", items: [{ label: "Application client", detail: "requests block operation" }, { label: "Initiator", detail: "creates task + CDB" }, { label: "Transport", detail: "SAS / FC / TCP / USB" }, { label: "Target port", detail: "receives task" }, { label: "Logical unit", detail: "executes command" }, { label: "Status + sense", detail: "GOOD or error detail" }], caption: "CDB語意可維持一致，承載它的實體或網路transport則可以不同。" },
+        sourceRefs: ["S9", "S10", "S11"]
+      },
+      {
+        title: "5. SATA 將 ATA 命令放上 point-to-point serial link，NCQ 允許裝置重排",
+        paragraphs: [
+          "Serial ATA以host與device之間的point-to-point link取代parallel ATA排線。ATA command set定義IDENTIFY DEVICE、READ/WRITE DMA EXT、FLUSH CACHE等命令；AHCI則定義memory-mapped host controller、command list、command table與received FIS等軟體介面。connector、PHY、transport、command set與OS driver是不同層。",
+          "Native Command Queuing（NCQ）讓host以tag提交多筆尚未完成的commands，裝置可依media狀態調整執行順序，再以tag指出哪一筆完成。對HDD，reordering可減少seek與rotation；對SSD，可提升內部parallelism。queue depth過大仍可能增加等待時間，且ordering-sensitive writes必須使用適當barrier、flush或FUA語意。",
+          "SATA 6 Gb/s是serial line rate，不是6 GB/s，也不是應用程式保證值。即使只做8b/10b概略編碼上限，6 Gbit/s成為600 MB/s；frame information structures、commands、flow control與裝置本身還會降低goodput。較慢NAND、controller或小random I/O latency常比link更早成為瓶頸。"
+        ],
+        figure: { type: "matrix", title: "SATA 路徑中的四個不同規格層", columns: ["層", "例子", "主要責任", "可見單位", "常見混淆"], rows: [["Command", "ATA ACS", "read/write/flush semantics", "LBA + sectors", "不是connector"], ["Host interface", "AHCI", "queues + registers + DMA", "command slots", "不是media速度"], ["Transport/PHY", "SATA 3.x", "FIS + serial signaling", "Gb/s", "不是GB/s"], ["Device", "HDD / SSD", "mapping + cache + media", "latency/IOPS", "不由link保證"]], caption: "同一SATA connector後方可以是不同媒體；command、controller與PHY也各有獨立上限。" },
+        sourceRefs: ["S12", "S13", "S14"]
+      },
+      {
+        title: "6. SAS 以 ports、phys 與 expanders 建立可擴充的企業 block fabric",
+        paragraphs: [
+          "Serial Attached SCSI使用SCSI command model並以serial protocol連接end devices。SAS port可由一個或多個phys組成；多個phys形成wide port時可提供aggregate bandwidth與path resilience。expander把多個ports互連，讓initiator存取大量targets，而不必為每個drive提供獨立host connector。",
+          "SAS drive常具有dual ports，可由兩條獨立paths連到controllers；multipath software依裝置識別合併paths，並在失效時切換。這種可用性來自端到端冗餘：兩個drive ports若最後仍共用同一HBA、電源或expander，就仍存在共同failure domain。",
+          "SAS與SATA皆為serial storage interface，但command與拓撲能力不同。許多SAS controllers可連接SATA drives，反方向通常不成立；外觀相容不表示dual-port、SCSI task management、expander routing或end-to-end behavior等價。比較時應列出drive、backplane、controller與software stack，而不是只看接頭形狀。"
+        ],
+        figure: { type: "hierarchy", title: "SAS fabric 的拓撲與故障邊界", root: "Multipath host", branches: [{ label: "HBA A", children: ["Expander A", "Drive port A"] }, { label: "HBA B", children: ["Expander B", "Drive port B"] }, { label: "Shared risks", children: ["Power", "Enclosure", "Firmware"] }], caption: "dual path只有在HBA、cable、expander與power等關鍵元件也分離時，才能避免單點故障。" },
+        sourceRefs: ["S9", "S15", "S16"]
+      },
+      {
+        title: "7. PCI Express 是 packetized point-to-point interconnect，lane 數與 generation 共同定上限",
+        paragraphs: [
+          "PCIe連線由root complex、switch與endpoints構成。每條link是full-duplex point-to-point，x1、x4、x8、x16表示聚合的lanes數；每個lane同時有獨立send與receive differential pairs。transactions被分成Transaction Layer Packets，再經data link與physical layers傳送，因此它不是傳統共享parallel bus。",
+          "GT/s表示每秒transfers，不可直接當成GB/s。PCIe 3.0到5.0使用128b/130b encoding；例如PCIe 4.0每lane 16 GT/s，x4的編碼後單向bit rate上限為16×4×128/130 Gbit/s，再除8得到約7.877 GB/s。TLP/DLLP headers、flow control與裝置行為會讓有效payload更低。",
+          "PCIe規格世代與實際部署必須分開。PCI-SIG在2025年發布PCIe 7.0，達128 GT/s並使用PAM4與flit-based encoding，但某個系統仍可能只支援4.0或5.0；link training還會協商兩端共同支援的速度與寬度。標示x4的card插入可提供x4 electrical lanes的slot，也可能因平台lane sharing而降速。"
+        ],
+        figure: { type: "matrix", title: "PCIe 3.0–7.0 的每 lane signaling", columns: ["世代", "Transfer rate", "主要encoding", "每lane單向編碼後上限", "說明"], rows: [["3.0", "8 GT/s", "128b/130b", "約0.985 GB/s", "未扣packet overhead"], ["4.0", "16 GT/s", "128b/130b", "約1.969 GB/s", "x4約7.877 GB/s"], ["5.0", "32 GT/s", "128b/130b", "約3.938 GB/s", "未扣packet overhead"], ["6.0", "64 GT/s", "PAM4 + flit", "約7.56 GB/s", "含flit/FEC架構"], ["7.0", "128 GT/s", "PAM4 + flit", "約15.13 GB/s", "2025發布規格"]], caption: "表中是規格層級的單向上限；實際payload還取決於packet size、平台與endpoint。" },
+        sourceRefs: ["S17", "S18"]
+      },
+      {
+        title: "8. NVMe 以多組 submission/completion queues 配合 PCIe parallelism",
+        paragraphs: [
+          "NVMe controller至少提供admin submission/completion queues，主機再建立一或多組I/O queue pairs。submission queue（SQ）是host寫入的circular buffer；host填好command entry、更新tail doorbell後，controller取走命令。completion queue（CQ）由controller寫入completion entries，host依phase tag辨認新項目、處理command identifier（CID），再更新CQ head doorbell。",
+          "queue pair讓不同CPU cores或workloads使用較少共享鎖的路徑。command可以out of order完成，所以CID用來把completion對回原request；SQ position不是completion順序保證。interrupt coalescing可降低interrupt overhead，但等待更多completions再通知也可能增加latency。polling則以CPU時間換取較低通知成本。",
+          "namespace是controller提供的logical block address space，可有獨立size、format與identifier；它不是單純等同partition，partition是namespace之上的host metadata。NVMe是command與register/queue architecture，不是NAND的同義詞；同樣模型可經PCIe transport直連，也可由NVMe over Fabrics透過RDMA、Fibre Channel或TCP承載。2026年8月發布的NVMe Base 2.4仍延續模組化base、command set與transport specifications。"
+        ],
+        figure: { type: "flow", title: "NVMe queue pair 的 circular command path", items: [{ label: "Host writes SQE", detail: "opcode + NSID + CID + PRP/SGL" }, { label: "Ring SQ tail", detail: "MMIO doorbell" }, { label: "Controller fetches", detail: "DMA command + data" }, { label: "Controller writes CQE", detail: "CID + status + phase" }, { label: "Notify or poll", detail: "interrupt / polling" }, { label: "Ring CQ head", detail: "entries reusable" }], caption: "SQ與CQ各自有head/tail；CID把out-of-order completion對回原command。" },
+        sourceRefs: ["S19", "S20", "S21"]
+      },
+      {
+        title: "9. USB mass storage 的 BOT 與 UASP 決定命令併行能力，不會改變媒體本質",
+        paragraphs: [
+          "USB mass storage常在USB link上承載SCSI-style commands。傳統Bulk-Only Transport（BOT）以Command Block Wrapper、data stage與Command Status Wrapper形成較序列化的交易；USB Attached SCSI Protocol（UASP）則把command、data、status分成streams，允許多個commands outstanding並利用SCSI task management。",
+          "UASP可降低等待與提升parallelism，但整條路徑仍受USB generation、host controller、hub、cable、bridge chip、device controller與media限制。一個10 Gbit/s USB link的raw ceiling為1.25 GB/s，尚未扣除USB packet與protocol overhead；接上只能持續寫入300 MB/s的flash device，UASP不會把media變成1.25 GB/s。",
+          "USB-to-SATA或USB-to-NVMe enclosure同時存在兩個protocol domains。是否能正確轉送flush、discard/TRIM、SMART、sense data與power-management command取決於bridge implementation；拔除前的safe removal也涉及OS cache與outstanding writes，而不只是connector已停止閃爍。"
+        ],
+        figure: { type: "matrix", title: "BOT 與 UASP 的交易特性", columns: ["特性", "BOT", "UASP", "效能影響", "仍共同受限於"], rows: [["Outstanding commands", "通常較序列", "可多筆", "UASP提高queue use", "device queue depth"], ["Command model", "CBW/data/CSW", "SCSI streams", "較少serialization", "bridge correctness"], ["Task management", "有限", "SCSI task model", "較佳recovery", "firmware"], ["Media speed", "不改變", "不改變", "protocol不是media", "flash/HDD"]], caption: "UASP改善transport利用率；它不替換bridge後方的SATA、NVMe或flash限制。" },
+        sourceRefs: ["S22", "S23"]
+      },
+      {
+        title: "10. SAN、iSCSI 與 NVMe-oF 把 block service 延伸到 fabric",
+        paragraphs: [
+          "Storage Area Network是讓hosts經專用或受控fabric存取block storage的架構；LUN或namespace在host端看起來近似local block device。Fibre Channel可承載SCSI FCP或NVMe/FC，Ethernet/IP可承載iSCSI與NVMe/TCP，RDMA fabrics可承載NVMe/RDMA。SAN描述用途與拓撲，不指定唯一cable或protocol。",
+          "iSCSI把SCSI commands與data封裝為iSCSI PDUs並使用TCP連線。initiator登入target、選擇logical unit並以CmdSN等欄位維持命令順序與window；TCP提供可靠ordered byte stream，但iSCSI本身不等於加密。authentication、IPsec或隔離網路需明確部署，且packet loss造成TCP recovery時可能放大tail latency。",
+          "NVMe over Fabrics延伸NVMe queue model，讓remote subsystem提供namespaces。network round-trip、serialization、switch queues與host/network processing會加入local device latency；RDMA可減少copy與CPU處理，TCP則利用廣泛部署的IP network。multipath提升path可用性，但remote controller、array、power與site仍必須納入failure-domain分析。"
+        ],
+        figure: { type: "hierarchy", title: "Network block storage 的 protocol stacks", root: "Host block request", branches: [{ label: "SCSI path", children: ["iSCSI / TCP / IP / Ethernet", "FCP / Fibre Channel", "SAS fabric"] }, { label: "NVMe path", children: ["NVMe/TCP / IP / Ethernet", "NVMe/RDMA", "NVMe/FC"] }, { label: "Common services", children: ["Discovery", "Authentication", "Multipath"] }], caption: "上層block command、transport與physical fabric是可分開選擇的層次。" },
+        sourceRefs: ["S24", "S25", "S26", "S27"]
+      },
+      {
+        title: "11. Queue depth 以 concurrency 隱藏等待，也同時累積 latency",
+        paragraphs: [
+          "在穩定、已飽和且平均值適用的系統中，Little's Law給N=λW。若平均outstanding requests為Q、平均latency為L seconds，完成率可估為IOPS≈Q/L。這不是裝置保證，而是守恆關係：QD=32、平均200 microseconds時，上限估計為160,000 IOPS；若每筆4 KiB，資料率約625 MiB/s。",
+          "throughput=IOPS×I/O size，但兩者受到不同瓶頸。小random I/O常受每命令latency與controller processing限制；大sequential I/O較快碰到link或media bandwidth。若算出的throughput超過介面上限，實際系統只能降低IOPS、增加latency或兩者同時發生，不能同時保留互相矛盾的數字。",
+          "提高queue depth可讓controller、channels與NAND dies並行，卻也讓每筆request排在更多工作後面。平均latency不能代表99th/99.9th percentile；garbage collection、error recovery、network retransmission與queue buildup會拉長tail。benchmark必須明示read/write ratio、block size、randomness、queue depth、dataset、warm-up、duration與latency percentiles。"
+        ],
+        figure: { type: "factor", title: "Storage performance 的相互約束", center: "Observed I/O", factors: [{ label: "Latency", detail: "service + queue + network" }, { label: "Queue depth", detail: "outstanding requests" }, { label: "IOPS", detail: "Q / L at steady state" }, { label: "I/O size", detail: "bytes per completion" }, { label: "Bandwidth", detail: "IOPS × size" }, { label: "Tail", detail: "p99 / p99.9" }], caption: "單一sequential MB/s無法代表random latency，單一IOPS也未交代I/O size與queue depth。" },
+        sourceRefs: ["S4", "S28"]
+      },
+      {
+        title: "12. Completion、ordering、durability 與 integrity 是四個不同問題",
+        paragraphs: [
+          "write completion表示命令到達規格允許回報成功的階段；若device啟用volatile write-back cache，資料可能尚未進入non-volatile media。cache flush要求先前writes推進到規定的stable boundary，FUA則要求特定write直接符合forced-unit-access語意。filesystem或database會利用write、flush/FUA與metadata ordering建立crash consistency。",
+          "ordering回答A與B誰先成為可觀察或durable；durability回答斷電後是否仍存在；atomicity回答failure時會看到完整舊值、完整新值或torn mixture；integrity回答內容是否被錯誤改變。這些性質不能由單一GOOD status推導。controller若有power-loss protection，可在斷電時把volatile state安全落盤，但必須由device規格與端到端測試確認。",
+          "CRC/ECC可偵測或修正特定bit errors，SCSI sense與NVMe status可回報command failure；end-to-end checksum能跨越memory、transport、controller與media發現silent corruption。RAID處理部分device failure並維持服務，snapshot/versioning保存時間點或歷史版本，backup則應有獨立copy與restore驗證。任何一項都不能自動取代其餘項目。"
+        ],
+        figure: { type: "flow", title: "建立 crash-consistent 更新的順序", items: [{ label: "Write data A", detail: "may enter volatile cache" }, { label: "Flush", detail: "A reaches stable boundary" }, { label: "Write metadata B", detail: "references A" }, { label: "FUA or flush", detail: "B becomes durable" }, { label: "Acknowledge transaction", detail: "recovery sees valid order" }], caption: "若B先durable而A遺失，metadata可能指向未初始化資料；barrier只在各層正確傳遞時有效。" },
+        sourceRefs: ["S6", "S11", "S29", "S30"]
+      },
+      {
+        title: "13. NAS 與 cloud object storage 把一致性、耐久性與安全邊界移到服務端",
+        paragraphs: [
+          "NAS以file protocol輸出shared namespace；client看到directories、files、attributes與locking，server管理filesystem與底層blocks。object service則把key映射到opaque byte sequence與metadata，常透過HTTP API存取。large object可採multipart upload並平行傳送parts，但完成前的parts、失敗重試與最後commit都由API語意決定。",
+          "雲端durability與availability不是同義詞。多副本、erasure coding與跨failure-domain placement可降低資料永久遺失機率；網路中斷、認證錯誤、區域故障或service throttling仍會使資料暫時不可用。以Amazon S3為例，成功PUT後對GET與LIST提供strong read-after-write consistency，單一key更新具atomic性，但這不建立跨多個keys的一般transaction。",
+          "安全分析涵蓋identity、authorization、encryption in transit/at rest、key management、audit、tenant isolation與secure deletion。versioning與object lock可降低誤刪或勒索軟體覆寫風險，卻仍需測試restore、保護credentials並控制retention。最終選型應由access model、latency、throughput、sharing、consistency、failure domain、recovery objective、operation能力與成本共同決定。"
+        ],
+        figure: { type: "matrix", title: "四種部署模型的架構選擇", columns: ["模型", "Host看到", "典型延遲", "共享方式", "主要failure domain"], rows: [["Local block", "LBA device", "最低", "單host為主", "host/controller/device"], ["SAN block", "remote LUN/namespace", "低到中", "cluster需協調", "fabric/array/site"], ["NAS file", "shared paths", "中", "server協調files", "network/file server"], ["Cloud object", "bucket + keys", "中到高", "service協調objects", "identity/network/region/service"]], caption: "延遲只是條件之一；共享語意、復原能力與操作責任往往更決定架構。" },
+        sourceRefs: ["S1", "S2", "S3", "S31", "S32", "S33", "S34"]
+      }
+    ],
+    workedExamples: [
+      { title: "例題一：辨認 block、file 與 object 邊界", prompt: "資料庫以16 KiB pages自行管理一致性，共享文件需支援path與rename，5 GiB備份檔只需整體上傳下載。各選哪種模型？", steps: ["先辨認每個workload希望由storage service管理的名稱與操作單位。", "資料庫需要自行安排pages與flush，適合在block volume上建立其資料格式。", "共享文件需要server管理path、directory與rename，選file service。", "備份以完整blob和key保存、不需in-place overwrite，選object service。", "三者仍可落在相同實體array，選擇依外部語意而非媒體名稱。"], result: "資料庫→block、共享文件→file、備份blob→object。" },
+      { title: "例題二：加總端到端 I/O latency", prompt: "一次cache miss依序耗用filesystem 12 μs、block layer 10 μs、queue 80 μs、controller 15 μs、media 120 μs、completion 5 μs，總latency多少？", steps: ["各階段在此模型中串行，因此直接加總。", "12+10+80+15+120+5=242 μs。", "queue與media合計200 μs，占總時間82.64%。", "占比=200/242≈82.64%。", "若只把controller從15降到8 μs，總時間仍為235 μs。"], result: "總latency為242 μs；優化前先處理占比最大的queue/media。" },
+      { title: "例題三：由 byte offset 求 LBA 與 block count", prompt: "logical block為512 B，從1 MiB offset寫入4096 B。求start LBA、block count；若physical block為4 KiB是否對齊？", steps: ["1 MiB=1,048,576 B。", "start LBA=1,048,576/512=2048。", "block count=4096/512=8。", "先檢查logical alignment：offset與length都能被512整除。", "physical alignment：1,048,576 mod 4096=0，長度也為4096，故涵蓋一個完整physical block。"], result: "起始LBA 2048、8個logical blocks，且4 KiB對齊。" },
+      { title: "例題四：解讀 SCSI READ(10) transfer length", prompt: "READ(10)的start LBA為0x00102030，transfer length為128 blocks，每block 512 B。讀取多少bytes，最後LBA為何？", steps: ["bytes=128×512=65,536 B=64 KiB。", "128 blocks=0x80 blocks。", "起始LBA十六進位維持0x00102030即可做範圍運算。", "最後一個LBA=start+count−1。", "0x00102030+0x80−1=0x001020AF。"], result: "讀取64 KiB，範圍為LBA 0x00102030至0x001020AF。" },
+      { title: "例題五：SATA 6 Gb/s 的raw transfer下界", prompt: "忽略所有協定overhead，只用6 Gbit/s傳送1 GiB資料，至少需要多久？若採8b/10b概略上限呢？", steps: ["1 GiB=2^30 B=1,073,741,824 B。", "bits=8,589,934,592。", "raw時間=8,589,934,592/(6×10^9)=1.4317 s。", "若有效資料率先乘0.8為4.8 Gbit/s，時間=1.7896 s。", "實際還有protocol與device限制，不能快於這些理想下界。"], result: "raw下界約1.432 s；只計8b/10b後約1.790 s。" },
+      { title: "例題六：SAS wide port 的aggregate upper bound", prompt: "一個wide port含4條12 Gbit/s phys，求單向raw aggregate rate。為何單一command不保證達到？", steps: ["每條phy的標示速率為12 Gbit/s。", "raw aggregate=4×12=48 Gbit/s。", "除8得6 GB/s十進位raw ceiling。", "protocol encoding與frames會扣除payload。", "drive media、controller、command size與可平行工作數也可能先飽和。"], result: "單向raw上限48 Gbit/s=6 GB/s，但不是application throughput保證。" },
+      { title: "例題七：PCIe 4.0 x4 的encoding ceiling", prompt: "PCIe 4.0為16 GT/s/lane、128b/130b encoding。求x4單向編碼後資料率。", steps: ["x4表示四條lanes聚合，且這裡只算一個方向。", "transfers=16×10^9×4=64×10^9 transfers/s。", "encoding後bit rate=64×10^9×128/130=63.01538 Gbit/s。", "除8得7.87692 GB/s。", "TLP/DLLP、flow control與endpoint processing尚未扣除。"], result: "單向編碼後理論上限約7.877 GB/s。" },
+      { title: "例題八：追蹤 NVMe circular queues", prompt: "深度8的SQ目前tail=6，host連續提交3筆CID 20、21、22。新位置與tail為何？若CID 21先完成是否錯誤？", steps: ["CID 20寫SQ index 6。", "CID 21寫index 7。", "CID 22wrap到index 0。", "新tail=(6+3) mod 8=1。", "controller可out of order完成；CQE以CID 21對回request，所以先完成不構成錯誤。"], result: "使用SQ indices 6、7、0，新tail=1；CID 21可先完成。" },
+      { title: "例題九：USB link 與 I/O latency 的雙重上限", prompt: "128 KiB I/O平均latency 80 μs、QD=1，USB raw line為10 Gbit/s。分別由latency與line rate估算上限。", steps: ["80 μs=80×10^-6 s。", "latency-limited IOPS=1/80 μs=12,500。", "要求資料率=12,500×128 KiB=1,638,400,000 B/s。", "USB raw ceiling=10 Gbit/s÷8=1,250,000,000 B/s。", "要求值高於line ceiling，因此兩者不可能同時成立；實際IOPS最多約1.25×10^9/131,072≈9,537，且protocol overhead後更低。"], result: "raw line先成為上限；實際低於約9,537 IOPS與1.25 GB/s。" },
+      { title: "例題十：iSCSI request 的 serialization 下界", prompt: "在25 Gbit/s link傳送256 KiB data，忽略headers，單純serialization多久？若path RTT為120 μs，完成不可能低於多少？", steps: ["256 KiB=262,144 B=2,097,152 bits。", "link rate=25×10^9 bit/s。", "serialization=2,097,152/(25×10^9)=83.886 μs。", "若command需一個request/response round trip，另有至少120 μs。", "下界=83.886+120=203.886 μs，尚未含software、switch queue與target media。"], result: "理想下界約203.9 μs。" },
+      { title: "例題十一：Little's Law、IOPS 與throughput", prompt: "平均QD=32、latency=200 μs、I/O size=4 KiB。估計穩態IOPS與throughput。", steps: ["L=200 μs=0.0002 s。", "IOPS≈Q/L=32/0.0002=160,000。", "throughput=160,000×4096=655,360,000 B/s。", "除2^20得625 MiB/s。", "若介面或media低於此值，latency會上升或完成率下降。"], result: "約160 kIOPS與625 MiB/s。" },
+      { title: "例題十二：判斷 durable ordering", prompt: "transaction先write data A，再flush，再write metadata B with FUA，最後回覆成功。斷電後允許看到哪些狀態？", steps: ["flush完成後，A必須達到該stack定義的stable storage boundary。", "B使用FUA，成功completion前也必須符合non-volatile要求。", "若在A write後、flush完成前斷電，A可能不存在，B尚未發出。", "若B成功後斷電，A已由先前flush保護，B也應durable。", "因此不應出現B durable卻沒有A的狀態，前提是所有層正確傳遞flush/FUA。"], result: "protocol建立A durable before B；錯誤bridge或虛報flush會破壞此推論。" },
+      { title: "例題十三：計算 multipart upload parts", prompt: "5 GiB object以64 MiB parts上傳，需要幾個parts？若最多8個並行且每批等時，至少幾批？", steps: ["5 GiB=5120 MiB。", "parts=ceil(5120/64)=80。", "5120可被64整除，所以最後一part也是64 MiB。", "每批最多8個，因此batches=ceil(80/8)=10。", "並行只縮短傳輸排程；最後仍需complete operation把parts組成object。"], result: "共80 parts，理想至少10批。" }
+    ],
+    misconceptions: [
+      ["儲存介面就是connector。", "完整介面還包含command set、transport、controller registers、driver與durability semantics。"],
+      ["Block device理解檔名與目錄。", "一般block device只處理LBA範圍；filesystem在主機端管理名稱。"],
+      ["Object storage就是可掛載的遠端filesystem。", "object API通常以完整key/object操作，path、locking與in-place update語意不同。"],
+      ["任何4 KiB write都一定physical aligned。", "offset也必須對齊；跨4 KiB boundary仍可能碰兩個physical blocks。"],
+      ["LUN就是partition。", "LUN識別SCSI logical unit；partition是host在block address space上建立的metadata。"],
+      ["SCSI只存在於舊式parallel cable。", "SCSI command model可由SAS、Fibre Channel、iSCSI與UASP承載。"],
+      ["SATA 6 Gb/s等於6 GB/s。", "bit與byte相差8倍，且encoding與protocol overhead還會降低payload rate。"],
+      ["SAS與SATA只差connector。", "command、dual-port、expander、multipath與task management能力均可能不同。"],
+      ["PCIe的GT/s可直接寫成Gb/s或GB/s。", "transfer需依該generation encoding/flit規則換算，之後還要扣packet overhead。"],
+      ["NVMe就是NAND flash。", "NVMe是command/queue architecture；media與transport是其他層。"],
+      ["NVMe namespace等同partition。", "namespace由controller提供；partition由host建在namespace之上。"],
+      ["NVMe commands一定依submission順序完成。", "多queue與controller parallelism允許out-of-order completion，CID負責配對。"],
+      ["UASP會讓任何USB儲存裝置跑滿USB line rate。", "UASP改善queueing，media、bridge與host仍可能是瓶頸。"],
+      ["SAN提供的是共享檔案路徑。", "SAN通常提供remote block devices；共享filesystem仍需額外協調。"],
+      ["iSCSI使用TCP，所以資料自動加密。", "TCP提供可靠ordered stream，不提供機密性；須另行部署認證與加密。"],
+      ["較高queue depth一定降低latency。", "它可能提高throughput，也會增加queue waiting與tail latency。"],
+      ["Write command完成就表示已通過斷電。", "volatile cache可先回報；durability需flush/FUA與正確device承諾。"],
+      ["RAID、snapshot或versioning其中一項就是完整backup。", "它們處理不同故障；backup還需獨立copy、retention與restore驗證。"],
+      ["SMART顯示正常就不會故障。", "health telemetry不能預測所有突發、controller、firmware或外部故障。"],
+      ["雲端高durability等於永遠可立即讀取。", "durability關於不永久遺失；availability仍受網路、identity與service failure影響。"]
+    ],
+    exercises: [
+      { level: "基礎", question: "Block、file、object storage各由哪一層管理主要名稱？", solution: ["block以LBA由device/controller呈現，檔名通常由host filesystem管理。", "file service由server管理path與file handle；object service管理bucket/key與object metadata。"] },
+      { level: "基礎", question: "DMA在storage I/O path中的作用是什麼？IOMMU又解決什麼問題？", solution: ["DMA讓controller直接在device與main memory間搬資料，避免CPU逐byte copy。", "IOMMU轉譯並限制device可存取的memory範圍，建立隔離。"] },
+      { level: "基礎", question: "SCSI中的initiator、target與logical unit分別扮演什麼角色？", solution: ["initiator建立並送出tasks/CDB；target port接收命令。", "logical unit是target內真正執行命令、提供block等服務的實體。"] },
+      { level: "基礎", question: "SATA NCQ為何能改善HDD與SSD效能？", solution: ["多筆tagged commands可同時outstanding。", "HDD可減少seek/rotation，SSD可使用內部channels/dies parallelism；但queueing也可能增長latency。"] },
+      { level: "基礎", question: "NVMe SQ、CQ、doorbell與CID的關係為何？", solution: ["host把command寫入SQ並更新tail doorbell；controller執行後把CQE寫入CQ。", "CID把可能out-of-order的completion配對回原command，host更新CQ head doorbell回收entries。"] },
+      { level: "基礎", question: "Durability與availability為何不能互換？", solution: ["durability關心成功保存的資料是否永久遺失。", "availability關心當下能否存取；資料仍存在時，網路或服務故障仍可使它暫時不可用。"] },
+      { level: "計算", question: "logical block為4 KiB，offset 6 MiB、length 1 MiB。求start LBA與block count。", solution: ["6 MiB/4 KiB=(6×1024)/4=1536，所以start LBA=1536。", "1 MiB/4 KiB=256 blocks。"] },
+      { level: "計算", question: "512e裝置的physical block為4 KiB。一筆512 B write從LBA 15開始，會碰到哪些physical blocks？", solution: ["每個physical block含8個logical sectors；LBA 8–15屬同一physical block。", "單一LBA 15仍只碰該block，但只改其中1/8，可能觸發read-modify-write；若長度2 sectors才會跨到LBA 16所在下一block。"] },
+      { level: "計算", question: "SCSI READ從LBA 4096讀256個4 KiB blocks。總bytes與最後LBA是多少？", solution: ["bytes=256×4096=1,048,576 B=1 MiB。", "最後LBA=4096+256−1=4351。"] },
+      { level: "計算", question: "PCIe 3.0 x8使用8 GT/s/lane、128b/130b。求編碼後單向GB/s。", solution: ["8×8×128/130=63.01538 Gbit/s。", "除8得7.87692 GB/s，尚未扣TLP/DLLP overhead。"] },
+      { level: "計算", question: "QD=16、平均latency=500 μs時，依Little's Law估IOPS。若每筆64 KiB，需求throughput是多少？", solution: ["IOPS=16/0.0005=32,000。", "throughput=32,000×65,536=2,097,152,000 B/s，約1.953 GiB/s。"] },
+      { level: "計算", question: "100 Gbit/s fabric傳送1 MiB data，忽略overhead的serialization delay多少？", solution: ["1 MiB=8,388,608 bits。", "delay=8,388,608/10^11=83.88608 μs。"] },
+      { level: "計算", question: "裝置宣稱500 kIOPS、I/O size 4 KiB。計算資料率；它能否通過raw 16 Gbit/s link？", solution: ["500,000×4096=2,048,000,000 B/s=16.384 Gbit/s。", "已超過16 Gbit/s raw line，且尚未扣overhead，因此不可能同時達成這兩個條件。"] },
+      { level: "計算", question: "一筆I/O含40 μs host、20 μs network serialization、150 μs RTT/queue、90 μs target media。總latency與各部分最大占比為何？", solution: ["總和=40+20+150+90=300 μs。", "network RTT/queue為150/300=50%，是最大部分。"] },
+      { level: "計算", question: "3.3 GiB object使用128 MiB parts，需要幾個parts？最後一part多大？", solution: ["3.3 GiB若按3.3×1024=3379.2 MiB；前26個parts為3328 MiB。", "需要ceil(3379.2/128)=27 parts，最後約51.2 MiB。題目使用小數GiB，結果承襲其近似精度。"] },
+      { level: "計算", question: "某transaction執行write data、write metadata、最後才flush。若第二個write後斷電，有何風險？", solution: ["兩筆都可能只在volatile cache，且device可能重排。", "可能看到舊資料、部分新資料，甚至metadata先落盤而data未落盤；需在相依更新間建立正確ordering與durability boundary。"] },
+      { level: "進階", question: "同一SSD經PCIe直連時延遲低，經NVMe/TCP後較高。列出至少五個新增階段，並指出哪些不能靠提高SSD速度消除。", solution: ["新增socket/protocol processing、TCP/IP stack、NIC DMA、link serialization、switch queue、propagation、remote target processing與return path。", "這些network/host階段不會因SSD media更快而消失；需分層量測CPU、RTT、loss、queue與target。"] },
+      { level: "整合", question: "設計一個需要低延遲database、多人共享documents與跨site immutable backups的storage配置，並說明一致性與復原邊界。", solution: ["database使用local或SAN block volume，由database/fsync與replication管理transaction durability。", "documents使用NAS file service，由server處理path、locking與ACL。", "backups寫入啟用versioning/object lock的object service並跨failure domain保存；另定期做restore test。", "三者分開是因access semantics不同，並非只依速度選擇。"] }
+    ],
+    glossary: [
+      ["Block storage", "以固定大小logical blocks與LBA提供read/write的儲存服務。"], ["File storage", "由server管理path、directory、metadata與file operations的共享儲存。"], ["Object storage", "以bucket/key識別完整object及其metadata的儲存服務。"], ["LBA", "Logical Block Address；block address space中的區塊編號。"], ["Logical block", "host command可直接定址與傳輸的最小block單位。"], ["Physical block", "媒體實際更新、保護或配置的block單位。"], ["512e", "對外模擬512-byte logical sectors、內部使用較大physical sectors的格式。"], ["4Kn", "logical與physical sector通常都為4096 bytes的native格式。"], ["Read-modify-write", "先讀較大單位、修改部分內容再寫回的更新流程。"], ["Write amplification", "media實際寫入量與host請求寫入量之比。"], ["FTL", "Flash Translation Layer；把host LBA映射到flash locations。"], ["DMA", "Direct Memory Access；裝置不經CPU逐byte操作直接搬移memory data。"], ["IOMMU", "替I/O devices轉譯與限制memory addresses的硬體。"], ["Scatter-gather", "以多個不連續memory segments描述一筆連續I/O data。"], ["Tag", "識別多筆outstanding commands並配對completion的編號。"], ["HBA", "Host Bus Adapter；連接host I/O stack與storage transport的控制器。"], ["SCSI", "定義storage commands、tasks、devices與service delivery的架構族。"], ["CDB", "Command Descriptor Block；攜帶SCSI opcode、LBA與參數。"], ["Initiator", "建立並送出SCSI task或network storage request的端點。"], ["Target", "接收initiator commands並提供logical units的端點。"], ["LUN", "Logical Unit Number；SCSI domain中識別logical unit的位址。"], ["Sense data", "SCSI command失敗時描述error category與詳細原因的資料。"], ["ATA", "常用於SATA devices的command set與裝置register語意。"], ["AHCI", "Advanced Host Controller Interface；SATA host controller的memory/register模型。"], ["NCQ", "Native Command Queuing；允許多筆tagged ATA commands outstanding與重排。"], ["SAS", "Serial Attached SCSI；以serial links、ports與expanders承載SCSI。"], ["Phy", "serial fabric中單一physical transmitter/receiver link。"], ["Expander", "在SAS fabric中連接與路由多個ports的裝置。"], ["Multipath", "經多條I/O paths存取同一logical device並提供load balance或failover。"], ["PCIe", "以point-to-point links與packets連接root、switches與endpoints的interconnect。"], ["Lane", "PCIe的一組獨立transmit與receive differential pairs。"], ["GT/s", "每秒十億次transfers；須依encoding才能換算有效bits。"], ["TLP", "Transaction Layer Packet；PCIe承載memory、I/O或message transactions的packet。"], ["NVMe", "以多queue與低overhead commands設計的non-volatile memory express架構。"], ["Submission queue", "host放入NVMe commands的circular queue。"], ["Completion queue", "controller放入NVMe command results的circular queue。"], ["Doorbell", "host以MMIO通知controller queue head或tail已更新的register。"], ["CID", "NVMe Command Identifier；把completion對回outstanding command。"], ["Namespace", "NVMe controller提供的一個logical block address space。"], ["BOT", "USB Mass Storage Bulk-Only Transport；以CBW/data/CSW交換命令。"], ["UASP", "USB Attached SCSI Protocol；在USB上支援多command與SCSI task model。"], ["SAN", "Storage Area Network；讓hosts經fabric存取block storage的架構。"], ["NAS", "Network Attached Storage；經network提供file-level service的系統。"], ["iSCSI", "在TCP/IP上承載SCSI commands與data的protocol。"], ["NVMe-oF", "NVMe over Fabrics；把NVMe queue/command model延伸到network fabric。"], ["Fibre Channel", "常用於storage fabric的loss-managed serial networking技術。"], ["RDMA", "Remote Direct Memory Access；讓remote data movement減少CPU與copy介入。"], ["Queue depth", "同時尚未完成的I/O requests數量。"], ["IOPS", "每秒完成的I/O operations數。"], ["Tail latency", "高percentile如p99或p99.9的response time。"], ["Flush", "要求先前cache writes推進到規定stable storage boundary的操作。"], ["FUA", "Forced Unit Access；要求特定command依規格直接滿足non-volatile語意。"], ["Durability", "成功資料在故障後仍不永久遺失的性質。"], ["Availability", "需要時服務與資料可被成功存取的性質。"], ["Atomicity", "操作在failure邊界呈現完整前或完整後狀態的性質。"], ["Integrity", "資料未被未偵測錯誤或未授權方式改變的性質。"], ["Object versioning", "保留同一key歷史object versions的機制。"], ["Object lock", "以retention或legal hold限制object version刪除/覆寫的機制。"]
+    ],
+    sources: [
+      { key: "S1", title: "SNIA Storage Networking Primer", url: "https://www.snia.org/education/storage_networking_primer", accessed: "2026-08-27", use: "block、file、object、DAS、networked storage與storage service基本分類。" },
+      { key: "S2", title: "SNIA: What Is NAS?", url: "https://www.snia.org/educational-library/what-nas-network-attached-storage-and-why-nas-important-2022", accessed: "2026-08-27", use: "NAS file protocols、shared files、client/server與block storage差異。" },
+      { key: "S3", title: "NIST SP 800-209 Rev. 1 Initial Public Draft", url: "https://csrc.nist.gov/pubs/sp/800/209/r1/ipd", accessed: "2026-08-27", use: "2026年初稿中的block/file/object、DAS/network/cloud storage、isolation、data protection、restore assurance與security controls。" },
+      { key: "S4", title: "Linux Kernel: Multi-Queue Block IO Queueing Mechanism", url: "https://docs.kernel.org/block/blk-mq.html", accessed: "2026-08-27", use: "software staging queues、hardware dispatch queues、tags、driver completion與out-of-order behavior。" },
+      { key: "S5", title: "Linux Kernel: DMA API HOWTO", url: "https://docs.kernel.org/core-api/dma-api-howto.html", accessed: "2026-08-27", use: "DMA mappings、coherent/streaming memory、scatter-gather與device-memory data path。" },
+      { key: "S6", title: "Linux Kernel: I/O Barriers", url: "https://docs.kernel.org/core-api/wrappers/memory-barriers.html", accessed: "2026-08-27", use: "CPU/device ordering、DMA visibility與I/O access ordering邊界。" },
+      { key: "S7", title: "T13 ATA Command Set 5 Documents", url: "https://t13.org/docsearch?title=ATA%20Command%20Set%20-5%20%28ACS-5%29", accessed: "2026-08-27", use: "ATA ACS-5文件、logical/physical sector concepts、identify data與storage commands。" },
+      { key: "S8", title: "Microsoft: Advanced Format 4K Sector Hard Drives", url: "https://learn.microsoft.com/en-us/windows/win32/w8cookbook/advanced-format--4k--disk-compatibility-update", accessed: "2026-08-27", use: "512e、4Kn、logical/physical sector size與alignment/read-modify-write問題。" },
+      { key: "S9", title: "INCITS T10: SCSI Architecture Model 6", url: "https://www.t10.org/members/w_sam6.htm", accessed: "2026-08-27", use: "initiator、target、logical unit、task、service delivery subsystem與SCSI architecture。" },
+      { key: "S10", title: "INCITS T10: SCSI Primary Commands 6", url: "https://www.t10.org/members/w_spc6.htm", accessed: "2026-08-27", use: "common SCSI commands、status、sense、inquiry與logical unit management。" },
+      { key: "S11", title: "INCITS T10: SCSI Block Commands 5", url: "https://www.t10.org/members/w_sbc5.htm", accessed: "2026-08-27", use: "READ/WRITE、CDB、LBA、cache、FUA、synchronize cache與block device semantics。" },
+      { key: "S12", title: "SATA-IO: Purchase Specifications", url: "https://sata-io.org/developers/purchase-specification", accessed: "2026-08-27", use: "Serial ATA Revision 3.5a現行規格版本與規格分層。" },
+      { key: "S13", title: "Serial ATA Revision 3.5", url: "https://sata-io.org/system/files/specifications/SerialATA_Revision_3_5_Gold.pdf", accessed: "2026-08-27", use: "SATA PHY、FIS、NCQ、commands、6 Gb/s signaling與transport behavior。" },
+      { key: "S14", title: "Intel Serial ATA AHCI Specification 1.3.1", url: "https://www.intel.com/content/www/us/en/io/serial-ata/serial-ata-ahci-spec-rev1-3-1.html", accessed: "2026-08-27", use: "AHCI registers、command lists/tables、received FIS、DMA與host software interface。" },
+      { key: "S15", title: "INCITS T10 Drafts and Standards", url: "https://www.t10.org/drafts.htm", accessed: "2026-08-27", use: "SAS Protocol Layer、SCSI standards家族與目前published/draft狀態。" },
+      { key: "S16", title: "INCITS T10 Projects", url: "https://www.t10.org/projects.htm", accessed: "2026-08-27", use: "SAS/SCSI project範圍、standards關係與serial storage roadmap。" },
+      { key: "S17", title: "PCI-SIG: PCI Express Base Specification", url: "https://pcisig.com/specification-overview/pci-express-base", accessed: "2026-08-27", use: "PCIe generations、lane rates、full-duplex links、encoding與base architecture。" },
+      { key: "S18", title: "PCI-SIG: PCI Express 7.0 FAQ", url: "https://pcisig.com/faq?field_category_value%5B%5D=pci_express_7.0", accessed: "2026-08-27", use: "PCIe 7.0 128 GT/s、PAM4、flit encoding與x16 aggregate bandwidth。" },
+      { key: "S19", title: "NVM Express Base Specification 2.4", url: "https://nvmexpress.org/specification/nvm-express-base-specification/", accessed: "2026-08-27", use: "2026-08-04發布Base 2.4、controller、namespace、queues、doorbells與modular architecture。" },
+      { key: "S20", title: "NVM Express NVM Command Set Specification", url: "https://nvmexpress.org/specification/nvm-command-set-specification/", accessed: "2026-08-27", use: "NVM command set、read/write/flush、LBA formats、status與data pointers。" },
+      { key: "S21", title: "NVM Express NVMe over PCIe Transport Specification 1.4", url: "https://nvmexpress.org/specification/nvme-over-pcie-transport-specification/", accessed: "2026-08-27", use: "2026-08-04發布的PCIe Transport 1.4、MMIO doorbells、queue memory與transport binding。" },
+      { key: "S22", title: "USB-IF: USB Attached SCSI Protocol 1.0", url: "https://www.usb.org/document-library/usb-attached-scsi-protocol-uasp-v10-and-adopters-agreement", accessed: "2026-08-27", use: "UASP command/data/status streams、queueing與SCSI task management。" },
+      { key: "S23", title: "USB-IF: Mass Storage Specifications", url: "https://www.usb.org/documents?search=Mass%20storage", accessed: "2026-08-27", use: "Bulk-Only Transport、mass storage class、command wrappers與USB storage documents。" },
+      { key: "S24", title: "SNIA: What Is a Storage Area Network?", url: "https://www.snia.org/education/storage_networking_primer/san/what_san", accessed: "2026-08-27", use: "SAN block service、fabric、Fibre Channel/Ethernet/InfiniBand與host-visible storage。" },
+      { key: "S25", title: "RFC 7143: Internet Small Computer System Interface", url: "https://www.rfc-editor.org/info/rfc7143/", accessed: "2026-08-27", use: "iSCSI initiator/target、TCP connections、sessions、CmdSN、tasks、security與error recovery。" },
+      { key: "S26", title: "NVM Express TCP Transport Specification 1.3", url: "https://nvmexpress.org/specification/tcp-transport-specification/", accessed: "2026-08-27", use: "2026 NVMe/TCP transport、PDUs、queues、data transfer與TCP fabric behavior。" },
+      { key: "S27", title: "NVM Express 2.4 Specification Set", url: "https://nvmexpress.org/specifications/", accessed: "2026-08-27", use: "Base 2.4中的Fabrics architecture，以及獨立PCIe、RDMA、TCP transports與remote namespaces。" },
+      { key: "S28", title: "Little's Law", url: "https://doi.org/10.1287/opre.9.3.383", accessed: "2026-08-27", use: "穩態queue中平均items、arrival/completion rate與平均time之關係N=λW。" },
+      { key: "S29", title: "Linux Kernel: Writeback Cache Control", url: "https://docs.kernel.org/6.10/block/writeback_cache_control.html", accessed: "2026-08-27", use: "volatile write-back cache、REQ_PREFLUSH、REQ_FUA、ordering與device completion semantics。" },
+      { key: "S30", title: "NIST SP 800-209 Rev. 1 Initial Public Draft: Data Protection", url: "https://csrc.nist.gov/pubs/sp/800/209/r1/ipd", accessed: "2026-08-27", use: "2026年初稿中的integrity、availability、replication、backup、isolation、encryption與restore assurance。" },
+      { key: "S31", title: "Amazon S3: Using Amazon S3 Objects", url: "https://docs.aws.amazon.com/console/s3/UsingObjects.html", accessed: "2026-08-27", use: "object、key、metadata、PUT/GET、single-key atomicity與strong consistency。" },
+      { key: "S32", title: "Amazon S3 Data Durability", url: "https://docs.aws.amazon.com/AmazonS3/latest/userguide/DataDurability.html", accessed: "2026-08-27", use: "redundancy、versioning、replication、durability與availability區分。" },
+      { key: "S33", title: "Amazon S3 Object Lock", url: "https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html", accessed: "2026-08-27", use: "WORM、retention periods、legal holds與version-level protection。" },
+      { key: "S34", title: "Amazon S3 PutObject API", url: "https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html", accessed: "2026-08-27", use: "PUT object atomicity、checksums、conditional requests與concurrent write behavior。" }
+    ]
   }
 ];
