@@ -85,6 +85,15 @@ for (const chapter of chapterDetails) {
   }
 }
 
+const chapterOne = chapterDetails.find((chapter) => chapter.chapter === 1);
+assert(chapterOne, "Chapter 1 detailed architecture-foundations material is missing");
+assert(chapterOne.sections.length >= 13, "Chapter 1 needs at least thirteen complete concept sections");
+assert(chapterOne.sections.filter((item) => item.figure).length >= 13, "Chapter 1 needs at least thirteen verifiable diagrams");
+assert(chapterOne.workedExamples.length >= 10, "Chapter 1 needs at least ten worked examples");
+assert(chapterOne.exercises.length >= 18, "Chapter 1 needs at least eighteen exercises with solutions");
+assert(chapterOne.glossary.length >= 40, "Chapter 1 needs a broad architecture-foundations glossary");
+assert(chapterOne.sources.length >= 20, "Chapter 1 needs broad authoritative source coverage");
+
 const chapterTwo = chapterDetails.find((chapter) => chapter.chapter === 2);
 assert(chapterTwo, "Chapter 2 detailed data-representation material is missing");
 assert(chapterTwo.sections.length >= 10, "Chapter 2 needs at least ten complete concept sections");
@@ -245,6 +254,33 @@ assert(Math.abs((8e8 * 1.4 / 2.5e9) - 0.448) < 1e-12, "Chapter 1 processor P tim
 assert(Math.abs((8e8 * 1.0 / 2.0e9) - 0.4) < 1e-12, "Chapter 1 processor Q time check failed");
 assert(Math.abs((2e9 * 1.2 / 3e9) - 0.8) < 1e-12, "Chapter 1 exercise CPU A time check failed");
 assert(Math.abs((1.5e9 * 1.8 / 3.6e9) - 0.75) < 1e-12, "Chapter 1 exercise CPU B time check failed");
+const chapterOneSingleCyclePs = 250 + 120 + 180 + 300 + 100;
+const chapterOnePipelinePs = Math.max(250, 120, 180, 300, 100) + 20;
+assert(chapterOneSingleCyclePs === 950, "Chapter 1 single-cycle critical path failed");
+assert(chapterOnePipelinePs === 320, "Chapter 1 pipeline clock period failed");
+assert(Math.abs(1e12 / chapterOnePipelinePs - 3.125e9) < 1e-3, "Chapter 1 pipeline throughput failed");
+assert(5 * chapterOnePipelinePs === 1600, "Chapter 1 pipeline instruction latency failed");
+const chapterOneAmdahlTime = 0.65 + 0.35 / 8;
+assert(Math.abs(chapterOneAmdahlTime - 0.69375) < 1e-12, "Chapter 1 Amdahl improved time failed");
+assert(Math.abs(1 / chapterOneAmdahlTime - 1.4414414414414414) < 1e-12, "Chapter 1 Amdahl speedup failed");
+assert(Math.abs(1 / 0.65 - 1.5384615384615383) < 1e-12, "Chapter 1 Amdahl upper bound failed");
+assert(Math.abs((0.8 ** 2) * (1.5 / 2.0) - 0.48) < 1e-12, "Chapter 1 DVFS power ratio failed");
+assert(80 * 2 === 160 && 110 * 1.2 === 132, "Chapter 1 energy comparison failed");
+assert(160 * 2 === 320 && 132 * 1.2 === 158.4, "Chapter 1 EDP comparison failed");
+assert(8 + 3 + 6 + 5 === 22 && Math.abs(30 / 22 - 1.3636363636363635) < 1e-12, "Chapter 1 accelerator offload failed");
+
+const chapterOneExercisePipelinePs = Math.max(180, 240, 150, 210) + 25;
+assert(chapterOneExercisePipelinePs === 265, "Chapter 1 pipeline exercise clock period failed");
+assert(Math.abs(1e12 / chapterOneExercisePipelinePs - 3.7735849056603775e9) < 1e-3, "Chapter 1 pipeline exercise throughput failed");
+assert(4 * chapterOneExercisePipelinePs === 1060, "Chapter 1 pipeline exercise latency failed");
+const chapterOneExerciseAmdahlTime = 0.4 + 0.6 / 5;
+assert(Math.abs(chapterOneExerciseAmdahlTime - 0.52) < 1e-12, "Chapter 1 Amdahl exercise time failed");
+assert(Math.abs(1 / chapterOneExerciseAmdahlTime - 1.923076923076923) < 1e-12, "Chapter 1 Amdahl exercise speedup failed");
+assert(1 / 0.4 === 2.5, "Chapter 1 Amdahl exercise upper bound failed");
+assert(Math.abs((0.9 ** 2) * (2.4 / 2.0) - 0.972) < 1e-12, "Chapter 1 DVFS exercise failed");
+assert(65 * 3 === 195 && 90 * 1.8 === 162, "Chapter 1 energy exercise failed");
+assert(195 * 3 === 585 && 162 * 1.8 === 291.6, "Chapter 1 EDP exercise failed");
+assert(7 + 3 + 4 + 5 === 19 && Math.abs(24 / 19 - 1.263157894736842) < 1e-12, "Chapter 1 offload exercise failed");
 
 const neg37 = ((~37 + 1) & 0xff);
 assert(neg37 === 0xdb, "Chapter 2 two's-complement encoding for -37 failed");
