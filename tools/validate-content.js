@@ -96,11 +96,12 @@ assert(chapterOne.sources.length >= 20, "Chapter 1 needs broad authoritative sou
 
 const chapterTwo = chapterDetails.find((chapter) => chapter.chapter === 2);
 assert(chapterTwo, "Chapter 2 detailed data-representation material is missing");
-assert(chapterTwo.sections.length >= 10, "Chapter 2 needs at least ten complete concept sections");
-assert(chapterTwo.sections.filter((item) => item.figure).length >= 9, "Chapter 2 needs at least nine verifiable diagrams");
-assert(chapterTwo.workedExamples.length >= 5, "Chapter 2 needs at least five worked examples");
-assert(chapterTwo.exercises.length >= 13, "Chapter 2 needs at least thirteen exercises with solutions");
-assert(chapterTwo.sources.length >= 8, "Chapter 2 needs broad authoritative source coverage");
+assert(chapterTwo.sections.length >= 13, "Chapter 2 needs at least thirteen complete concept sections");
+assert(chapterTwo.sections.filter((item) => item.figure).length >= 13, "Chapter 2 needs at least thirteen verifiable diagrams");
+assert(chapterTwo.workedExamples.length >= 10, "Chapter 2 needs at least ten worked examples");
+assert(chapterTwo.exercises.length >= 18, "Chapter 2 needs at least eighteen exercises with solutions");
+assert(chapterTwo.glossary.length >= 40, "Chapter 2 needs a broad data-representation glossary");
+assert(chapterTwo.sources.length >= 20, "Chapter 2 needs broad authoritative source coverage");
 
 const chapterThree = chapterDetails.find((chapter) => chapter.chapter === 3);
 assert(chapterThree, "Chapter 3 detailed digital-logic material is missing");
@@ -292,6 +293,43 @@ binary32.writeFloatBE(13.25, 0);
 assert(binary32.readUInt32BE(0) === 0x41540000, "Chapter 2 IEEE 754 encoding for 13.25 failed");
 assert(Buffer.from("中", "utf8").toString("hex") === "e4b8ad", "Chapter 2 UTF-8 encoding for U+4E2D failed");
 assert((2 ** 3) < (8 + 3 + 1) && (2 ** 4) >= (8 + 4 + 1), "Chapter 2 Hamming parity-bit bound failed");
+const chapterTwoPackedWord = ((5 & 0x7) << 5) | ((1 & 0x1) << 4) | (9 & 0xf);
+assert(chapterTwoPackedWord === 0x00b9, "Chapter 2 packed-field encoding failed");
+assert(((chapterTwoPackedWord >>> 5) & 0x7) === 5, "Chapter 2 Mode extraction failed");
+assert(((chapterTwoPackedWord >>> 4) & 0x1) === 1, "Chapter 2 Enable extraction failed");
+assert((chapterTwoPackedWord & 0xf) === 9, "Chapter 2 Count extraction failed");
+
+const chapterTwoProduct16 = 50_000 * 3;
+assert(chapterTwoProduct16 === 150_000 && chapterTwoProduct16 === 0x000249f0, "Chapter 2 widening product failed");
+assert((chapterTwoProduct16 & 0xffff) === 0x49f0, "Chapter 2 product low half failed");
+assert((chapterTwoProduct16 >>> 16) === 0x0002, "Chapter 2 product high half failed");
+const chapterTwoSignedQuotient = Math.trunc(-17 / 5);
+const chapterTwoSignedRemainder = -17 - chapterTwoSignedQuotient * 5;
+assert(chapterTwoSignedQuotient === -3 && chapterTwoSignedRemainder === -2, "Chapter 2 signed division failed");
+assert(chapterTwoSignedQuotient * 5 + chapterTwoSignedRemainder === -17 && Math.abs(chapterTwoSignedRemainder) < 5, "Chapter 2 division invariant failed");
+
+assert(Math.fround((2 ** 24) + 1) === 2 ** 24, "Chapter 2 binary32 ties-to-even failed");
+assert(Math.fround((2 ** 24) + 2) === (2 ** 24) + 2, "Chapter 2 binary32 next-value check failed");
+const chapterTwoFloatA = Math.fround(1e20);
+const chapterTwoFloatB = Math.fround(-1e20);
+const chapterTwoFloatC = Math.fround(3.14);
+const chapterTwoFloatLeft = Math.fround(Math.fround(chapterTwoFloatA + chapterTwoFloatB) + chapterTwoFloatC);
+const chapterTwoFloatRight = Math.fround(chapterTwoFloatA + Math.fround(chapterTwoFloatB + chapterTwoFloatC));
+assert(chapterTwoFloatLeft === chapterTwoFloatC && chapterTwoFloatRight === 0, "Chapter 2 binary32 non-associativity failed");
+
+assert(((0xa6d35b7c >>> 8) & 0xff) === 0x5b, "Chapter 2 bit-field exercise failed");
+const chapterTwoProduct32 = 70_000 * 70_000;
+assert(chapterTwoProduct32 === 4_900_000_000 && Math.floor(chapterTwoProduct32 / (2 ** 32)) === 1, "Chapter 2 32-bit widening exercise failed");
+assert((chapterTwoProduct32 >>> 0) === 0x24101100, "Chapter 2 32-bit product low half failed");
+const chapterTwoExerciseQuotient = Math.trunc(-29 / 6);
+const chapterTwoExerciseRemainder = -29 - chapterTwoExerciseQuotient * 6;
+assert(chapterTwoExerciseQuotient === -4 && chapterTwoExerciseRemainder === -5, "Chapter 2 signed division exercise failed");
+assert(2 ** (10 - 23) === 2 ** -13, "Chapter 2 ULP exercise failed");
+assert(Math.fround(1024 + 2 ** -14) === 1024, "Chapter 2 ULP tie exercise failed");
+assert(Math.fround(1024 + 2 ** -13) === 1024.0001220703125, "Chapter 2 ULP next-value exercise failed");
+assert(Number.isNaN(0 / 0) && (5 / 0) === Infinity, "Chapter 2 floating exception classes failed");
+assert(Math.fround(3.4028234663852886e38 * 2) === Infinity, "Chapter 2 floating overflow exercise failed");
+assert(Math.fround(0.1) !== 0.1, "Chapter 2 floating inexact exercise failed");
 
 for (let inputs = 0; inputs < 8; inputs += 1) {
   const a = (inputs >>> 2) & 1;

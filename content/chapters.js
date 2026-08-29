@@ -690,9 +690,9 @@ const chapterDetails = [
     chapter: 2,
     title: "位元模式、數值與文字的表示",
     english: "Representing Bits, Numbers, and Text",
-    revised: "2026-08-16",
-    readingTime: "約 180–240 分鐘",
-    intro: "記憶體只保存位元模式，不會自行標記某一串 bits 是負整數、小數、字元、指令或錯誤檢查碼。真正賦予位元意義的是表示法與操作規則。本章從 positional notation 建立二進位與十六進位的數學模型，再推導 fixed-width unsigned、two's complement、定點與 IEEE 754；接著追蹤多位元組資料的 endian 排列、Unicode code point 如何轉成 UTF-8 bytes，以及 parity、Hamming distance 與 CRC 如何用冗餘換取錯誤偵測能力。每個結果都能回到欄位權重、模數運算或編碼規則逐位驗證。",
+    revised: "2026-08-29",
+    readingTime: "約 280–340 分鐘",
+    intro: "記憶體只保存位元模式，不會自行標記某一串 bits 是負整數、小數、字元、指令或錯誤檢查碼。真正賦予位元意義的是一份完整表示契約：寬度、欄位、signedness、scaling、byte order、合法特殊值，以及 overflow、rounding 與 error rules。本章從 positional notation 建立二進位與十六進位模型，推導 fixed-width unsigned、two's complement、定點與 IEEE 754；再以 mask、shift、packed field、widening multiply、signed divide、ULP 與五類浮點例外追蹤 operation 如何改變位元。最後把 multi-byte serialization、Unicode 17 UTF-8、Hamming/SECDED 與 CRC 放回跨系統資料邊界。每個結果都能由欄位權重、模數運算、round-trip 或 reference calculation 逐步驗證。",
     outcomes: [
       "能使用 positional notation 在二進位、十六進位與十進位之間轉換整數與有限小數。",
       "能推導 n-bit unsigned 與 two's complement 的範圍，並正確完成 negation、sign extension 與 zero extension。",
@@ -701,7 +701,12 @@ const chapterDetails = [
       "能逐欄拆解 IEEE 754 binary32 的 normal、subnormal、zero、infinity 與 NaN。",
       "能分析 endian、alignment 與 byte addressing 對 memory dump 和資料交換的影響。",
       "能區分 Unicode code point、glyph 與 UTF-8 byte sequence，並手工編碼基本範例。",
-      "能用 parity、Hamming distance、syndrome 與 CRC 說明錯誤偵測或修正能力。"
+      "能用 parity、Hamming distance、syndrome 與 CRC 說明錯誤偵測或修正能力。",
+      "能以 AND mask、OR、XOR 與 logical shift 擷取、清除、設定並組合 packed bit fields。",
+      "能判斷乘法 full product 所需寬度，分開 low/high halves，並以 quotient×divisor+remainder 驗證 signed division。",
+      "能計算 binary32 的 ULP，套用 round-to-nearest-ties-to-even，並辨認 invalid、division by zero、overflow、underflow 與 inexact。",
+      "能說明浮點運算為何不具一般實數的 associativity，並用明確 evaluation order 重現結果。",
+      "能為 memory、file 或 network boundary 寫出包含 field width、byte order、encoding 與 validation 的 serialization contract。"
     ],
     sections: [
       {
@@ -738,7 +743,7 @@ const chapterDetails = [
           items: ["除以 2", "記錄 remainder", "對 quotient 重複", "由最後一個 remainder 反向讀取", "以 positional weights 回算"],
           caption: "最後一步不是多餘動作；回算可抓出 remainder 順序顛倒與漏位錯誤。"
         },
-        sourceRefs: ["S1", "S2"]
+        sourceRefs: ["S1", "S2", "S20"]
       },
       {
         title: "3. Unsigned、Two's Complement 與模數圓環",
@@ -820,7 +825,7 @@ const chapterDetails = [
           ],
           caption: "欄位切割只能先分類；還要依 exponent 是否為 0、1–254 或 255 選擇正確公式。"
         },
-        sourceRefs: ["S3", "S10"]
+        sourceRefs: ["S3", "S10", "S13", "S14"]
       },
       {
         title: "7. Byte Addressing、Alignment 與 Endianness",
@@ -848,7 +853,7 @@ const chapterDetails = [
         paragraphs: [
           "Unicode 為文字元素指定 code points，例如字元 A 是 U+0041，中是 U+4E2D。code point 是抽象編號，不等於 glyph：相同 code point 可由不同 font 畫成不同形狀，多個 code points 也可能組成使用者看見的一個 grapheme cluster。字元數、code point 數與 bytes 數因此不一定相等。",
           "UTF-8 是把 Unicode scalar values 轉成 1 到 4 bytes 的 encoding。U+0000 到 U+007F 使用 0xxxxxxx；較大 code point 依序使用 110xxxxx 10xxxxxx、1110xxxx 10xxxxxx 10xxxxxx 或 11110xxx 加三個 continuation bytes。continuation byte 固定以 10 開頭，讓 decoder 能辨認 byte sequence 邊界。",
-          "截至 2026-08-16，Unicode 17.0 是已發布的正式版本。UTF-8 的 ASCII 區段保持單 byte 相容，但不能因此假設一個文字字元永遠是一個 byte。處理 substring、游標移動與欄寬時，應明確區分 byte offset、code point index 與 grapheme boundary。"
+          "Unicode 17.0 於 2025-09-09 發布，至 2026-08-29 仍是正式版本。UTF-8 的 ASCII 區段保持單 byte 相容，但不能因此假設一個文字字元永遠是一個 byte。處理 substring、游標移動與欄寬時，應明確區分 byte offset、code point index 與 grapheme boundary。"
         ],
         figure: {
           type: "flow",
@@ -877,14 +882,15 @@ const chapterDetails = [
           ],
           caption: "冗餘不是越多就自動越可靠；能力由 code construction 與 minimum distance 決定。"
         },
-        sourceRefs: ["S7", "S8", "S9"]
+        sourceRefs: ["S7", "S8", "S9", "S18", "S19"]
       },
       {
         title: "10. 從 Bits 到 Correctness：建立表示契約",
         paragraphs: [
           "分析任何 bit pattern 時，先寫出 representation contract：總寬度、field boundaries、signedness、scaling 或 bias、byte order、合法 special patterns，以及 overflow/rounding/error rules。這些條件缺一時，單一 hex value 往往沒有唯一答案。0xFFFFFFFF 可依 context 成為 unsigned 4294967295、signed -1、NaN 的一部分或四個 bytes。",
           "再把 conversion 分成可驗證步驟：切欄位、標權重、依分類選公式、執行 arithmetic、重新 encode，最後用 range 或 round-trip 檢查。IEEE 754 題先分類 exponent；UTF-8 題先確認 code point range；endian 題先列 addresses；overflow 題先決定 signed 或 unsigned。固定流程能避免只靠圖形直覺猜答案。",
-          "表示法也會跨層影響效能與安全性。alignment 改變 memory transactions，浮點 precision 改變數值穩定性，signed/unsigned conversion 可能破壞 bounds check，錯誤的 UTF-8 邊界可能截斷 sequence。correctness 的起點不是『電腦只懂 0 和 1』，而是每一層都對同一串 bits 採用一致且明確的契約。"
+          "表示法也會跨層影響效能與安全性。alignment 改變 memory transactions，浮點 precision 改變數值穩定性，signed/unsigned conversion 可能破壞 bounds check，錯誤的 UTF-8 邊界可能截斷 sequence。correctness 的起點不是『電腦只懂 0 和 1』，而是每一層都對同一串 bits 採用一致且明確的契約。",
+          "資料一旦離開目前 process，in-memory type 就不再是充分契約。File 或 protocol 必須固定 field width、byte order、integer range、floating format、text encoding、length 與 malformed-input behavior。RFC 8949 的 CBOR 例如把多 byte integer argument 依 network byte order 編碼，並可要求最短、deterministic representation；receiver 依 wire format 重建 value，而不是直接複製某部主機的 struct padding。"
         ],
         figure: {
           type: "flow",
@@ -892,7 +898,73 @@ const chapterDetails = [
           items: ["Identify width and context", "Split fields or bytes", "Assign weights / rules", "Compute value or state", "Check range and special cases", "Round-trip to original bits"],
           caption: "能 round-trip 回原 pattern，代表欄位切割與解讀至少彼此一致；仍需確認 context 選對格式。"
         },
-        sourceRefs: ["S2", "S3", "S4", "S6"]
+        sourceRefs: ["S2", "S3", "S4", "S6", "S15", "S17"]
+      },
+      {
+        title: "11. Mask、Shift 與 Packed Fields：用位元運算讀寫子欄位",
+        paragraphs: [
+          "Bitwise AND 對每個 position 只在兩個 operand 都為 1 時留下 1，因此 mask 中的 1 表示保留、0 表示清除。若欄位從 bit p 開始、寬度為 w，最基本的 extraction 是 (x >> p) & (2^w-1)。先右移把欄位最低位對齊 bit 0，再以 w 個 1 去除更高 bits；兩步的順序與 mask 寬度都能由欄位圖直接驗證。",
+          "OR 可把指定 bits 設為 1，XOR 可在 mask 為 1 的 positions 翻轉 bits，AND with complement 可清除欄位。更新欄位不能只做 x | (v << p)，因為舊欄位中的 1 可能殘留；完整 replace 是 (x & ~(mask << p)) | ((v & mask) << p)。其中 v & mask 也防止過寬輸入污染相鄰欄位。",
+          "Left shift k positions 在未丟失有效 bits 時等同乘 2^k；unsigned logical right shift 等同 floor(x/2^k)。Signed right shift 的高位填充值與語言／ISA 規則有關，不能把算術右移與 logical right shift 混為一談。C 等語言還要求 shift count 落在 operand width 內；負 shift 或大於等於 width 都不是可攜的位元操作。",
+          "Packed fields 常用於 instruction、device register、protocol header 與狀態字。解題時先畫 bit index，再列出每個 mask 的 hexadecimal，最後做 round-trip：pack 後逐欄 extract，應得到原始 values。RISC-V Bitmanip extension 提供單 bit、count、rotate 與其他 operations，但其語意仍可回到相同的 position/mask 模型。"
+        ],
+        figure: {
+          type: "bits",
+          title: "16-bit 狀態字的 packed fields",
+          totalBits: 16,
+          items: [
+            { label: "Reserved", bits: 8, detail: "bits 15:8，寫入時保持 0" },
+            { label: "Mode", bits: 3, detail: "bits 7:5，mask 0x00E0" },
+            { label: "E", bits: 1, detail: "bit 4，enable mask 0x0010" },
+            { label: "Count", bits: 4, detail: "bits 3:0，mask 0x000F" }
+          ],
+          caption: "Mode=5、E=1、Count=9 時，word=(5<<5)|(1<<4)|9=0x00B9；每個欄位都可用 shift+mask 取回。"
+        },
+        sourceRefs: ["S6", "S11", "S16"]
+      },
+      {
+        title: "12. 乘法、除法與結果寬度：Low Bits 不等於完整答案",
+        paragraphs: [
+          "兩個 n-bit unsigned integers 的最大 product 小於 2^(2n)，因此完整 product 最多需要 2n bits。Two's complement signed n×n product 也通常保留 2n-bit 結果，再依需要檢查能否縮回 n bits。只保留 low n bits 等同 modulo 2^n；若 high half 非零，unsigned product 無法無損放回 n bits。Signed product 能縮窄的條件則是被丟棄 high bits 必須全為 low result sign 的正確延伸。",
+          "Shift-and-add multiplication 由 multiplier 的每個 1 bit 選擇是否加入 shifted multiplicand。第 i bit 為 1，就加入 multiplicand×2^i；所有 partial products 相加得到 full product。這與十進位直式乘法相同，只是每個 digit 只有 0 或 1。硬體可以循序重用 adder，也可用平行 tree 壓縮 partial products；表示法推導不依賴實作速度。",
+          "Integer division 要同時產生 quotient q 與 remainder r，核心不變式是 dividend=q×divisor+r 且 |r|<|divisor|。RISC-V signed DIV 採 round toward zero，因此 remainder 與非零 dividend 同號；-17/5 得 q=-3、r=-2。其他語言或數學系統可能使用 floor division，遇到負數時 q、r 會不同，不能只寫斜線符號而不說規則。",
+          "Division by zero 與最小 signed value 除以 -1 都是邊界。RISC-V integer M extension 回傳規格指定的 quotient/remainder，而不是一律 trap；程式語言則可能定義 exception、undefined behavior 或不同結果。必須分開 ISA result、language semantics 與 application validation，不能從其中一層推論所有層。"
+        ],
+        figure: {
+          type: "matrix",
+          title: "n-bit 乘除結果需要保留哪些證據",
+          columns: ["Operation", "完整結果", "縮窄檢查", "回算條件"],
+          rows: [
+            ["unsigned n×n", "最多 2n bits", "high half 是否為 0", "low+high 重建 product"],
+            ["signed n×n", "通常 2n bits", "high 是否為 sign extension", "以 2n-bit two's complement 解讀"],
+            ["unsigned divide", "q 與 r", "q 是否落入目標 width", "a=q×b+r；0≤r<b"],
+            ["signed divide", "q 與 r", "rounding rule 與 overflow case", "a=q×b+r；|r|<|b|"]
+          ],
+          caption: "只看 low product 或 quotient 都不足以驗證 operation；high half、remainder 與 rounding rule 也是表示契約的一部分。"
+        },
+        sourceRefs: ["S12", "S15"]
+      },
+      {
+        title: "13. IEEE 754 運算：ULP、捨入、例外旗標與非結合性",
+        paragraphs: [
+          "對 binary32 normal number 1.f×2^e，同一 binade 內相鄰值的 spacing 是 ULP=2^(e-23)。在 [1,2) 時 e=0，間距為 2^-23；在 [2^24,2^25) 時 e=24，間距變成 2。這能直接解釋 2^24+1 無法表示：它位於 2^24 與 2^24+2 正中央，預設 round-to-nearest-ties-to-even 選擇 significand 最低位為偶數的 2^24。",
+          "浮點加減先對齊 exponents，再運算 significands、normalize 並 rounding；乘法加 exponents，除法相減，但最後同樣必須回到目標 precision。Guard、round、sticky 等額外資訊用來判斷被捨棄尾端是否小於、等於或大於半個 ULP。Fused multiply-add 只在 a×b+c 最後捨入一次，可能比先乘後加得到更精確且不同的 result。",
+          "IEEE 754 定義 invalid operation、division by zero、overflow、underflow 與 inexact 五類 exception conditions，通常產生規定結果並升起 status flag；exception 不必等於同步 trap。0/0 產生 NaN 並屬 invalid，非零有限值除以零通常產生帶號 infinity 並升 division-by-zero，有限結果需要 rounding 時升 inexact。Underflow 的判定還與 tiny result 及精度損失相關，不能把所有 subnormal 都直接稱為錯誤。",
+          "每一步 rounding 使浮點運算不再具一般實數的 associativity。以 binary32 計算，(1e20+(-1e20))+3.14 先精確抵消後留下約 3.14；1e20+((-1e20)+3.14) 的 3.14 先被巨大 spacing 吞掉，最後得到 0。可重現分析必須固定 format、rounding mode、operation order、是否使用 FMA，以及 intermediate precision。"
+        ],
+        figure: {
+          type: "flow",
+          title: "浮點 operation 從精確值到 binary32 result",
+          items: [
+            { label: "Exact operation", detail: "以無限精度概念建立目標值" },
+            { label: "Normalize", detail: "形成 1.f×2^e 或 subnormal" },
+            { label: "Classify range", detail: "normal / tiny / too large / invalid" },
+            { label: "Round", detail: "依 direction 選可表示鄰值" },
+            { label: "Result + flags", detail: "finite、zero、infinity、NaN 與五類 flags" }
+          ],
+          caption: "Result bits 與 exception flags 是兩組輸出；得到 infinity 或 NaN 時仍要辨認是哪個條件造成。"
+        },
+        sourceRefs: ["S3", "S10", "S14"]
       }
     ],
     workedExamples: [
@@ -960,6 +1032,71 @@ const chapterDetails = [
           "檢查後兩個 continuation bytes 都以 10 開頭，sequence length 與 code point range 一致。"
         ],
         result: "「中」的 UTF-8 是三個 bytes：E4 B8 AD；它不是單一 byte，也不是把 U+4E2D 直接分成 4E 2D。"
+      },
+      {
+        title: "例題六：Pack 與 Extract 一個 16-bit 狀態字",
+        prompt: "16-bit word 的 Mode 在 bits 7:5、Enable 在 bit 4、Count 在 bits 3:0。將 Mode=5、Enable=1、Count=9 編碼，再逐欄取回。",
+        steps: [
+          "Mode 寬 3 bits，mask=0b111=0x7；放到 bits 7:5 得 (5&7)<<5=0x00A0。",
+          "Enable 寬 1 bit，放到 bit 4 得 (1&1)<<4=0x0010。",
+          "Count 寬 4 bits，mask=0xF；(9&0xF)=0x0009。",
+          "三欄互不重疊，以 OR 組合：0x00A0|0x0010|0x0009=0x00B9。",
+          "取回 Mode：(0x00B9>>5)&0x7=5；取回 Enable：(0x00B9>>4)&1=1。",
+          "取回 Count：0x00B9&0xF=9；round-trip 與三個輸入完全一致。"
+        ],
+        result: "Packed word 是 0x00B9；shift 決定欄位位置，mask 同時限制寬度並去除無關 bits。"
+      },
+      {
+        title: "例題七：16-bit 乘法為何需要 High Half",
+        prompt: "把 unsigned 16-bit 的 50000 乘 3，求完整 product、32-bit hexadecimal、low 16 bits 與 high 16 bits。",
+        steps: [
+          "50000=0xC350，3=0x0003，兩個 operands 都能放入 16 bits。",
+          "精確 product=50000×3=150000。",
+          "兩個 16-bit values 的完整 product 以 32 bits 保存；150000=0x000249F0。",
+          "Low 16 bits 是 0x49F0，unsigned value=18928。",
+          "High 16 bits 是 0x0002，非零表示 product 不能無損縮回 16 bits。",
+          "重建檢查：(0x0002<<16)|0x49F0=0x000249F0=150000。"
+        ],
+        result: "完整 product 為 0x000249F0；只保留 low half 會得到 18928，也就是 modulo 2^16 的結果。"
+      },
+      {
+        title: "例題八：Round-toward-zero 的 Signed Division",
+        prompt: "依 RISC-V signed DIV/REM 規則計算 -17 除以 5 的 quotient 與 remainder，並驗證不變式。",
+        steps: [
+          "精確實數 quotient=-17/5=-3.4。",
+          "Round toward zero 捨去小數部分，因此 q=-3，不是 floor division 的 -4。",
+          "由 r=dividend-q×divisor 計算 r=-17-(-3×5)。",
+          "r=-17+15=-2。",
+          "驗證 -17=(-3)×5+(-2)，等式成立。",
+          "再檢查 |r|=2<5，且非零 remainder 與 dividend 同為負，符合此規則。"
+        ],
+        result: "q=-3、r=-2。負數 division 必須先固定 rounding convention，否則 quotient 與 remainder 都可能不同。"
+      },
+      {
+        title: "例題九：Binary32 在 2^24 的 Tie-to-even",
+        prompt: "以 binary32 分析 16777216+1 與 16777216+2 是否可精確表示。",
+        steps: [
+          "16777216=2^24，所在 binade 的 unbiased exponent e=24。",
+          "Binary32 precision 為 24 bits，因此 ULP=2^(24-23)=2。",
+          "相鄰 representable values 是 16777216 與 16777218。",
+          "16777217 位於兩者正中央，形成 exactly halfway tie。",
+          "Round-to-nearest-ties-to-even 選擇 significand 最低 retained bit 為偶數的一端，因此回到 16777216。",
+          "16777218 正好是下一個 representable value，所以加 2 可精確保留。"
+        ],
+        result: "以 binary32 計算，2^24+1 仍是 2^24；2^24+2 才移到下一個 value。"
+      },
+      {
+        title: "例題十：相同三個數，不同括號得到不同 Binary32 Result",
+        prompt: "令 a=1e20、b=-1e20、c=3.14，每次 operation 都 rounding 到 binary32。比較 (a+b)+c 與 a+(b+c)。",
+        steps: [
+          "先把 a、b、c 各自 rounding 成 binary32；a 與 b 的 magnitude 相同、sign 相反。",
+          "左式先算 a+b，兩者抵消成 +0。",
+          "再算 0+c，得到 c 的 binary32 鄰值，約 3.1400001049。",
+          "右式先算 b+c；在約 10^20 的 magnitude，ULP 遠大於 3.14，因此 c 被 rounding 掉，結果仍是 b。",
+          "再算 a+b，得到 0。",
+          "兩式的實數代數等價，但 intermediate rounding points 不同，所以 binary32 results 不同。"
+        ],
+        result: "左式約為 3.1400001049，右式為 0；浮點 evaluation order 是可觀察的數值條件。"
       }
     ],
     misconceptions: [
@@ -970,7 +1107,18 @@ const chapterDetails = [
       ["0.1 在 binary32 裡就是精確的十分之一。", "0.1 的 binary expansion 循環，必須 rounding 到鄰近 representable value。"],
       ["Little-endian 會把每個 byte 裡的 bits 倒過來。", "endianness 只決定 multi-byte object 的 byte order；byte 內 bit pattern 不反轉。"],
       ["一個 Unicode 字元就是兩個 bytes。", "Unicode code point 與 encoding 不同；UTF-8 使用 1–4 bytes，grapheme 還可能由多個 code points 組成。"],
-      ["有 parity 就能修正任何錯誤。", "單一 parity 通常只能保證偵測奇數個 bit flips，無法定位錯誤；修正能力需要足夠 minimum distance 與結構。"]
+      ["有 parity 就能修正任何錯誤。", "單一 parity 通常只能保證偵測奇數個 bit flips，無法定位錯誤；修正能力需要足夠 minimum distance 與結構。"],
+      ["OR 新欄位就能安全取代 packed word 中的舊欄位。", "OR 只能把 0 變 1，舊欄位的 1 可能殘留；必須先以 AND-complement 清空欄位，再 OR 受寬度 mask 限制的新值。"],
+      ["Left shift k bits 在任何情況都等於乘 2^k。", "只有在型別與語意允許、有效 bits 未被丟失時才保持數值；fixed width 可能 wrap，語言對 signed shift 還可能另有限制。"],
+      ["兩個 n-bit 整數相乘，結果也只需要 n bits。", "完整 unsigned product 最多需要 2n bits；只留 low n bits 是 modulo 2^n，必須檢查 high half 才知道是否能縮窄。"],
+      ["負數整數除法永遠向下取整。", "RISC-V signed DIV 與多數 C-like integer division 採 toward zero；floor division 對負數會產生不同 quotient 與 remainder。"],
+      ["除法只要 quotient 正確就完成驗證。", "還要檢查 remainder，並回算 dividend=q×divisor+r 與 |r|<|divisor|。"],
+      ["每個 binary32 數附近的間距都相同。", "Normal numbers 的 spacing 隨 exponent 改變；同一 binade 近似固定，跨越 power-of-two boundary 時會改變。"],
+      ["浮點 exception 一定立刻讓程式 trap。", "IEEE 754 通常定義 default result 與 sticky status flag；是否 trap 由環境與控制設定決定。"],
+      ["所有 subnormal results 都代表 underflow exception。", "Subnormal 是一類可表示數；underflow flag 的判定涉及 tiny 與 loss of accuracy，不能只看 exponent field 為 0。"],
+      ["浮點加法與實數一樣可以任意交換括號。", "Commutativity 常可保留，但 associativity 會因每一步 rounding 失效；compiler transformation 也可能改變結果。"],
+      ["把記憶體中的 struct bytes 直接送出就是標準 serialization。", "In-memory layout 可能含 padding、host endian 與 implementation-specific widths；wire/file format 必須另定欄位與 validation。"],
+      ["CRC width 相同，錯誤偵測能力就完全相同。", "Generator polynomial 與 protected message length 會改變 minimum distance 與可保證能力；位數只是其中一項參數。"]
     ],
     exercises: [
       {
@@ -1037,6 +1185,31 @@ const chapterDetails = [
         level: "整合",
         question: "pattern 0xFFFFFFFF 有哪些可能解讀？至少列出四種，並說明還缺什麼資訊才能決定答案。",
         solution: ["可解讀為 32-bit unsigned 4294967295、32-bit two's complement -1、四個 0xFF bytes、RGBA color、instruction 或其他欄位。", "若切成 IEEE binary32，sign=1、exponent 全 1、fraction 非 0，屬於 NaN。", "必須知道 width、format/type、field boundaries、byte order 與操作 context 才能決定。"]
+      },
+      {
+        level: "計算",
+        question: "32-bit word 0xA6D35B7C 的 bits 15:8 是多少？請寫出 shift、mask 與結果。",
+        solution: ["先右移 8 bits：0xA6D35B7C>>8=0x00A6D35B。", "欄位寬 8 bits，mask=0xFF；0x00A6D35B&0xFF=0x5B。", "答案是 0x5B；其他更高欄位已被 mask 清除。"]
+      },
+      {
+        level: "計算",
+        question: "Unsigned 32-bit 的 70000×70000 是否能放回 32 bits？求完整 64-bit hexadecimal、low 32 bits 與 high 32 bits。",
+        solution: ["精確 product=4,900,000,000，大於 2^32-1=4,294,967,295，因此不能無損放回 32 bits。", "完整 64-bit pattern 是 0x0000000124101100。", "High 32 bits=0x00000001，low 32 bits=0x24101100；high 非零正是 unsigned overflow 證據。"]
+      },
+      {
+        level: "計算",
+        question: "採 round toward zero 時計算 -29/6 的 quotient 與 remainder，並完成回算。",
+        solution: ["-29/6≈-4.8333，toward zero 得 q=-4。", "r=-29-(-4×6)=-29+24=-5。", "回算 (-4)×6+(-5)=-29，且 |r|=5<6，條件成立。"]
+      },
+      {
+        level: "計算",
+        question: "Binary32 normal number 的 unbiased exponent e=10 時，同一 binade 內的 ULP 是多少？1024 加上半個 ULP 在 ties-to-even 下會如何捨入？",
+        solution: ["ULP=2^(e-23)=2^-13=1/8192=0.0001220703125。", "半個 ULP=2^-14。1024 的 trailing significand bit 為 even；正中央 tie 依 ties-to-even 回到 1024。", "若增加一個完整 ULP，下一個 representable value 是 1024.0001220703125。"]
+      },
+      {
+        level: "整合",
+        question: "分別判斷 binary floating operation 0/0、5/0、最大有限值乘 2，以及 1/10 的典型 result class 與 exception condition。",
+        solution: ["0/0 是 invalid operation，default result 為 NaN。", "有限非零 5/0 是 division by zero，default result 為帶號 infinity。", "最大有限值乘 2 超出 finite range，通常是 overflow 並伴隨 inexact，result 依 rounding direction 為 infinity 或最大有限值。", "1/10 的 binary expansion 不終止，round 到有限 precision 時升 inexact，result 是鄰近有限值。"]
       }
     ],
     glossary: [
@@ -1058,7 +1231,38 @@ const chapterDetails = [
       ["UTF-8", "將 Unicode scalar value 編成 1–4 bytes 的 variable-length encoding。"],
       ["Hamming distance", "兩個等長 strings 在多少 bit positions 上不同。"],
       ["Syndrome", "由接收 codeword 重新計算 parity checks 得到、用於辨認錯誤狀態的 bit vector。"],
-      ["CRC", "以 GF(2) polynomial division remainder 建立錯誤偵測碼的方法。"]
+      ["CRC", "以 GF(2) polynomial division remainder 建立錯誤偵測碼的方法。"],
+      ["Bit mask", "以各 position 的 0 或 1 選擇要清除、保留、設定或翻轉哪些 bits 的 pattern。"],
+      ["Logical shift", "移動 bit positions，空出的 positions 補 0 的 shift operation。"],
+      ["Arithmetic right shift", "右移 signed pattern 並通常複製 sign bit，以近似維持 two's complement 符號。"],
+      ["Packed field", "在同一 fixed-width word 中分配特定位元範圍表示多個子值。"],
+      ["Field extraction", "以 right shift 對齊欄位，再用寬度 mask 取出子值。"],
+      ["Round-trip", "將 decoded values 重新 encode 後應回到原 pattern 的一致性檢查。"],
+      ["Widening multiplication", "把 n-bit operands 的完整 product 保存在較寬、通常為 2n-bit 的 destination。"],
+      ["High half", "完整 product 中高於原 operand width 的那一半 bits。"],
+      ["Low half", "完整 product 中最低的 n bits；單獨保留時等同 modulo 2^n。"],
+      ["Quotient", "division 中滿足 dividend=q×divisor+r 的整數 q。"],
+      ["Remainder", "division 後未被 quotient×divisor 涵蓋的 r，必須符合指定範圍與 sign rule。"],
+      ["Round toward zero", "捨去精確 quotient 的 fractional part，讓 magnitude 朝 0 縮小的 integer rounding。"],
+      ["ULP", "Unit in the Last Place；某一浮點 magnitude 附近最後有效位所代表的 spacing。"],
+      ["Binade", "介於相鄰 powers of two 間、共享同一 exponent 與 spacing 規則的一段浮點範圍。"],
+      ["Round to nearest, ties to even", "選最近可表示值；正中央時選 retained significand 最低位為偶數的一端。"],
+      ["Guard bit", "目標 precision 之外保留、協助決定 rounding 的第一個額外 bit。"],
+      ["Sticky bit", "把其後所有被捨棄 bits 做 OR；指出尾端是否曾出現 1。"],
+      ["Inexact", "精確結果無法以目標 format 表示而必須 rounding 的 IEEE 754 condition。"],
+      ["Underflow", "tiny result 與精度損失相關的 IEEE 754 condition；不等同於看見任一 subnormal。"],
+      ["Floating-point overflow", "捨入後 magnitude 超出目標 finite format 最大範圍的 condition。"],
+      ["Invalid operation", "例如 0/0 或 infinity-infinity 等沒有有效數值結果的 IEEE 754 condition。"],
+      ["Division by zero", "有限非零 floating operand 除以零時產生 infinity 類 default result 的 IEEE 754 condition。"],
+      ["Exception flag", "記錄某類 floating condition 曾發生的 status bit；通常具有 sticky 行為。"],
+      ["Fused multiply-add", "以無限精確概念計算 a×b+c 並只在最後 rounding 一次的 operation。"],
+      ["Associativity", "(a+b)+c 與 a+(b+c) 相等的性質；fixed-precision floating arithmetic 通常不具此性質。"],
+      ["Serialization", "依固定 wire/file format 把 value 轉成 bytes，讓不同 implementations 可交換。"],
+      ["Network byte order", "Protocol 常用的 big-endian multi-byte integer byte order。"],
+      ["Deterministic encoding", "同一 abstract value 依規則只產生一種 canonical byte representation。"],
+      ["Padding", "implementation 為 alignment 插入、通常不屬於 logical fields 的額外 bytes。"],
+      ["Generator polynomial", "CRC 中用來對 message polynomial 除法並決定 error-detection properties 的 polynomial。"],
+      ["SECDED", "Single-Error Correction, Double-Error Detection；常以 extended Hamming code 實作。"]
     ],
     sources: [
       {
@@ -1078,8 +1282,8 @@ const chapterDetails = [
       {
         key: "S3",
         title: "IEEE 754-2019: IEEE Standard for Floating-Point Arithmetic",
-        url: "https://standards.ieee.org/ieee/315/6210/",
-        accessed: "2026-08-16",
+        url: "https://standards.ieee.org/ieee/754/6210/",
+        accessed: "2026-08-29",
         use: "binary/decimal floating-point formats、operations、exceptions 與 rounding 的現行標準依據。"
       },
       {
@@ -1130,6 +1334,76 @@ const chapterDetails = [
         url: "https://notes.cs61c.org/content/floating-point/",
         accessed: "2026-08-16",
         use: "fixed-point scaling、range、step size，以及 IEEE 754 normalized representation 的公開課程推導。"
+      },
+      {
+        key: "S11",
+        title: "RISC-V Unprivileged ISA: B Standard Extension for Bit Manipulation, Version 1.0.0",
+        url: "https://docs.riscv.org/reference/isa/unpriv/b-st-ext.html",
+        accessed: "2026-08-29",
+        use: "Mask、single-bit、count、rotate 與各寬度 bit-manipulation semantics。"
+      },
+      {
+        key: "S12",
+        title: "RISC-V Unprivileged ISA: M Extension for Integer Multiplication and Division, Version 2.0",
+        url: "https://docs.riscv.org/reference/isa/unpriv/m-st-ext.html",
+        accessed: "2026-08-29",
+        use: "Low/high product、signed/unsigned multiply、toward-zero divide 與邊界結果。"
+      },
+      {
+        key: "S13",
+        title: "IEEE 754 Working Group",
+        url: "https://754r.ucbtest.org/",
+        accessed: "2026-08-29",
+        use: "IEEE floating-point standard 的維護狀態、背景與工作小組資訊。"
+      },
+      {
+        key: "S14",
+        title: "Berkeley SoftFloat Release 3e: Library Interface",
+        url: "https://www.jhauser.us/arithmetic/SoftFloat-3/doc/SoftFloat.html",
+        accessed: "2026-08-29",
+        use: "IEEE formats、rounding modes、五類 exception flags 與 reference implementation semantics。"
+      },
+      {
+        key: "S15",
+        title: "SEI CERT C: INT02-C Understand Integer Conversion Rules",
+        url: "https://wiki.sei.cmu.edu/confluence/display/c/INT02-C.%2BUnderstand%2Binteger%2Bconversion%2Brules",
+        accessed: "2026-08-29",
+        use: "Integer promotion、signed/unsigned conversion、narrowing 與 width-loss 風險。"
+      },
+      {
+        key: "S16",
+        title: "SEI CERT C: INT34-C Valid Shift Counts",
+        url: "https://wiki.sei.cmu.edu/confluence/pages/viewpage.action?pageId=88014861",
+        accessed: "2026-08-29",
+        use: "Shift count、operand width 與 unsigned bitwise operation 的合法邊界。"
+      },
+      {
+        key: "S17",
+        title: "RFC 8949: Concise Binary Object Representation",
+        url: "https://www.rfc-editor.org/rfc/rfc8949.html",
+        accessed: "2026-08-29",
+        use: "跨系統 integer/floating/text serialization、network byte order 與 deterministic encoding。"
+      },
+      {
+        key: "S18",
+        title: "Philip Koopman, Carnegie Mellon University: Best CRC Polynomials",
+        url: "https://users.ece.cmu.edu/~koopman/crc/",
+        accessed: "2026-08-29",
+        use: "CRC width、generator polynomial、message length 與 minimum-distance 能力的關係。"
+      },
+      {
+        key: "S19",
+        title: "Koopman and Chakravarty: CRC Polynomial Selection for Embedded Networks",
+        url: "https://users.ece.cmu.edu/~koopman/roses/dsn04/koopman04_crc_poly_embedded.pdf",
+        accessed: "2026-08-29",
+        use: "CRC polynomial selection、Hamming distance 與 burst-error 保證的研究依據。"
+      },
+      {
+        key: "S20",
+        title: "UC Berkeley CS61C Fall 2026: Discussion 1 Number Representation",
+        url: "https://cs61c.org/fa26/discussions/disc01/",
+        accessed: "2026-08-29",
+        use: "目前大學部課程對進位、two's complement、range 與位元運算的公開教材入口。"
       }
     ]
   },
