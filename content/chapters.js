@@ -1411,18 +1411,22 @@ const chapterDetails = [
     chapter: 3,
     title: "布林代數、數位邏輯與同步狀態",
     english: "Boolean Algebra, Digital Logic, and Synchronous State",
-    revised: "2026-08-17",
-    readingTime: "約 150–180 分鐘",
-    intro: "處理器最終必須把指令語意化成可實作的位元運算與狀態轉移。組合邏輯回答『目前輸入決定什麼輸出』，循序邏輯回答『系統如何記住過去並在時脈邊緣更新』；布林代數、真值表與有限狀態機則是兩者之間可驗證的描述語言。本章從實際電壓的數位抽象開始，依序推導 canonical form、化簡、multiplexer、decoder、full adder、register、時序限制與 FSM，最後連到 ALU 與 RTL。每一個方程式都能回到真值表，每一條同步路徑都能回到 setup 與 hold 不等式，因此圖形、代數與時間三種證據可以互相核對。",
+    revised: "2026-08-30",
+    readingTime: "約 280–340 分鐘",
+    intro: "處理器最終必須把指令語意化成可實作的位元運算與狀態轉移。組合邏輯回答『目前輸入決定什麼輸出』，循序邏輯回答『系統如何記住過去並在時脈邊緣更新』；布林代數、真值表與有限狀態機則是兩者之間可驗證的描述語言。本章從實際電壓的數位抽象開始，依序推導 canonical form、化簡、multiplexer、decoder、full adder、register、時序限制與 FSM，再展開 carry-lookahead 的每一層 carry equation、組合路徑的 hazard、亞穩態可靠度與 reset 釋放邊界。每一個方程式都能回到真值表，每一條同步路徑都能回到 setup 與 hold 不等式，每一個非同步輸入則必須說明取樣協定；圖形、代數、時間與機率四種證據因而能互相核對。",
     outcomes: [
       "能區分實際電壓、邏輯準位與抽象 bit，並說明 noise margin 與 propagation delay 的作用。",
       "能由文字規格建立真值表，再寫出 canonical SOP 或 POS，並以布林定律或 Karnaugh map 化簡。",
       "能用 multiplexer、decoder、comparator 與 full adder 組成較大的組合電路。",
       "能由 full-adder 方程式推導 ripple-carry adder 的功能與 critical path。",
+      "能展開 generate/propagate carry equations，比較 ripple、block lookahead 與 prefix structure 的深度。",
+      "能分析 reconvergent paths 造成的 static hazard，以 consensus term 修正必須 glitch-free 的路徑。",
       "能區分 latch、edge-triggered register 與 combinational feedback，並追蹤同步狀態更新。",
       "能計算 setup slack、hold slack、critical-path delay 與最高時脈頻率。",
       "能把序列規格轉成 Moore 或 Mealy FSM 的狀態、轉移、輸出與編碼。",
-      "能說明 clock-domain crossing 的亞穩態風險，以及 RTL、synthesis 與 timing verification 的關係。"
+      "能說明 clock-domain crossing 的亞穩態風險，以 MTBF 比值評估額外解析時間的影響。",
+      "能區分 synchronous reset、asynchronous reset、asynchronous assert/synchronous deassert 與 clock enable，並說明 recovery/removal 限制。",
+      "能把 RTL、simulation、assertion、synthesis、CDC analysis 與 static timing analysis 連成完整驗證鏈。"
     ],
     sections: [
       {
@@ -1443,7 +1447,7 @@ const chapterDetails = [
           ],
           caption: "Boolean 值是建立在電氣保證上的抽象；延遲與未定義區域沒有消失，只是由介面規則集中管理。"
         },
-        sourceRefs: ["S1", "S2"]
+        sourceRefs: ["S1", "S2", "S20"]
       },
       {
         title: "2. Gate、真值表與 Boolean function",
@@ -1604,8 +1608,8 @@ const chapterDetails = [
         title: "10. 亞穩態、clock-domain crossing 與 RTL 驗證",
         paragraphs: [
           "若 asynchronous input 或另一 clock domain 的訊號在取樣邊緣附近改變，可能違反 setup/hold，使 flip-flop 進入 metastable state。輸出最後通常會解析成 0 或 1，但解析時間沒有固定上限；若不穩定值立刻扇出到多處，接收邏輯可能在同一事件上得到不一致判斷。",
-          "單 bit control 常用兩級或多級 synchronizer：第一級承受較高亞穩態機率，後續級提供額外解析時間，再把穩定結果送入接收 domain。這會把 failure probability 壓低並提高 MTBF，卻不是數學上的完全消除。multi-bit data 不能把每一位各自同步，因為 bits 可能跨 cycle 不一致；常見方法是 handshake、Gray-code pointer 或 asynchronous FIFO。",
-          "RTL 以 register transfer 描述 clock edge 間的資料與控制，synthesis 將可合成語意映射為 gates、muxes、registers 與 wires。IEEE 1800-2023 同時涵蓋 design、testbench 與 assertions，但 HDL 不是逐行執行的一般軟體：並行硬體會同時存在。完整驗證要把真值表／state transition 的功能證據、simulation、formal checks、CDC analysis 與 static timing analysis 放在一起。"
+          "單 bit level control 常用兩級或多級 synchronizer：第一級承受較高亞穩態機率，後續級提供額外解析時間，再把穩定結果送入接收 domain。常見簡化模型為 MTBF 與 exp(Tresolve/τ)/(fclock·fevent) 成正比：解析時間 Tresolve 增加會帶來指數級改善，clock 或事件頻率增加則降低 MTBF。τ 與比例常數是特定元件參數，必須使用廠商 timing/metastability 資料，不能從一般公式猜出絕對存活時間。",
+          "synchronizer 的結構必須配合資料語意。慢速變化的單 bit level 可直接同步；比目的 clock period 還短的 pulse 可能完全沒被取樣，需用 pulse-stretch、toggle 或 request/acknowledge handshake。multi-bit word 不能把每一位各自接入兩級 synchronizer，因為 bits 可能在不同 cycles 完成轉移；常見協定是保持資料穩定的 handshake、單 bit 變化的 Gray-code pointer 或內含 dual-clock storage 的 asynchronous FIFO。"
         ],
         figure: {
           type: "flow",
@@ -1613,7 +1617,71 @@ const chapterDetails = [
           items: ["Boolean / state specification", "RTL", "Simulation + assertions", "Synthesis", "Gate-level netlist", "STA + CDC", "可實作設計"],
           caption: "功能正確與時間正確是兩個檢查維度；任一項失敗都不能保證實體系統依規格運作。"
         },
-        sourceRefs: ["S7", "S8", "S9"]
+        sourceRefs: ["S7", "S8", "S14", "S15", "S16"]
+      },
+      {
+        title: "11. Carry-lookahead：將串列 carry 改寫成平行邏輯層",
+        paragraphs: [
+          "對第 i 位定義 generate Gi=Ai·Bi，表示該位不論 Cin 為何都產生 carry；定義 propagate Pi=Ai XOR Bi，表示該位會把輸入 carry 傳向上一位。因此 Ci+1=Gi+Pi·Ci，而 sum Si=Pi XOR Ci。這些方程不改變加法功能，只改變 carry 依賴如何在電路中排列。",
+          "把遞迴式展開後，C1=G0+P0C0，C2=G1+P1G0+P1P0C0，C3=G2+P2G1+P2P1G0+P2P1P0C0。每個 carry 可直接由原始 P/G 與 C0 得到，不必在功能圖上等待前一個 full adder。但大扇入 AND/OR 不能無限擴展，實際設計會把數位分組，建立 group propagate PG=P3P2P1P0 與 group generate GG=G3+P3G2+P3P2G1+P3P2P1G0。",
+          "prefix adder 將每位的 (G,P) 用 associative operator 成對合併：(Gx,Px)◦(Gy,Py)=(Gx+PxGy, PxPy)。使用 tree 時，N 位的 carry 資訊可在約 log2N 層傅播，代價是更多中間節點、wires、fan-out 與布線複雜度。所以 ripple、block lookahead 與 prefix 並非只比 gate count，而是在 delay、area、power 與 routing 之間取捨。"
+        ],
+        figure: {
+          type: "matrix",
+          title: "4-bit carry-lookahead 的 carry 展開",
+          columns: ["Carry", "展開式", "最遠依賴"],
+          rows: [
+            ["C1", "G0 + P0C0", "bit 0 與 C0"],
+            ["C2", "G1 + P1G0 + P1P0C0", "bit 1..0 與 C0"],
+            ["C3", "G2 + P2G1 + P2P1G0 + P2P1P0C0", "bit 2..0 與 C0"],
+            ["C4", "G3 + P3G2 + P3P2G1 + P3P2P1G0 + P3P2P1P0C0", "bit 3..0 與 C0"]
+          ],
+          caption: "展開式把 ripple 依賴改成對 P/G 的平行組合；實作時再以 block 或 prefix tree 限制 fan-in。"
+        },
+        sourceRefs: ["S1", "S4", "S10"]
+      },
+      {
+        title: "12. Hazard 與 glitch：Boolean 等價不代表瞬態波形相同",
+        paragraphs: [
+          "Boolean algebra 只比較輸入穩定前後的功能值，不包含路徑延遲。當一個輸入的正相與反相經不同路徑後重新匯合，一條路徑可能已改變，另一條尚未改變。若邏輯值應維持 1 卻暫降為 0，稱 static-1 hazard；應維持 0 卻暫升為 1，稱 static-0 hazard；多次翻轉則是 dynamic hazard。",
+          "以 F=AB+(NOT A)C 為例，當 B=C=1 且 A 由 1 轉 0，穩態真值前後都是 1。但 AB 可能先變 0，NOT A 經 inverter 後才使第二項變 1，中間就出現一段兩項同為 0 的 pulse。consensus theorem XY+(NOT X)Z+YZ=XY+(NOT X)Z 表明穩態功能上 YZ 是冗餘項；但加入 BC 可在 A 轉換期間維持輸出 1，因而移除此 static-1 hazard。",
+          "glitch 是否造成錯誤取決於觀察邊界。若它只在組合邏輯內傳播，且在下一個 clock edge 前穩定並滿足 setup/hold，synchronous register 只會取到最終值；但 asynchronous control、clock/reset、pulse interface 或在 glitch 期間取樣的路徑就可能失敗。即使不被取樣，額外翻轉仍會增加 dynamic power，所以不能只以『最後值正確』判斷設計品質。"
+        ],
+        figure: {
+          type: "timeline",
+          title: "F=AB+(NOT A)C 的 static-1 hazard",
+          columns: ["t0 穩定", "A 開始 1→0", "AB 先變 0", "NOT A 尚未到", "(NOT A)C 變 1", "t1 穩定"],
+          rows: [
+            { label: "A", cells: ["1", "↓", "0", "0", "0", "0"] },
+            { label: "AB", cells: ["1", "1", "0", "0", "0", "0"] },
+            { label: "(NOT A)C", cells: ["0", "0", "0", "0", "1", "1"] },
+            { label: "F", cells: ["1", "1", "0", "0", "1", "1"] },
+            { label: "加入 BC 後", cells: ["1", "1", "1", "1", "1", "1"] }
+          ],
+          caption: "B=C=1 時，consensus term BC 在兩條 A 路徑都尚未輸出 1 的窗口維持 F=1。"
+        },
+        sourceRefs: ["S11", "S12", "S13"]
+      },
+      {
+        title: "13. Reset、clock enable 與可預測的啟動邊界",
+        paragraphs: [
+          "synchronous reset 只在 clock edge 被取樣為有效時重設 state，因此釋放與更新都納入一般 setup/hold 模型；asynchronous reset 則可不等 clock 立即強制狀態，適合在 clock 尚未穩定時進入安全狀態。但 asynchronous reset 在取樣邊緣附近釋放可違反 recovery/removal time，使各 registers 在不同 cycles 離開 reset。",
+          "asynchronous assert/synchronous deassert 同時利用兩種特性：reset assertion 直接使同步器內各級置於 reset state，deassertion 則經過目的 clock domain 的兩個或多個 edges 傳遞，所以只在邊緣上對齊釋放。每個 asynchronous clock domain 都需要屬於自己的 reset synchronizer；重設路徑本身也是 CDC/timing 對象，不是分析之外的全域特例。",
+          "reset 不必要覆蓋每個 datapath register。若 valid bit 或 FSM state 能保證未初始化資料在使用前被覆寫，只重設控制狀態可減少 reset fan-out、routing、area 與 timing 成本。需要停止更新時，register 的 clock enable 讓專用 clock network 繼續傳遞乾淨時脈，只控制 D 是取新值還是保持 Q；以一般邏輯門直接截斷 clock 可產生 runt pulse、skew 與額外 clock domain，必須使用已驗證的專用 clock-gating resource。"
+        ],
+        figure: {
+          type: "timeline",
+          title: "Asynchronous assert / synchronous deassert 的釋放順序",
+          columns: ["reset 有效", "deassert@12 ns", "edge@20 ns", "edge@30 ns", "edge@40 ns"],
+          rows: [
+            { label: "async reset in", cells: ["1", "0", "0", "0", "0"] },
+            { label: "sync stage 1", cells: ["reset", "reset", "release", "release", "release"] },
+            { label: "sync stage 2", cells: ["reset", "reset", "reset", "release", "release"] },
+            { label: "functional state", cells: ["held", "held", "held", "run", "run"] }
+          ],
+          caption: "reset 可在 12 ns 非同步取消，但 functional state 直到兩級 synchronizer 於 30 ns 邊緣完成釋放才開始運作。"
+        },
+        sourceRefs: ["S16", "S17", "S18", "S19"]
       }
     ],
     workedExamples: [
@@ -1682,6 +1750,73 @@ const chapterDetails = [
           "輸出序列為 000101，兩個 1 分別對應輸入位置 4 與 6 結束的 pattern。"
         ],
         result: "狀態序列 S0,S1,S1,S10,S1,S10,S1；output=000101，重疊能力來自偵測後回到 S1。"
+      },
+      {
+        title: "例題六：以 generate/propagate 平行求出 4-bit carry",
+        prompt: "以 carry-lookahead 計算 A=1011₂、B=0110₂、C0=0，列出每位 Pi、Gi、Ci 與 sum。",
+        steps: [
+          "由最低位開始：bit 0 的 (A0,B0)=(1,0)，所以 P0=1、G0=0。",
+          "bit 1 的 (1,1) 得 P1=0、G1=1；bit 2 的 (0,1) 得 P2=1、G2=0；bit 3 的 (1,0) 得 P3=1、G3=0。",
+          "C1=G0+P0C0=0+1·0=0。",
+          "C2=G1+P1G0+P1P0C0=1；C3=G2+P2G1+P2P1G0+P2P1P0C0=1。",
+          "C4=G3+P3G2+P3P2G1+P3P2P1G0+P3P2P1P0C0=1。",
+          "Si=Pi XOR Ci，所以 S0=1、S1=0、S2=0、S3=0；連同 C4 得 10001₂。",
+          "十進位核對為 11+6=17；結果與 ripple adder 相同，差別是 carry 由展開方程平行產生。"
+        ],
+        result: "P3..P0=1101、G3..G0=0010，C1..C4=0,1,1,1，結果 C4S3S2S1S0=10001₂。"
+      },
+      {
+        title: "例題七：用簡化 delay model 比較 ripple 與 prefix adder",
+        prompt: "32-bit ripple adder 每級 carry delay 為 70 ps、最後 XOR 為 40 ps。另一 prefix 實作在 P/G 已可用後有 5 層、每層 90 ps，最後 XOR 同為 40 ps。比較最長路徑。",
+        steps: [
+          "32-bit 最高 sum 的 carry-in 最壞需穿過 31 級 ripple carry。",
+          "ripple delay=31×70+40=2170+40=2210 ps。",
+          "32=2^5，題目給定 prefix network 有 5 層合併。",
+          "prefix delay=5×90+40=490 ps。",
+          "在此簡化模型中，speedup=2210/490≈4.51。",
+          "這個比值不包含 initial P/G、fan-out、wire 與 placement；若兩種設計的這些成本不同，必須加入後才能預測實體 fmax。"
+        ],
+        result: "簡化估計為 ripple 2210 ps、prefix 490 ps，prefix 約快 4.51 倍，但並非零面積或零布線代價。"
+      },
+      {
+        title: "例題八：定位 static-1 hazard 並加入 consensus term",
+        prompt: "F=AB+(NOT A)C，B=C=1，A 由 1 轉 0。AB 路徑在 20 ps 後失效，(NOT A)C 路徑在 55 ps 後有效。判斷 glitch 並修正。",
+        steps: [
+          "A=1 時 F=1·1+0·1=1；A=0 時 F=0·1+1·1=1，穩態功能應維持 1。",
+          "t=20 ps 時 AB 已降為 0，但反相路徑尚未使 (NOT A)C 升為 1。",
+          "t=20..55 ps 兩個 product terms 同為 0，所以 OR 輸入有約 35 ps 的低電位窗口。",
+          "若 OR 對下降與上升的延遲相同，輸出 pulse 寬度仍約 35 ps，只是整體往後平移。",
+          "依 consensus theorem 加入 BC，得 Fsafe=AB+(NOT A)C+BC。",
+          "B=C=1 時 BC 始終為 1，因此 A 的兩條路徑交接期間輸出仍被維持為 1。",
+          "BC 不改變任何穩態真值表列，但改善了對路徑延遲的容忍度。"
+        ],
+        result: "原電路有約 35 ps static-1 glitch；加入 consensus term BC 可在不改變穩態功能下移除此 hazard。"
+      },
+      {
+        title: "例題九：以 MTBF 比值量化額外解析時間",
+        prompt: "在 fclock、fevent 與元件參數都不變時，額外一級 synchronizer 增加 2 ns 解析時間。若簡化模型的 τ=50 ps，求 MTBF 改善倍數。",
+        steps: [
+          "MTBF ∝ exp(Tresolve/τ)/(fclock·fevent)。因題目中頻率與其他常數不變，只需比較指數項。",
+          "額外解析時間 ΔT=2 ns=2000 ps。",
+          "指數的增量 ΔT/τ=2000/50=40。",
+          "MTBFnew/MTBFold=exp(40)≈2.3539×10^17。",
+          "這是在題目模型下的相對倍數，不是 MTBF 的絕對年數。",
+          "實際設計還要從元件資料取得 τ 與比例常數，並以真實 toggle rate、clock frequency 與放置後的 Tresolve 重新計算。"
+        ],
+        result: "在給定的相對模型中，MTBF 約改善 2.35×10^17 倍；指數效果解釋了為何額外解析時間如此重要。"
+      },
+      {
+        title: "例題十：追蹤 asynchronous assert / synchronous deassert reset",
+        prompt: "目的 clock 的 rising edges 在 10、20、30、40 ns。兩級 reset synchronizer 原先處於 reset，asynchronous reset 在 12 ns 取消，求各級與 functional state 何時釋放。",
+        steps: [
+          "12 ns 介於 10 ns 與 20 ns edges 之間；reset input 已取消，但兩級輸出仍維持 reset。",
+          "20 ns edge 時，第一級取樣到 release value；第二級同時只能取樣第一級的舊 reset value。",
+          "20..30 ns 期間，stage 1 已釋放，stage 2 與 functional state 仍被 reset 住。",
+          "30 ns edge 時，stage 2 取樣 stage 1 的 release value。",
+          "functional reset 在 30 ns edge 對齊取消，所有由它控制的 state registers 從這個邊緣開始依 next-state logic 運作。",
+          "若 reset 在某個 edge 的 recovery/removal window 內取消，stage 1 可能延後一個 cycle 解析；stage 2 仍阻擋這個不確定性，代價是釋放 latency 可多一個 cycle。"
+        ],
+        result: "stage 1 於 20 ns 釋放，stage 2 與 functional state 於 30 ns 釋放；釋放動作對齊目的 clock edge。"
       }
     ],
     misconceptions: [
@@ -1692,7 +1827,17 @@ const chapterDetails = [
       ["Latch 與 register 只是兩個名稱。", "Latch 在有效電位期間透明；edge-triggered register 在 clock edge 取樣，timing 行為不同。"],
       ["降低 clock frequency 可以修正所有 timing violations。", "拉長週期通常能改善 setup，但同一 edge 附近的 hold violation 需要調整最短資料路徑或 clock。"],
       ["兩級 synchronizer 能完全消除 metastability。", "它以增加解析時間降低 failure probability、提高 MTBF，不能給出絕對零風險。"],
-      ["HDL 像一般程式一樣由上到下只執行一次。", "RTL 描述同時存在的硬體與 clocked behavior；simulation scheduling 與 synthesis semantics 都必須符合該模型。"]
+      ["HDL 像一般程式一樣由上到下只執行一次。", "RTL 描述同時存在的硬體與 clocked behavior；simulation scheduling 與 synthesis semantics 都必須符合該模型。"],
+      ["Carry-lookahead 仍然必須先得到 C1，才能開始算 C2。", "展開後的 C2、C3、C4 都可直接由原始 P/G 與 C0 產生；實作以 block 或 prefix tree 限制邏輯深度。"],
+      ["Boolean-equivalent 的兩個電路在任何時刻都會有相同輸出。", "Boolean 等價只保證穩定輸入的功能；不同路徑延遲可造成不同 glitch 波形。"],
+      ["Karnaugh map 得到的最小 SOP 必然 hazard-free。", "最小 implicants 可在相鄰的 1 由不同 product terms 覆蓋時留下 static-1 hazard；可能需加入冗餘 consensus term。"],
+      ["glitch 最後會消失，所以一定沒有影響。", "它可被 asynchronous control 或 register 取樣，也會產生額外 switching power；必須依觀察邊界判斷。"],
+      ["任何 asynchronous pulse 經兩級 synchronizer 都一定被接收。", "比目的 clock period 短的 pulse 可能落在兩次取樣之間；需依協定使用 pulse-stretch、toggle 或 handshake。"],
+      ["多位元 bus 每一位都用兩級 synchronizer，就能保持 word coherence。", "每位可在不同 cycle 解析，接收端可看到來源端從未出現的混合值；應使用 handshake 或 asynchronous FIFO。"],
+      ["MTBF 是一顆晶片必然不失敗的保證期限。", "MTBF 是統計模型的平均故障間隔，受元件、解析時間、clock 與事件頻率影響，不是單次運作的絕對保證。"],
+      ["Asynchronous reset 可在任何時刻安全釋放。", "若 deassertion 落在 clock edge 附近，可違反 recovery/removal；常以 asynchronous assert/synchronous deassert 對齊釋放。"],
+      ["把所有 datapath registers 都接 reset 總是最安全。", "不必要的 reset 增加 fan-out、routing、area 與 timing 壓力；可由 valid/control state 保證未初始化資料不被使用。"],
+      ["用 AND gate 把 clock 與 enable 相與，等同於使用 register clock enable。", "一般邏輯門可在 clock path 產生 runt pulse 與 skew；應使用 register enable 或專用、已驗證的 clock-gating resource。"]
     ],
     exercises: [
       { level: "基礎", question: "四個 Boolean inputs 的完整真值表有幾列？若只有輸出為 1 的列要寫 canonical SOP，最多會有幾個 minterms？", solution: ["每個 input 有兩種值，四個 inputs 共有 2^4=16 種 combinations。", "最壞情況所有列輸出皆為 1，因此 canonical SOP 最多有 16 個 minterms。"] },
@@ -1708,7 +1853,11 @@ const chapterDetails = [
       { level: "進階", question: "某最短路徑 tclk-q(min)=45 ps、tcomb(min)=15 ps、thold=75 ps。求 hold slack 並判斷。", solution: ["資料最早在 45+15=60 ps 抵達，hold slack=60-75=-15 ps。", "slack 為負，存在 15 ps hold violation；單純拉長 clock period 不會修正同一 edge 的最早抵達。"] },
       { level: "進階", question: "有 5 個 states 的 binary-encoded FSM 至少需要幾個 state bits？one-hot 又需要幾個？", solution: ["ceil(log2 5)=3，所以 binary encoding 至少需要 3 bits，可提供 8 個 codes。", "one-hot 每個 state 使用一個獨立 bit，因此需要 5 bits。"] },
       { level: "進階", question: "對 101 detector，從 S1 收到 0 為何不能回 S0？", solution: ["S1 表示已看見 suffix 1；再收到 0 後，最新兩個 bits 是 10。", "10 正是 pattern 101 的前兩位，因此必須進入 S10，保留可能在下一個 1 完成偵測的資訊。"] },
-      { level: "挑戰", question: "為何不能用三個獨立兩級 synchronizers 傳送會同時改變的 3-bit binary counter？", solution: ["每個 bit 的解析時間與取樣 cycle 可能不同，接收端可能短暫組合出來源端從未存在的 code。", "可改用 handshake 保持整個 word 穩定，或以 Gray code 讓相鄰 count 只改一位，再搭配適當 CDC 結構。"] }
+      { level: "挑戰", question: "為何不能用三個獨立兩級 synchronizers 傳送會同時改變的 3-bit binary counter？", solution: ["每個 bit 的解析時間與取樣 cycle 可能不同，接收端可能短暫組合出來源端從未存在的 code。", "可改用 handshake 保持整個 word 穩定，或以 Gray code 讓相鄰 count 只改一位，再搭配適當 CDC 結構。"] },
+      { level: "核心", question: "以 carry-lookahead 計算 A=1101₂、B=0011₂、C0=0。列出 P3..P0、G3..G0、C1..C4 與 4-bit sum。", solution: ["由 Ai XOR Bi 得 P3..P0=1110；由 AiBi 得 G3..G0=0001。", "C1=1，之後每位都會 propagate，所以 C1..C4=1,1,1,1。", "Si=Pi XOR Ci，得 S3..S0=0000，連同 C4 為 10000₂=16，與 13+3 一致。"] },
+      { level: "進階", question: "F=XY+(NOT X)Z，Y=Z=1 且 X 由 1 轉 0。這是哪種 hazard？應加入哪個 consensus term？", solution: ["穩態前後 F 都應為 1，但 XY 與 (NOT X)Z 可因路徑延遲暫時同為 0，所以是 static-1 hazard。", "加入不含 X 的 consensus term YZ，得 Fsafe=XY+(NOT X)Z+YZ。", "Y=Z=1 時 YZ 持續為 1，可覆蓋 X 的兩條路徑交接窗口。"] },
+      { level: "進階", question: "額外 synchronizer stage 提供 1.5 ns 解析時間，τ=60 ps，其他條件不變。在 MTBF∝exp(Tresolve/τ) 模型下，改善倍數約為何？", solution: ["1.5 ns=1500 ps，所以 ΔT/τ=1500/60=25。", "改善倍數=exp(25)≈7.20×10^10。", "這只是在其他參數不變下的相對改善，不是元件的絕對 MTBF。"] },
+      { level: "挑戰", question: "兩級 reset synchronizer 的 clock edges 在 5、15、25、35 ns，asynchronous reset 在 6 ns 取消。忽略 metastability 延後時，stage 1、stage 2 與 functional state 何時釋放？", solution: ["6 ns 已錯過 5 ns edge，stage 1 在下一個 15 ns edge 取樣 release value。", "stage 2 在 15 ns 只取到 stage 1 的舊 reset value，到 25 ns edge 才取到 release value。", "functional state 由 stage 2 控制，所以在 25 ns edge 對齊釋放。"] }
     ],
     glossary: [
       ["Digital abstraction", "把連續電氣訊號依合法範圍解讀為有限邏輯符號的介面。"],
@@ -1730,7 +1879,36 @@ const chapterDetails = [
       ["Metastability", "storage element 在違反取樣時間時可能暫時無法解析成穩定 0/1 的狀態。"],
       ["Clock-domain crossing", "訊號在非同步或不同 clock relationships 的 domains 之間傳遞。"],
       ["RTL", "描述 registers 之間資料轉移與組合運算的硬體抽象層次。"],
-      ["Static timing analysis", "不依賴特定 simulation vectors，對 timing graph 的最長與最短 paths 檢查 constraints。"]
+      ["Static timing analysis", "不依賴特定 simulation vectors，對 timing graph 的最長與最短 paths 檢查 constraints。"],
+      ["Generate", "Gi=AiBi；當本位兩個 operands 都為 1 時，本位必然產生 carry。"],
+      ["Propagate", "Pi=Ai XOR Bi；當本位只有一個 operand 為 1 時，輸入 carry 會被傳遞。"],
+      ["Carry-lookahead", "展開 Ci+1=Gi+PiCi，使多個 carries 由原始 P/G 平行形成的加法結構。"],
+      ["Group generate", "一個 bit group 不依賴 group carry-in 就能產生 carry-out 的條件。"],
+      ["Group propagate", "一個 bit group 會把 group carry-in 一路傳到 carry-out 的條件。"],
+      ["Prefix adder", "用 tree 合併 (G,P) prefix 資訊，以約 logarithmic depth 得到 carries 的加法器。"],
+      ["Carry chain", "專門傳遞相鄰 bit positions 之間 carry 的邏輯與布線結構。"],
+      ["Static-1 hazard", "輸入轉換前後輸出應為 1，卻因路徑延遲暫時變 0 的危害。"],
+      ["Static-0 hazard", "輸入轉換前後輸出應為 0，卻因路徑延遲暫時變 1 的危害。"],
+      ["Dynamic hazard", "輸出在一次應有轉換期間反覆翻轉多次的瞬態行為。"],
+      ["Consensus term", "對穩定 Boolean function 冗餘，但可覆蓋兩條互補路徑交接窗口的 term。"],
+      ["Glitch", "因不同路徑延遲而產生、不屬於最終穩定功能的短暫輸出 pulse。"],
+      ["Reconvergent path", "同一訊號分支後經不同邏輯路徑，最後在另一節點重新匯合。"],
+      ["Synchronizer", "在目的 clock domain 中以多級 storage elements 提供亞穩態解析時間的結構。"],
+      ["MTBF", "Mean Time Between Failures；依元件、解析時間與事件頻率估計的統計平均故障間隔。"],
+      ["Resolution time", "第一級 storage element 被取樣後，留給 metastable output 解析成穩定值的時間。"],
+      ["Pulse synchronizer", "以拉長、toggle 或 handshake 等方式，使短事件能被另一 clock domain 觀察的 CDC 協定。"],
+      ["Handshake", "以 request 與 acknowledge 確認資料已被接收，並在交握期間保持資料穩定的協定。"],
+      ["Asynchronous FIFO", "寫入與讀取使用不同 clocks，並安全同步滿、空指標的跨時脈資料緩衝器。"],
+      ["Gray code", "相鄰 codes 只改變一個 bit 的編碼，常用於 asynchronous FIFO pointer crossing。"],
+      ["Synchronous reset", "只在有效 clock edge 取樣 reset 後才重設 state 的方式。"],
+      ["Asynchronous reset", "不需等待 clock edge 即可強制 storage element 進入 reset state 的方式。"],
+      ["Recovery time", "異步 reset 釋放到下一有效 clock edge 前所需的最小間隔。"],
+      ["Removal time", "有效 clock edge 後，異步 reset 必須繼續保持才能安全釋放的最小間隔。"],
+      ["Asynchronous assert/synchronous deassert", "reset 可立即有效，但取消必須經過目的 clock 同步對齊的結構。"],
+      ["Clock enable", "在 clock network 不變的情況下，決定 register 取入新 D 或保持舊 Q 的控制。"],
+      ["Clock gating", "以專用 glitch-free resource 停止時脈送往特定區域，以降低 switching power 的技術。"],
+      ["4-state logic", "除 0、1 外還包含 unknown X 與 high-impedance Z 的 HDL 模擬邏輯系統。"],
+      ["Assertion", "對設計應始終或在特定時序成立的 property 進行自動檢查的驗證敘述。"]
     ],
     sources: [
       { key: "S1", title: "MIT OpenCourseWare 6.004: Computation Structures, Digital Logic Sequence", url: "https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/pages/c8/c8s1/", accessed: "2026-08-17", use: "digital abstraction、combinational/sequential logic、FSM、timing、adder 與設計取捨的公開課程基礎。" },
@@ -1740,8 +1918,19 @@ const chapterDetails = [
       { key: "S5", title: "UC Berkeley CS61C Course Notes: State and Timing Summary", url: "https://notes.cs61c.org/content/sds-state/summary/", accessed: "2026-08-17", use: "register timing、critical path、setup 與 hold constraints。" },
       { key: "S6", title: "UC Berkeley CS61C Course Notes: Finite State Machines", url: "https://notes.cs61c.org/content/sds-state/fsm/", accessed: "2026-08-17", use: "FSM 的 state、transition、output 與同步實作。" },
       { key: "S7", title: "IEEE 1800-2023: SystemVerilog Language Reference Manual", url: "https://standards.ieee.org/ieee/1800/7743/", accessed: "2026-08-17", use: "目前 active 的 SystemVerilog design、verification、assertion 與 testbench 標準。" },
-      { key: "S8", title: "Intel Quartus Prime Pro Edition User Guide: Metastability Analysis", url: "https://www.intel.com/content/www/us/en/docs/programmable/683068/18-1/metastability-analysis.html", accessed: "2026-08-17", use: "asynchronous transfer、synchronizer chain、metastability 與 MTBF。" },
-      { key: "S9", title: "Altera Timing Analyzer Cookbook", url: "https://docs.altera.com/r/docs/683081/current", accessed: "2026-08-17", use: "clock constraints、setup/hold analysis 與 timing verification 的官方實務。" }
+      { key: "S8", title: "Intel Quartus Prime Pro Edition User Guide: Metastability Analysis", url: "https://www.intel.com/content/www/us/en/docs/programmable/683068/18-1/metastability-analysis.html", accessed: "2026-08-17", use: "metastability analysis 與 synchronizer chain 的廠商資料沿革。" },
+      { key: "S9", title: "Altera Timing Analyzer Cookbook", url: "https://docs.altera.com/r/docs/683081/current", accessed: "2026-08-30", use: "clock constraints、setup/hold analysis 與 timing verification 的官方實務。" },
+      { key: "S10", title: "MIT OpenCourseWare 6.004: Carry Lookahead", url: "https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/5ce748b04db04e59c66ac2c32c7b95f9_i1tUBZLWD3o.pdf", accessed: "2026-08-30", use: "generate/propagate、carry equation 展開、hierarchical lookahead 與 logarithmic-depth prefix 結構。" },
+      { key: "S11", title: "MIT OpenCourseWare 6.004: Combinational Logic", url: "https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/pages/c4/c4s1/", accessed: "2026-08-30", use: "組合電路的 propagation delay、不等路徑延遲與 glitch 行為。" },
+      { key: "S12", title: "Purdue University: Logic Circuit Hazards", url: "https://engineering.purdue.edu/~meyer/DDU270/Notes/PDF/2-Mod2_LS_2019.pdf", accessed: "2026-08-30", use: "static-1/static-0 hazard、Karnaugh-map 相鄰覆蓋與 consensus term。" },
+      { key: "S13", title: "NJIT Digital Logic Design Animation: Static Hazard", url: "https://digitalcommons.njit.edu/dld-animations/117/", accessed: "2026-08-30", use: "reconvergent paths 在實際 gate delay 下造成 static hazard 的可視化驗證。" },
+      { key: "S14", title: "Altera Quartus Prime Pro 25.3: Metastability Analysis", url: "https://docs.altera.com/r/docs/683243/25.3/quartus-prime-pro-edition-user-guide-timing-analyzer/metastability-analysis", accessed: "2026-08-30", use: "2026 現行工具的 synchronizer identification、metastability analysis 與 MTBF 評估。" },
+      { key: "S15", title: "Altera Quartus Prime Pro 25.3: Synchronizer Toggle Rate", url: "https://docs.altera.com/r/docs/683296/25.3/quartus-prime-pro-edition-settings-file-reference-manual/synchronizer_toggle_rate", accessed: "2026-08-30", use: "synchronizer 事件轉換率如何進入 metastability/MTBF analysis。" },
+      { key: "S16", title: "AMD Vivado Design Methodology 2026.1: Asynchronous Clock Groups and CDCs", url: "https://docs.amd.com/r/en-US/ug949-vivado-design-methodology/Constraining-Asynchronous-Clock-Groups-and-Clock-Domain-Crossings", accessed: "2026-08-30", use: "asynchronous clock relationship、CDC 結構、constraints 與單靠一般 timing analysis 不足以證明功能正確的邊界。" },
+      { key: "S17", title: "AMD Vivado Design Methodology 2024.2: Resets", url: "https://docs.amd.com/r/2024.2-English/ug949-vivado-design-methodology/Resets", accessed: "2026-08-30", use: "reset architecture、synchronous/asynchronous reset 與實作影響。" },
+      { key: "S18", title: "AMD Vivado Design Methodology 2024.2: When and Where to Use a Reset", url: "https://docs.amd.com/r/2024.2-English/ug949-vivado-design-methodology/When-and-Where-to-Use-a-Reset?contentId=SpOcbybsGLfLD7LRe~RsJg", accessed: "2026-08-30", use: "不必要 datapath reset 對 Fmax、area、power 與 routing 的影響，以及優先重設 control state 的方法。" },
+      { key: "S19", title: "AMD Vivado Design Methodology 2026.1: Clock Routing Root and Distribution", url: "https://docs.amd.com/r/en-US/ug949-vivado-design-methodology/Clock-Routing-Root-and-Distribution", accessed: "2026-08-30", use: "專用 clock routing、clock distribution 與一般邏輯布線的差異。" },
+      { key: "S20", title: "UC Berkeley CS61C Fall 2026", url: "https://cs61c.org/fa26/", accessed: "2026-08-30", use: "2026 年現行大學部計算機架構課程中數位邏輯、同步系統與處理器資料路徑的公開學習脈絡。" }
     ]
   },
   {

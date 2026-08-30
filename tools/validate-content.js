@@ -105,11 +105,12 @@ assert(chapterTwo.sources.length >= 20, "Chapter 2 needs broad authoritative sou
 
 const chapterThree = chapterDetails.find((chapter) => chapter.chapter === 3);
 assert(chapterThree, "Chapter 3 detailed digital-logic material is missing");
-assert(chapterThree.sections.length >= 10, "Chapter 3 needs at least ten complete concept sections");
-assert(chapterThree.sections.filter((item) => item.figure).length >= 9, "Chapter 3 needs at least nine verifiable diagrams");
-assert(chapterThree.workedExamples.length >= 5, "Chapter 3 needs at least five worked examples");
-assert(chapterThree.exercises.length >= 13, "Chapter 3 needs at least thirteen exercises with solutions");
-assert(chapterThree.sources.length >= 8, "Chapter 3 needs broad authoritative source coverage");
+assert(chapterThree.sections.length >= 13, "Chapter 3 needs at least thirteen complete concept sections");
+assert(chapterThree.sections.filter((item) => item.figure).length >= 13, "Chapter 3 needs at least thirteen verifiable diagrams");
+assert(chapterThree.workedExamples.length >= 10, "Chapter 3 needs at least ten worked examples");
+assert(chapterThree.exercises.length >= 18, "Chapter 3 needs at least eighteen exercises with solutions");
+assert(chapterThree.glossary.length >= 40, "Chapter 3 needs a broad digital-logic glossary");
+assert(chapterThree.sources.length >= 20, "Chapter 3 needs broad authoritative source coverage");
 
 const chapterFour = chapterDetails.find((chapter) => chapter.chapter === 4);
 assert(chapterFour, "Chapter 4 detailed MARIE material is missing");
@@ -346,6 +347,50 @@ assert(chapterThreePeriodPs === 850, "Chapter 3 setup period failed");
 assert(Math.abs((1e3 / chapterThreePeriodPs) - 1.1764705882352942) < 1e-12, "Chapter 3 maximum frequency failed");
 assert((60 + 40 - 70) === 30, "Chapter 3 hold slack failed");
 assert(Math.ceil(Math.log2(5)) === 3, "Chapter 3 FSM state encoding failed");
+const chapterThreeA = 0b1011;
+const chapterThreeB = 0b0110;
+const chapterThreeCarry = [0];
+const chapterThreePropagate = [];
+const chapterThreeGenerate = [];
+let chapterThreeSum = 0;
+for (let bit = 0; bit < 4; bit += 1) {
+  const a = (chapterThreeA >>> bit) & 1;
+  const b = (chapterThreeB >>> bit) & 1;
+  const p = a ^ b;
+  const g = a & b;
+  chapterThreePropagate.push(p);
+  chapterThreeGenerate.push(g);
+  chapterThreeSum |= (p ^ chapterThreeCarry[bit]) << bit;
+  chapterThreeCarry.push(g | (p & chapterThreeCarry[bit]));
+}
+assert(chapterThreePropagate.join("") === "1011", "Chapter 3 carry-lookahead propagate bits failed");
+assert(chapterThreeGenerate.join("") === "0100", "Chapter 3 carry-lookahead generate bits failed");
+assert(chapterThreeCarry.join("") === "00111", "Chapter 3 carry-lookahead carry chain failed");
+assert(chapterThreeSum === 0b0001 && chapterThreeCarry[4] === 1, "Chapter 3 carry-lookahead sum failed");
+const chapterThreeRipplePs = 31 * 70 + 40;
+const chapterThreePrefixPs = 5 * 90 + 40;
+assert(chapterThreeRipplePs === 2210 && chapterThreePrefixPs === 490, "Chapter 3 adder delay comparison failed");
+assert(Math.abs(chapterThreeRipplePs / chapterThreePrefixPs - 4.510204081632653) < 1e-12, "Chapter 3 adder speedup failed");
+for (let inputs = 0; inputs < 8; inputs += 1) {
+  const a = (inputs >>> 2) & 1;
+  const b = (inputs >>> 1) & 1;
+  const c = inputs & 1;
+  const original = (a & b) | ((1 - a) & c);
+  const consensus = original | (b & c);
+  assert(original === consensus, "Chapter 3 consensus term changed the stable Boolean function");
+}
+assert((55 - 20) === 35, "Chapter 3 static-hazard pulse estimate failed");
+assert(Math.abs(Math.exp(2_000 / 50) - 2.3538526683702e17) / 2.3538526683702e17 < 1e-12, "Chapter 3 MTBF example failed");
+assert(Math.abs(Math.exp(1_500 / 60) - 7.200489933738588e10) / 7.200489933738588e10 < 1e-12, "Chapter 3 MTBF exercise failed");
+const chapterThreeResetEdges = [10, 20, 30, 40];
+const chapterThreeResetDeassert = 12;
+const chapterThreeStageOneRelease = chapterThreeResetEdges.find((edge) => edge > chapterThreeResetDeassert);
+const chapterThreeStageTwoRelease = chapterThreeResetEdges[chapterThreeResetEdges.indexOf(chapterThreeStageOneRelease) + 1];
+assert(chapterThreeStageOneRelease === 20 && chapterThreeStageTwoRelease === 30, "Chapter 3 reset synchronizer trace failed");
+const chapterThreeExerciseEdges = [5, 15, 25, 35];
+const chapterThreeExerciseStageOne = chapterThreeExerciseEdges.find((edge) => edge > 6);
+const chapterThreeExerciseStageTwo = chapterThreeExerciseEdges[chapterThreeExerciseEdges.indexOf(chapterThreeExerciseStageOne) + 1];
+assert(chapterThreeExerciseStageOne === 15 && chapterThreeExerciseStageTwo === 25, "Chapter 3 reset exercise trace failed");
 
 assert((2 ** 12) === 4096 && ((2 ** 12) * 16 / 8) === 8192, "Chapter 4 MARIE memory capacity failed");
 assert(((0x1 << 12) | 0x3a5) === 0x13a5, "Chapter 4 Load encoding failed");
