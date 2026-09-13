@@ -19,8 +19,8 @@
       </div>
     </a>
     <nav class="top-actions" aria-label="工具列">
-      <button id="toggleTheme" type="button" title="切換明暗色調">◐</button>
-      <button id="printPage" type="button" title="列印目前內容">⎙</button>
+      <button id="toggleTheme" type="button" title="切換明暗色調" aria-label="深色模式" aria-pressed="false">◐</button>
+      <button id="printPage" type="button" title="列印目前內容" aria-label="列印目前內容">⎙</button>
     </nav>
   </header>
   <nav class="chapter-nav" aria-label="課程章節導覽">
@@ -60,11 +60,11 @@
       <article class="chapter-page">
         <nav class="breadcrumb" aria-label="麵包屑"><a href="../index.html">課程首頁</a><a href="../fourth-edition-map.html">第 4 版對照</a><span>第 7 章</span></nav>
         <header class="chapter-hero">
-          <p class="eyebrow">Chapter 7 · Revised 2026-08-21</p>
+          <p class="eyebrow">Chapter 7 · Revised 2026-09-13</p>
           <h2>第 7 章<br>輸出入、儲存與現代裝置介面</h2>
           <p class="chapter-english">Input/Output, Storage, and Modern Device Interfaces</p>
           <p>輸出入系統把處理器的同步指令世界連到速度、資料單位與故障模式各不相同的裝置。一次 I/O request 不是 CPU 對裝置做一次 load 就結束，而是經過 driver、device registers、command queue、interconnect、controller、DMA buffers 與 completion path；儲存 request 還要進入 HDD mechanical positioning 或 SSD flash translation。這條路徑同時牽涉 correctness、ordering、latency、throughput、CPU overhead 與 durability。本章以『誰發出命令、誰搬資料、誰宣告完成、完成到哪一層』追蹤 programmed I/O、interrupt、DMA、PCIe、NVMe、HDD、NAND SSD 與 RAID，並用可重算的模型辨認瓶頸與可靠性邊界。</p>
-          <dl class="chapter-meta"><div><dt>教材對照</dt><dd>第 7 章 Input/Output and Storage Systems</dd></div><div><dt>預估時間</dt><dd>約 230–280 分鐘</dd></div><div><dt>更新日期</dt><dd>2026-08-21</dd></div></dl>
+          <dl class="chapter-meta"><div><dt>教材對照</dt><dd>第 7 章 Input/Output and Storage Systems</dd></div><div><dt>預估時間</dt><dd>約 230–280 分鐘</dd></div><div><dt>更新日期</dt><dd>2026-09-13</dd></div></dl>
         </header>
         <section class="chapter-outcomes">
           <h3>完成本章後應能做到</h3>
@@ -101,7 +101,7 @@
       <p class="source-ref">資料基礎：<a href="#source-S1">S1</a>、<a href="#source-S2">S2</a>、<a href="#source-S4">S4</a></p>
     </section><section class="chapter-section" id="section-4">
       <h3>4. Interrupt 是可恢復的控制轉移</h3>
-      <p>external interrupt 在 instruction stream 之外非同步到達；exception 通常由目前 instruction 同步觸發；system call 是程式主動執行 trap instruction。三者都可能進入 privileged handler，但 cause、return PC 與 restart semantics 不同。precise state 要讓 handler 看見等同於某個 instruction boundary 的 architectural state。</p><p>概念步驟為：event 令 pending bit 成立；enable/mask 與 priority 判斷是否接受；CPU 保存 return PC、先前 privilege 與 interrupt-enable state；由 vector 或 common entry 取得 handler；software 保存還會使用的 registers、辨認來源、service/acknowledge，最後 restore 並執行 return-from-trap。acknowledge 過早可能遺失狀態，過晚可能重複進入。</p><p>RISC-V supervisor mode 以 sip/sie 表示 pending/enable，sstatus.SIE 控制全域接受，stvec 提供 Direct 或 Vectored entry，scause 記錄原因，sepc 保存 return PC，sret 恢復 privilege/control state。Vectored mode 的 asynchronous interrupt entry 為 BASE+4×cause，但 synchronous exceptions 仍到 BASE。</p>
+      <p>external interrupt 在 instruction stream 之外非同步到達；exception 通常由目前 instruction 同步觸發；system call 是程式主動執行 trap instruction。三者都可能進入 privileged handler，但 cause、return PC 與 restart semantics 不同。precise state 要讓 handler 看見等同於某個 instruction boundary 的 architectural state。</p><p>概念步驟為：event 令 pending bit 成立；enable/mask 與 priority 判斷是否接受；CPU 保存 return PC、先前 privilege 與 interrupt-enable state；由 vector 或 common entry 取得 handler；software 保存還會使用的 registers、辨認來源、service/acknowledge，最後 restore 並執行 return-from-trap。acknowledge 過早可能遺失狀態，過晚可能重複進入。</p><p>RISC-V supervisor mode 以 sip/sie 表示 pending/enable，目前在 S-mode 執行時，sstatus.SIE 控制 S-mode interrupts 的全域接受；目前在 U-mode 時，S-mode interrupts 不受 SIE 遮罩，但仍受對應 pending/enable 與 delegation/routing 控制；在 M-mode 不會向下 trap 到 S-mode。stvec 提供 Direct 或 Vectored entry，scause 記錄原因，sepc 保存 return PC，sret 恢復 privilege/control state。Vectored mode 的 asynchronous interrupt entry 為 BASE+4×cause，但 synchronous exceptions 仍到 BASE。</p>
       <figure class="learning-figure">
     <h4>Interrupt entry 到 return 的狀態鏈</h4>
     <div class="flow-diagram"><span class="flow-node">device event</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">pending=1</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">enable + priority</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">save PC / privilege</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">vector handler</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">service + acknowledge</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">restore state</span><span class="flow-arrow" aria-hidden="true">→</span><span class="flow-node">return</span></div>
@@ -173,11 +173,11 @@
       <p class="source-ref">資料基礎：<a href="#source-S7">S7</a>、<a href="#source-S9">S9</a>、<a href="#source-S10">S10</a></p>
     </section><section class="chapter-section" id="section-12">
       <h3>12. RAID 在 capacity、performance 與 failure tolerance 間交換</h3>
-      <p>RAID 0 將 stripes 分散到 N drives，usable capacity=N×smallest-drive capacity，但沒有 redundancy，任一 drive failure 都破壞 array。RAID 1 保存 mirror copies，two-way mirror 的 usable capacity 約為總容量一半，可從任一健康 copy 讀取。RAID 10 先 mirror 再 stripe，兼具 parallelism 與 redundancy，但 failure tolerance 取決於失效是否落在同一 mirror group。</p><p>RAID 5 以 distributed single parity 提供 N−1 drives 的容量並容忍一顆失效；RAID 6 以 dual parity 提供 N−2 drives 容量並容忍兩顆失效。full-stripe write 可直接由新 data 算 parity；small partial-stripe write 常需 read old data、read old parity、write new data、write new parity，RAID 5 形成典型 4 I/O read-modify-write penalty，RAID 6 需要更多 parity work。</p><p>RAID 不是 backup。它無法防止誤刪、ransomware、controller/software corruption、site failure 或所有 correlated faults。degraded mode 與 rebuild 期間，每筆 request 可能要由 surviving drives 重建資料，performance 下降且其餘 drives 承受更高 load；capacity 計算也必須以 smallest member 為基準。</p>
+      <p>RAID 0 將 stripes 分散到 N drives，usable capacity=N×smallest-drive capacity，但沒有 redundancy，任一 drive failure 都破壞 array。RAID 1 的單一 N-way mirror 保存 N 份相同內容，usable capacity=S，可從任一健康 copy 讀取；常見雙路鏡像 N=2 才是總容量的一半。RAID 10 先 mirror 再 stripe，兼具 parallelism 與 redundancy，但 failure tolerance 取決於失效是否落在同一 mirror group。</p><p>RAID 5 以 distributed single parity 提供 N−1 drives 的容量並容忍一顆失效；RAID 6 以 dual parity 提供 N−2 drives 容量並容忍兩顆失效。full-stripe write 可直接由新 data 算 parity；small partial-stripe write 常需 read old data、read old parity、write new data、write new parity，RAID 5 形成典型 4 I/O read-modify-write penalty，RAID 6 需要更多 parity work。</p><p>RAID 不是 backup。它無法防止誤刪、ransomware、controller/software corruption、site failure 或所有 correlated faults。degraded mode 與 rebuild 期間，每筆 request 可能要由 surviving drives 重建資料，performance 下降且其餘 drives 承受更高 load；capacity 計算也必須以 smallest member 為基準。</p>
       <figure class="learning-figure">
     <h4>常見 RAID level 的基本模型</h4>
-    <div class="diagram-table-wrap"><table class="diagram-table"><thead><tr><th>Level</th><th>Usable capacity（N×S）</th><th>最少 drives</th><th>保證容忍</th><th>small-write 特性</th></tr></thead><tbody><tr><td>RAID 0</td><td>N×S</td><td>2</td><td>0 drive</td><td>parallel data writes</td></tr><tr><td>RAID 1</td><td>約 N/2×S</td><td>2</td><td>每 mirror group 1 drive</td><td>duplicate writes</td></tr><tr><td>RAID 5</td><td>(N−1)×S</td><td>3</td><td>1 drive</td><td>single-parity RMW</td></tr><tr><td>RAID 6</td><td>(N−2)×S</td><td>4</td><td>2 drives</td><td>dual-parity RMW</td></tr><tr><td>RAID 10</td><td>N/2×S</td><td>4</td><td>依 mirror group</td><td>mirror + stripe</td></tr></tbody></table></div>
-    <figcaption>S 是 smallest member capacity；RAID level 只定義 mapping/redundancy，不自動提供獨立歷史版本或異地副本。</figcaption>
+    <div class="diagram-table-wrap"><table class="diagram-table"><thead><tr><th>Level</th><th>Usable capacity（N×S）</th><th>最少 drives</th><th>保證容忍</th><th>small-write 特性</th></tr></thead><tbody><tr><td>RAID 0</td><td>N×S</td><td>2</td><td>0 drive</td><td>parallel data writes</td></tr><tr><td>RAID 1（單一 N-way mirror）</td><td>S</td><td>2</td><td>任意 N−1 drives</td><td>N copies</td></tr><tr><td>RAID 5</td><td>(N−1)×S</td><td>3</td><td>1 drive</td><td>single-parity RMW</td></tr><tr><td>RAID 6</td><td>(N−2)×S</td><td>4</td><td>2 drives</td><td>dual-parity RMW</td></tr><tr><td>RAID 10（雙路鏡像）</td><td>N/2×S</td><td>4（N 為偶數）</td><td>任意 1 drive；更多依分布</td><td>mirror + stripe</td></tr></tbody></table></div>
+    <figcaption>S 是 smallest member capacity；RAID level 只定義 mapping/redundancy，不自動提供獨立歷史版本或異地副本。 本表只考慮磁碟完全失效且其餘副本完整，不包含 metadata、spare、重建讀取錯誤與共同故障。</figcaption>
   </figure>
       <p class="source-ref">資料基礎：<a href="#source-S13">S13</a></p>
     </section><section class="chapter-section" id="section-13">
@@ -241,9 +241,9 @@
     </section><section class="worked-example chapter-worked">
       <p class="eyebrow">Worked example 9</p>
       <h3>例題九：比較六顆 4 TB drives 的 RAID capacity</h3>
-      <p><strong>題目：</strong>六顆相同 4 TB drives，分別建 RAID 0、RAID 1（三組 mirror 再合併容量）、RAID 5、RAID 6、RAID 10，求 usable capacity 與最低保證容錯。</p>
-      <ol><li>總 raw capacity=6×4=24 TB。</li><li>RAID 0：6×4=24 TB，保證容忍 0 顆。</li><li>RAID 1 / RAID 10 two-way mirrors：6/2×4=12 TB；每個 mirror group 可失效一顆。</li><li>RAID 5：(6−1)×4=20 TB，保證容忍任意 1 顆。</li><li>RAID 6：(6−2)×4=16 TB，保證容忍任意 2 顆。</li><li>RAID 10 可能容忍多顆，但若同一 mirror group 全失效就失敗，因此不能簡化為保證任意 3 顆。</li></ol>
-      <p class="worked-result"><strong>結論：</strong>RAID0/1/5/6/10 分別為 24/12/20/16/12 TB；容錯語意取決於 level 與失效分布。</p>
+      <p><strong>題目：</strong>六顆相同 4 TB drives，分別建 RAID 0、RAID 1（六路鏡像，同一份資料複製六份）、RAID 5、RAID 6、RAID 10（三組雙路鏡像再條帶化）。忽略 metadata 與 spare，只考慮獨立磁碟完全失效，求容量與保證容錯。</p>
+      <ol><li>總 raw capacity=6×4=24 TB。</li><li>RAID 0：6×4=24 TB，保證容忍 0 顆。</li><li>RAID 1 六路鏡像：usable capacity=4 TB；在本題磁碟失效模型下，只要任一副本完整，即可容忍任意 5 顆失效。</li><li>RAID 5：(6−1)×4=20 TB，保證容忍任意 1 顆。</li><li>RAID 6：(6−2)×4=16 TB，保證容忍任意 2 顆。</li><li>RAID 10：三組雙路鏡像再條帶化，capacity=3×4=12 TB，保證容忍任意 1 顆；若每組各失效一顆則可容忍 3 顆，但同組兩顆全失效就會失去該組資料。</li></ol>
+      <p class="worked-result"><strong>結論：</strong>RAID 0/1/5/6/10 的容量分別為 24/4/20/16/12 TB，保證容忍任意磁碟失效數為 0/5/1/2/1。單一六路 RAID 1 與三組雙路鏡像的 RAID 10 是不同配置；此模型不涵蓋共同故障、重建錯誤或誤刪。</p>
     </section><section class="worked-example chapter-worked">
       <p class="eyebrow">Worked example 10</p>
       <h3>例題十：用 Amdahl&#039;s Law 評估 SSD 升級</h3>

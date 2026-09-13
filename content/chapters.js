@@ -690,7 +690,7 @@ const chapterDetails = [
     chapter: 2,
     title: "位元模式、數值與文字的表示",
     english: "Representing Bits, Numbers, and Text",
-    revised: "2026-08-29",
+    revised: "2026-09-13",
     readingTime: "約 280–340 分鐘",
     intro: "記憶體只保存位元模式，不會自行標記某一串 bits 是負整數、小數、字元、指令或錯誤檢查碼。真正賦予位元意義的是一份完整表示契約：寬度、欄位、signedness、scaling、byte order、合法特殊值，以及 overflow、rounding 與 error rules。本章從 positional notation 建立二進位與十六進位模型，推導 fixed-width unsigned、two's complement、定點與 IEEE 754；再以 mask、shift、packed field、widening multiply、signed divide、ULP 與五類浮點例外追蹤 operation 如何改變位元。最後把 multi-byte serialization、Unicode 17 UTF-8、Hamming/SECDED 與 CRC 放回跨系統資料邊界。每個結果都能由欄位權重、模數運算、round-trip 或 reference calculation 逐步驗證。",
     outcomes: [
@@ -772,7 +772,7 @@ const chapterDetails = [
         paragraphs: [
           "subtraction A-B 可改寫為 A+(~B+1)，所以 adder-subtractor 只需在 subtract mode 反相 B 並令初始 carry-in 為 1。無論 operands 被解讀為 signed 或 unsigned，硬體產生的低 n-bit result 完全相同；差別在於程式如何判定結果是否落在目標型別範圍內。",
           "unsigned addition 的精確結果若超過 2^n-1，會出現 carry out；signed addition 則在兩個同號 operands 產生異號 result 時 overflow。兩個異號 signed values 相加不會 overflow，因為結果位於兩者之間。carry out 與 signed overflow 可以一個發生、另一個不發生，不能互相代替。",
-          "把較窄值放入較寬 register 時，unsigned 使用 zero extension；two's complement signed 使用 sign extension，也就是複製原最高位。8-bit -5 為 11111011，sign-extend 到 16 bits 是 11111111 11111011，權重仍為 -5；若誤用 zero extension，會得到 251。縮窄則會捨棄高 bits，必須另外確認被捨棄部分是否只是不影響值的 sign copies。"
+          "把較窄值放入較寬 register 時，unsigned 使用 zero extension；two's complement signed 使用 sign extension，也就是複製原最高位。8-bit -5 為 11111011，sign-extend 到 16 bits 是 11111111 11111011，權重仍為 -5；若誤用 zero extension，會得到 251。縮窄會捨棄高 bits；unsigned 要求被捨棄 bits 全為 0，two's complement 則要求它們全是縮窄後 sign bit 的延伸，才能保留數值。語言層的轉型規則仍需另行確認。"
         ],
         figure: {
           type: "matrix",
@@ -1411,7 +1411,7 @@ const chapterDetails = [
     chapter: 3,
     title: "布林代數、數位邏輯與同步狀態",
     english: "Boolean Algebra, Digital Logic, and Synchronous State",
-    revised: "2026-08-30",
+    revised: "2026-09-13",
     readingTime: "約 280–340 分鐘",
     intro: "處理器最終必須把指令語意化成可實作的位元運算與狀態轉移。組合邏輯回答『目前輸入決定什麼輸出』，循序邏輯回答『系統如何記住過去並在時脈邊緣更新』；布林代數、真值表與有限狀態機則是兩者之間可驗證的描述語言。本章從實際電壓的數位抽象開始，依序推導 canonical form、化簡、multiplexer、decoder、full adder、register、時序限制與 FSM，再展開 carry-lookahead 的每一層 carry equation、組合路徑的 hazard、亞穩態可靠度與 reset 釋放邊界。每一個方程式都能回到真值表，每一條同步路徑都能回到 setup 與 hold 不等式，每一個非同步輸入則必須說明取樣協定；圖形、代數、時間與機率四種證據因而能互相核對。",
     outcomes: [
@@ -1624,7 +1624,7 @@ const chapterDetails = [
         paragraphs: [
           "對第 i 位定義 generate Gi=Ai·Bi，表示該位不論 Cin 為何都產生 carry；定義 propagate Pi=Ai XOR Bi，表示該位會把輸入 carry 傳向上一位。因此 Ci+1=Gi+Pi·Ci，而 sum Si=Pi XOR Ci。這些方程不改變加法功能，只改變 carry 依賴如何在電路中排列。",
           "把遞迴式展開後，C1=G0+P0C0，C2=G1+P1G0+P1P0C0，C3=G2+P2G1+P2P1G0+P2P1P0C0。每個 carry 可直接由原始 P/G 與 C0 得到，不必在功能圖上等待前一個 full adder。但大扇入 AND/OR 不能無限擴展，實際設計會把數位分組，建立 group propagate PG=P3P2P1P0 與 group generate GG=G3+P3G2+P3P2G1+P3P2P1G0。",
-          "prefix adder 將每位的 (G,P) 用 associative operator 成對合併：(Gx,Px)◦(Gy,Py)=(Gx+PxGy, PxPy)。使用 tree 時，N 位的 carry 資訊可在約 log2N 層傅播，代價是更多中間節點、wires、fan-out 與布線複雜度。所以 ripple、block lookahead 與 prefix 並非只比 gate count，而是在 delay、area、power 與 routing 之間取捨。"
+          "prefix adder 將每位的 (G,P) 用 associative operator 成對合併：(Gx,Px)◦(Gy,Py)=(Gx+PxGy, PxPy)。使用 tree 時，N 位的 carry 資訊可在約 log2N 層傳播，代價是更多中間節點、wires、fan-out 與布線複雜度。所以 ripple、block lookahead 與 prefix 並非只比 gate count，而是在 delay、area、power 與 routing 之間取捨。"
         ],
         figure: {
           type: "matrix",
@@ -1677,9 +1677,9 @@ const chapterDetails = [
             { label: "async reset in", cells: ["1", "0", "0", "0", "0"] },
             { label: "sync stage 1", cells: ["reset", "reset", "release", "release", "release"] },
             { label: "sync stage 2", cells: ["reset", "reset", "reset", "release", "release"] },
-            { label: "functional state", cells: ["held", "held", "held", "run", "run"] }
+            { label: "functional state", cells: ["held", "held", "held", "held; reset releases after edge", "first update"] }
           ],
-          caption: "reset 可在 12 ns 非同步取消，但 functional state 直到兩級 synchronizer 於 30 ns 邊緣完成釋放才開始運作。"
+          caption: "各欄描述 edge 後狀態：stage 2 在 30 ns edge 後取消 reset，功能暫存器在該 edge 仍保持 reset state，到 40 ns edge 才首次正常更新。"
         },
         sourceRefs: ["S16", "S17", "S18", "S19"]
       }
@@ -1767,14 +1767,14 @@ const chapterDetails = [
       },
       {
         title: "例題七：用簡化 delay model 比較 ripple 與 prefix adder",
-        prompt: "32-bit ripple adder 每級 carry delay 為 70 ps、最後 XOR 為 40 ps。另一 prefix 實作在 P/G 已可用後有 5 層、每層 90 ps，最後 XOR 同為 40 ps。比較最長路徑。",
+        prompt: "32-bit ripple adder 每級 carry delay 為 70 ps、最後 XOR 為 40 ps。另一 prefix 實作在 P/G 已可用後有 5 層、每層 90 ps，最後 XOR 同為 40 ps。只比較最高 sum bit 的路徑，不含 carry-out。",
         steps: [
           "32-bit 最高 sum 的 carry-in 最壞需穿過 31 級 ripple carry。",
           "ripple delay=31×70+40=2170+40=2210 ps。",
           "32=2^5，題目給定 prefix network 有 5 層合併。",
           "prefix delay=5×90+40=490 ps。",
           "在此簡化模型中，speedup=2210/490≈4.51。",
-          "這個比值不包含 initial P/G、fan-out、wire 與 placement；若兩種設計的這些成本不同，必須加入後才能預測實體 fmax。"
+          "這個比值不包含 initial P/G、fan-out、wire 與 placement；若兩種設計的這些成本不同，必須加入後才能預測實體 fmax。 若 carry-out 也是 timing endpoint，ripple C32 路徑為 32×70=2240 ps，比最高 sum 的 2210 ps 更長；全模組要取所有 endpoints 的最大值。"
         ],
         result: "簡化估計為 ripple 2210 ps、prefix 490 ps，prefix 約快 4.51 倍，但並非零面積或零布線代價。"
       },
@@ -1813,10 +1813,10 @@ const chapterDetails = [
           "20 ns edge 時，第一級取樣到 release value；第二級同時只能取樣第一級的舊 reset value。",
           "20..30 ns 期間，stage 1 已釋放，stage 2 與 functional state 仍被 reset 住。",
           "30 ns edge 時，stage 2 取樣 stage 1 的 release value。",
-          "functional reset 在 30 ns edge 對齊取消，所有由它控制的 state registers 從這個邊緣開始依 next-state logic 運作。",
-          "若 reset 在某個 edge 的 recovery/removal window 內取消，stage 1 可能延後一個 cycle 解析；stage 2 仍阻擋這個不確定性，代價是釋放 latency 可多一個 cycle。"
+          "30 ns edge 後，stage 2 經 clock-to-Q delay 才取消 functional reset；功能暫存器在該 edge 仍看到舊 reset，因此保持 reset state。若 recovery/removal 與 routing timing 皆滿足，首次正常取樣 next state 是 40 ns edge。",
+          "若 reset 在 recovery/removal window 內取消，stage 1 可能較晚解析；同步器降低而非完全消除 metastability 傳播機率。釋放 latency 可能延長，須依 MTBF 與實際 timing 評估。"
         ],
-        result: "stage 1 於 20 ns 釋放，stage 2 與 functional state 於 30 ns 釋放；釋放動作對齊目的 clock edge。"
+        result: "stage 1 於 20 ns edge 後釋放，stage 2 於 30 ns edge 後釋放 functional reset；功能暫存器首次正常更新在 40 ns edge。"
       }
     ],
     misconceptions: [
@@ -1848,7 +1848,7 @@ const chapterDetails = [
       { level: "核心", question: "用 2-to-1 mux 表示 F(A,B)=A XOR B，選 A 為 S。D0、D1 應接什麼？", solution: ["A=0 時 F=B，所以 D0=B。", "A=1 時 F=NOT B，所以 D1=NOT B；代入 mux 方程可得 (NOT A)B+A(NOT B)。"] },
       { level: "核心", question: "3-to-8 decoder 的每條 output 對應什麼？如何做 F=Σm(1,3,6)？", solution: ["每條 output 對應三個 inputs 的一個 minterm，任一時刻理想上只有對應 code 的 output 有效。", "將 decoder 的 y1、y3、y6 經 OR 相連，即可在 minterm 1、3、6 時輸出 1。"] },
       { level: "核心", question: "full adder 輸入 A=1、B=0、Cin=1 時，Sum 與 Cout 為何？", solution: ["Sum=1 XOR 0 XOR 1=0。", "三個 inputs 中有兩個 1，因此 Cout=1；算術核對為 1+0+1=10₂。"] },
-      { level: "核心", question: "8-bit ripple adder 每級 carry delay 為 70 ps，最後 sum XOR delay 為 40 ps。以 7 級 carry 傳播加最後 XOR 估計最長 delay。", solution: ["carry 從最低位穿過到最高位之前需要 7×70=490 ps。", "再加最高位 sum 的 40 ps，估計 critical-path delay=530 ps。"] },
+      { level: "核心", question: "8-bit ripple adder 每級 carry delay 為 70 ps，最後 sum XOR delay 為 40 ps。以 7 級 carry 傳播加最後 XOR 估計最高 sum bit 的 delay（不含 carry-out）。", solution: ["carry 從最低位穿過到最高位之前需要 7×70=490 ps。", "再加最高位 sum 的 40 ps，該路徑為 530 ps；若包含 carry-out endpoint，8×70=560 ps 才是此簡化模型較長的路徑。"] },
       { level: "進階", question: "路徑 tclk-q(max)=90 ps、tcomb(max)=710 ps、tsetup=80 ps，沒有額外 uncertainty。最低 clock period 與 fmax 為何？", solution: ["Tmin=90+710+80=880 ps。", "fmax=1/(880×10^-12)≈1.136 GHz。"] },
       { level: "進階", question: "某最短路徑 tclk-q(min)=45 ps、tcomb(min)=15 ps、thold=75 ps。求 hold slack 並判斷。", solution: ["資料最早在 45+15=60 ps 抵達，hold slack=60-75=-15 ps。", "slack 為負，存在 15 ps hold violation；單純拉長 clock period 不會修正同一 edge 的最早抵達。"] },
       { level: "進階", question: "有 5 個 states 的 binary-encoded FSM 至少需要幾個 state bits？one-hot 又需要幾個？", solution: ["ceil(log2 5)=3，所以 binary encoding 至少需要 3 bits，可提供 8 個 codes。", "one-hot 每個 state 使用一個獨立 bit，因此需要 5 bits。"] },
@@ -1857,7 +1857,7 @@ const chapterDetails = [
       { level: "核心", question: "以 carry-lookahead 計算 A=1101₂、B=0011₂、C0=0。列出 P3..P0、G3..G0、C1..C4 與 4-bit sum。", solution: ["由 Ai XOR Bi 得 P3..P0=1110；由 AiBi 得 G3..G0=0001。", "C1=1，之後每位都會 propagate，所以 C1..C4=1,1,1,1。", "Si=Pi XOR Ci，得 S3..S0=0000，連同 C4 為 10000₂=16，與 13+3 一致。"] },
       { level: "進階", question: "F=XY+(NOT X)Z，Y=Z=1 且 X 由 1 轉 0。這是哪種 hazard？應加入哪個 consensus term？", solution: ["穩態前後 F 都應為 1，但 XY 與 (NOT X)Z 可因路徑延遲暫時同為 0，所以是 static-1 hazard。", "加入不含 X 的 consensus term YZ，得 Fsafe=XY+(NOT X)Z+YZ。", "Y=Z=1 時 YZ 持續為 1，可覆蓋 X 的兩條路徑交接窗口。"] },
       { level: "進階", question: "額外 synchronizer stage 提供 1.5 ns 解析時間，τ=60 ps，其他條件不變。在 MTBF∝exp(Tresolve/τ) 模型下，改善倍數約為何？", solution: ["1.5 ns=1500 ps，所以 ΔT/τ=1500/60=25。", "改善倍數=exp(25)≈7.20×10^10。", "這只是在其他參數不變下的相對改善，不是元件的絕對 MTBF。"] },
-      { level: "挑戰", question: "兩級 reset synchronizer 的 clock edges 在 5、15、25、35 ns，asynchronous reset 在 6 ns 取消。忽略 metastability 延後時，stage 1、stage 2 與 functional state 何時釋放？", solution: ["6 ns 已錯過 5 ns edge，stage 1 在下一個 15 ns edge 取樣 release value。", "stage 2 在 15 ns 只取到 stage 1 的舊 reset value，到 25 ns edge 才取到 release value。", "functional state 由 stage 2 控制，所以在 25 ns edge 對齊釋放。"] }
+      { level: "挑戰", question: "兩級 reset synchronizer 的 clock edges 在 5、15、25、35 ns，asynchronous reset 在 6 ns 取消。忽略 metastability 延後時，stage 1、stage 2 與 functional state 何時釋放？", solution: ["6 ns 已錯過 5 ns edge，stage 1 在下一個 15 ns edge 取樣 release value。", "stage 2 在 15 ns 只取到 stage 1 的舊 reset value，到 25 ns edge 才取到 release value。", "stage 2 於 25 ns edge 後釋放 functional reset；功能暫存器在 25 ns 仍取到舊 reset，首次正常更新為 35 ns edge（假設 recovery/removal 與 routing timing 滿足）。"] }
     ],
     glossary: [
       ["Digital abstraction", "把連續電氣訊號依合法範圍解讀為有限邏輯符號的介面。"],
@@ -1937,9 +1937,9 @@ const chapterDetails = [
     chapter: 4,
     title: "MARIE：從指令位元到完整狀態追蹤",
     english: "MARIE: From Instruction Bits to Complete State Traces",
-    revised: "2026-08-18",
-    readingTime: "約 180–220 分鐘",
-    intro: "MARIE 是刻意簡化的 accumulator machine，目的不是模擬現代 CPU 的全部複雜度，而是讓一條指令的所有狀態變化都能被看見。16-bit instruction 如何切成 opcode 與 address、PC 如何推進、memory word 如何經 MAR 與 MBR 到達 AC、控制轉移如何改寫 PC，都可以用 register transfer notation 逐步驗證。本章以第 4 版 ISA 為準，從 datapath 與共同 fetch cycle 開始，建立 direct、indirect、branch、subroutine 與 assembler 的完整模型，再用可執行程式追蹤 machine code、register state 與 memory side effect。",
+    revised: "2026-09-13",
+    readingTime: "約 300–360 分鐘",
+    intro: "MARIE 是刻意簡化的 accumulator machine，目的不是模擬現代 CPU 的全部複雜度，而是讓一條指令的所有狀態變化都能被看見。16-bit instruction 如何切成 opcode 與 address、PC 如何推進、memory word 如何經 MAR 與 MBR 到達 AC、控制轉移如何改寫 PC，都可以用 register transfer notation 逐步驗證。本章以第 4 版 ISA 為準，從 datapath 與共同 fetch cycle 開始，建立 direct、indirect、branch、subroutine 與 assembler 的完整模型，再把每條指令展開成 memory transaction 與 clocked control sequence。最後以軟體 stack、loop invariant 與目前 MARIE.js 的可重現 micro-step trace，同時檢查 machine code、register state、memory side effect、termination 與版本邊界。",
     outcomes: [
       "能畫出 MARIE 的 CPU、memory、I/O 與 bus 關係，並說明七個 registers 的寬度與責任。",
       "能把 16-bit instruction 切成 4-bit opcode 與 12-bit address，完成 assembly 與 machine word 的雙向轉換。",
@@ -1947,9 +1947,13 @@ const chapterDetails = [
       "能依第 4 版完整 instruction set 追蹤 AC、PC、memory 與 I/O 的變化。",
       "能正確使用 Skipcond 與 Jump 表達 if、loop，並說明 skip 與 branch 的差異。",
       "能追蹤 AddI、LoadI、StoreI、JumpI 的兩層 memory dereference。",
+      "能逐條計算 instruction fetch、operand read 與 memory write，比較 direct 與 indirect addressing 的 traffic。",
       "能解釋 JnS 如何把 return address 存在 memory，並以 JumpI 完成返回。",
+      "能以 memory-resident stack 實作 push/pop，追蹤 SP、pointer slot 與 LIFO 不變性。",
       "能建立 symbol table，說明 two-pass assembler 如何解析 forward reference。",
-      "能比較 hardwired 與 microprogrammed control，並辨認 MARIE 與 MIPS 顯露狀態的差異。"
+      "能以 loop invariant 與單調遞減的 termination variant 證明 array loop 的結果與終止。",
+      "能比較 hardwired 與 microprogrammed control，並辨認 MARIE 與 MIPS 顯露狀態的差異。",
+      "能區分第 4 版 MARIE 與 MARIE.js v2.3.0 的 ISA 擴充，不把 simulator convenience 誤當成教科書編碼。"
     ],
     sections: [
       {
@@ -1971,7 +1975,7 @@ const chapterDetails = [
           ],
           caption: "由上往下追蹤時，每一層都把同一個程式轉成更具體的 bits、register transfers 與 clocked state。"
         },
-        sourceRefs: ["S1", "S2", "S3"]
+        sourceRefs: ["S1", "S2", "S3", "S14", "S19"]
       },
       {
         title: "2. 七個 registers、單一 bus 與 memory transaction",
@@ -2060,7 +2064,7 @@ const chapterDetails = [
         title: "6. Skipcond 與 Jump：以 PC 表達 if 與 loop",
         paragraphs: [
           "Skipcond 不指定任意 target；它只在條件成立時把已經指向下一個 instruction 的 PC 再加 1，所以恰好略過一個 16-bit word。condition 放在 IR[11:10]：00 檢查 AC<0，01 檢查 AC=0，10 檢查 AC>0，常用 hexadecimal operands 分別寫成 000、400、800。",
-          "if/else 的典型排列是先讓 AC 保存比較結果，再用 Skipcond 跳過緊接著的 Jump。以 X<Y 為例，Load X、Subt Y 後 AC=X−Y；Skipcond 000 為真時略過 Jump Else，順向進入 then block。then block 結尾仍需 Jump End，否則會落入 else block。",
+          "if/else 的典型排列是先讓 AC 保存比較結果，再用 Skipcond 跳過緊接著的 Jump。以 X<Y 為例，Load X、Subt Y 後 AC=X−Y；Skipcond 000 為真時略過 Jump Else，順向進入 then block。then block 結尾仍需 Jump End，否則會落入 else block。 此 signed comparison 只在 X−Y 不溢位時成立；例如 X=32767、Y=−1 時，差值 wrap 成 −32768，會誤判 X<Y。一般有號比較應先處理異號情況，再對同號數做不溢位的減法。",
           "loop 由 backward Jump 形成。每次 iteration 都必須在 AC 中重建 condition，因為 loop body 可能改變 AC。分析時不要只畫箭頭；要列出每次到達 Skipcond 時的 AC、fetch 後 PC、條件是否成立，以及成立後實際略過哪一個 word。"
         ],
         figure: {
@@ -2146,9 +2150,9 @@ const chapterDetails = [
       {
         title: "11. 第 4 版 MARIE、現行 MARIE.js 與 MIPS 的邊界",
         paragraphs: [
-          "本章 machine words 依第 4 版：opcode A 是 Clear，A000 使 AC←0。現行 MARIE.js 自 v2.1 起把 opcode A 一般化為 LoadImmi X，並把 Clear 當成 LoadImmi 0 的 alias；它還接受 Skipcond 0C00 作 nonzero extension。這些 simulator extensions 不能反向寫進第 4 版 ISA 題目的答案。",
-          "MARIE 與 MIPS 都以 PC、instruction bits、datapath 與 memory operations 執行 stored program，但 MIPS 對 programmers 顯露多個 general-purpose registers、三個 register operands、byte addressing 與固定 32-bit instruction。MARIE 的 PC+1 是下一個 16-bit word；MIPS sequential PC 通常+4 是下一個 4-byte instruction。",
-          "比較兩者時，應先固定同一層次。Load X 與 lw 都造成 memory-to-register transfer，但前者 destination 隱含為 AC 且 address 直接在 12-bit field，後者 destination/base registers 與 signed offset 都在 instruction 中。MARIE 的價值是把 state chain縮短到可手算；MIPS 則讓相同原理接近實際 RISC datapath。"
+          "本章 machine words 依第 4 版：opcode A 是 Clear，A000 使 AC←0。MARIE.js 在 v2.1.0 把 opcode A 一般化為 LoadImmi X，把 Clear 當成 LoadImmi 0 的 alias，並接受 Skipcond 0C00 作 nonzero extension。本次核對使用的 release 是 v2.3.0（2026-04-15），新增 editor 追蹤與 RTL log 改善，但上述 language extensions 仍是 simulator 版本的合約，不能反向改寫第 4 版 ISA 題目的答案。",
+          "MARIE.js v2.3.0 的公開 TypeScript 實作把 fetch/decode 與每條 instruction 寫成可重播 microSteps。例如共同 fetch 依序完成 MAR←PC、MBR←M[MAR]、IR←MBR、PC←PC+1 與 decode；LoadI 在此之後再有 MAR←IR、memory read、MAR←MBR、第二次 read 與 AC←MBR。程式碼是 simulator 實作的證據，不代表所有硬體必須使用相同 clock count；ISA-visible result 才是必須一致的部分。",
+          "MARIE、MIPS 與 2026 年 ratified RISC-V 都可用 PC、instruction bits、operand access 與 state update 描述，但 programmer-visible state 不同。Load X 把 destination 隱含為 AC 且直接編入 12-bit word address；MIPS lw 明寫 destination/base registers 與 signed byte offset；RV32I load 也是 register-plus-immediate 的 byte-addressed operation。簡化模型不是現代 ISA 的縮寫版，而是讓 architectural state transition 能被完整手算的另一份合約。"
         ],
         figure: {
           type: "matrix",
@@ -2164,7 +2168,52 @@ const chapterDetails = [
           ],
           caption: "ISA 顯露的 state 不同，但都可用 fetch、decode、operand、execute、state update 的證據鏈分析。"
         },
-        sourceRefs: ["S7", "S9"]
+        sourceRefs: ["S7", "S9", "S11", "S12", "S13", "S16", "S17"]
+      },
+      {
+        title: "12. Memory transaction 計數：把 instruction count 拆成 fetch、read 與 write",
+        paragraphs: [
+          "每條 MARIE instruction 都先需要一次 instruction fetch，因此執行 N 條 instructions 至少有 N 次 memory reads。execute phase 是否再存取 memory，取決於 opcode：Clear、Input、Output、Halt、Skipcond 與 Jump 沒有 data-memory transaction；Load、Add、Subt 各多一次 operand read；Store 多一次 write。instruction count 相同不代表 memory traffic 相同。",
+          "indirect operation 要把 pointer 讀出後才能存取最終位置。LoadI 與 AddI 在 fetch 之外有 pointer read 與 operand read，所以每條共有 3 次 memory reads；StoreI 是 1 次 fetch、1 次 pointer read 與 1 次 data write；JumpI 則是 fetch 加 1 次 target read。JnS 不讀 operand，但會把 return address 寫到 M[X]，因此也有 1 read+1 write。",
+          "transaction count 是結構化成本模型，不直接等於 clock cycles。單埠 memory 通常無法同時完成兩筆存取，但實體 memory latency、bus transfer 與 register transfer 可各占一或多個 cycles；cache 也可使某些存取比其他快。所以先數『必須發生幾筆 transaction』，再套入指定 implementation 的 latency，不能把一條 assembly 行預設為一個 clock。"
+        ],
+        figure: {
+          type: "matrix",
+          title: "MARIE instruction 的 memory transaction 分類",
+          columns: ["Instruction 類型", "Fetch read", "Execute read", "Execute write", "每條總數"],
+          rows: [
+            ["Clear/Input/Output/Halt/Skipcond/Jump", "1", "0", "0", "1"],
+            ["Load/Add/Subt", "1", "1", "0", "2"],
+            ["Store", "1", "0", "1", "2"],
+            ["LoadI/AddI", "1", "2", "0", "3"],
+            ["StoreI", "1", "1", "1", "3"],
+            ["JumpI", "1", "1", "0", "2"],
+            ["JnS", "1", "0", "1", "2"]
+          ],
+          caption: "表格計算 architectural memory transactions，不假定每筆 transaction 需要幾個 clock cycles。"
+        },
+        sourceRefs: ["S3", "S6", "S10", "S12"]
+      },
+      {
+        title: "13. Memory-resident stack、reentrant call 與 loop invariant",
+        paragraphs: [
+          "MARIE 沒有專用 stack pointer 或 push/pop opcodes，但可在 memory 中保留 SP、Ptr 與 One 來實作軟體 stack。若 SP 表示『下一個空位置』且 stack 向高位址成長，push V 先以 Load SP; Store Ptr 取得寫入位置，再 Load V; StoreI Ptr，最後將 SP 加 1。pop 先將 SP 減 1 並複製到 Ptr，再以 LoadI Ptr 取回頂端值。 範例中的地址與 machine words 以十六進位表示；計數及 signed data 則依題目標示解讀。",
+          "stack invariant 是區間 [base,SP) 內依 push 順序存放尚未 pop 的 values，而 SP 始終指向第一個空 word。每次 push 必須先寫 M[SP]、再增加 SP；每次 pop 必須先減少 SP、再讀 M[SP]。若次序反過來就會跳過頂端或讀到空位置；另外還必須檢查 underflow 與 stack 區域上界。",
+          "JnS 的 return slot 可在 nested call 前 push，在 return 前 pop 回原 slot，使每一層 linkage 有獨立儲存空間；這只是 recursive calling convention 的 linkage 部分，不是新 ISA instruction；AC 中尚需使用的值、locals 與暫存 pointer 也必須依每次呼叫保存／恢復。共用 Ptr/SP 的 push/pop 序列不能被任意重入；若有 interrupt，還需定義臨界區或獨立 stack，不能只保存 return address 就宣稱完全 reentrant。同樣的不變性方法也可驗證 loop：陣列累加在第 k 次開始時應滿足 Sum=前 k 項之和、Ptr=base+k、Ctr=n−k，且 Ctr 每次減 1。不變式證明結果，非負且單調遞減的 Ctr 則證明會終止。"
+        ],
+        figure: {
+          type: "matrix",
+          title: "向高位址成長的軟體 stack",
+          columns: ["動作", "操作前 SP", "Memory effect", "操作後 SP", "取得的值"],
+          rows: [
+            ["push 0x103", "0x300", "M[300]←0103", "0x301", "—"],
+            ["push 0x207", "0x301", "M[301]←0207", "0x302", "—"],
+            ["pop", "0x302", "read M[301]", "0x301", "0x207"],
+            ["pop", "0x301", "read M[300]", "0x300", "0x103"]
+          ],
+          caption: "SP 指向下一個空 word；push 後增加、pop 前減少，因此以 LIFO 順序取回兩層 return addresses。"
+        },
+        sourceRefs: ["S5", "S8", "S15", "S18"]
       }
     ],
     workedExamples: [
@@ -2224,7 +2273,7 @@ const chapterDetails = [
       },
       {
         title: "例題五：以 LoadI/AddI 走訪三個 array words",
-        prompt: "Ptr 初值為 120，M[120..122] 分別為 4、−1、6。每次 AddI Ptr 後把 Ptr 加 1，共執行三次，求 Sum 與 memory reads。",
+        prompt: "Ptr 初值為 120，M[120..122] 分別為 4、−1、6。每輪 Load Sum; AddI Ptr; Store Sum 後把 Ptr 加 1，共執行三次，求 Sum 與 memory reads。",
         steps: [
           "初始化 Sum=0、Ptr=120、Ctr=3。第一次 AddI 先讀 M[Ptr]=120，再讀 M[120]=4，Sum=4。",
           "將 Ptr 更新為 121，Ctr 更新為 2；Skipcond 400 不成立，回到 loop。",
@@ -2249,6 +2298,62 @@ const chapterDetails = [
           "若在返回前再次用同一 slot M[110] 儲存其他 return address，原 caller linkage 就會遺失。"
         ],
         result: "call 後 M[110]=103、PC=111；return 後 PC=103。MARIE 以 memory slot 保存 linkage。"
+      },
+      {
+        title: "例題七：分開計算 instruction fetch 與 data-memory traffic",
+        prompt: "程式執行 Load X、AddI Ptr、Store Z、Halt 各一次後停止。計算 memory reads、writes 與總 transactions。",
+        steps: [
+          "共執行 4 條 instructions，所以共同 fetch 先產生 4 次 memory reads。",
+          "Load X 在 execute 再讀 M[X] 一次，累計 data reads=1。",
+          "AddI Ptr 先讀 M[Ptr] 得到 effective address，再讀 M[M[Ptr]] 得到 operand，增加 2 次 data reads。",
+          "Store Z 在 execute 寫 M[Z] 一次；Halt 沒有額外 data-memory transaction。",
+          "memory reads=4 fetch+1 Load+2 AddI=7。",
+          "memory writes=1 Store，所以總 transactions=7+1=8。",
+          "4 條 instructions 卻有 8 筆 memory transactions；若要換成 cycles，還需要每類 transaction 的 implementation latency。"
+        ],
+        result: "共 7 次 reads、1 次 write、8 筆 memory transactions；其中 4 次 reads 是 instruction fetch。"
+      },
+      {
+        title: "例題八：辨認 MARIE 中無旗標的 signed overflow",
+        prompt: "AC=0x7FFF，M[One]=0x0001。執行 Add One 後，以 16-bit two's complement 解讀 result，並判斷 Skipcond 000 會看到什麼。",
+        steps: [
+          "0x7FFF 的最高 bit 為 0，two's-complement 值是 +32767。",
+          "數學和為 32767+1=32768，超出 16-bit signed 上界 32767。",
+          "16-bit adder 保留低 16 bits：0x7FFF+0x0001=0x8000。",
+          "0x8000 以 16-bit two's complement 解讀為 −32768，正數加正數卻得到負結果，因此發生 signed overflow。",
+          "此加法沒有第 17-bit carry out，再次顯示 carry 與 signed overflow 不是同一條件。",
+          "第 4 版基本 MARIE 沒有 programmer-visible overflow flag；Skipcond 只檢查 AC 的當前值。",
+          "Skipcond 000 會因 AC 的 sign bit 為 1 而判定 AC<0，它不知道這個負值是 overflow 後的 wrapped result。"
+        ],
+        result: "AC=0x8000（解讀為 −32768）且 Skipcond 000 成立；程式不能把該 condition 當成『沒有 overflow』的證明。"
+      },
+      {
+        title: "例題九：以軟體 stack 保存兩層 return addresses",
+        prompt: "stack 向高位址成長，SP=0x300 表示下一個空 word。依序 push 0x0103、push 0x0207，再 pop 兩次。追蹤 SP 與 memory。",
+        steps: [
+          "第一次 push 先把 SP=0x300 複製到 Ptr，再以 StoreI Ptr 寫入 M[300]=0x0103。",
+          "寫入後以 Load SP; Add One; Store SP 將 SP 更新為 0x301。",
+          "第二次 push 寫 M[301]=0x0207，再將 SP 更新為 0x302。",
+          "第一次 pop 先做 SP←SP−1，所以 SP=0x301；把此值放入 Ptr 後用 LoadI Ptr 讀得 M[301]=0x0207。",
+          "第二次 pop 再使 SP=0x300，LoadI Ptr 讀得 M[300]=0x0103。",
+          "pop 的順序是 0x0207、0x0103，與 push 順序相反，符合 LIFO。",
+          "若這兩個 values 是 nested JnS 的 linkage，每次 return 前可先 pop 回對應 return slot，再執行 JumpI。"
+        ],
+        result: "最後 SP 回到 0x300，pop 依序取得 0x0207、0x0103；stack 使每層 return address 有獨立 storage。"
+      },
+      {
+        title: "例題十：用 loop invariant 驗證 indirect array sum",
+        prompt: "array M[120..122]=[4,−1,6]，初始 Sum=0、Ptr=120、Ctr=3。每次用 Load Sum; AddI Ptr; Store Sum 累加，再使 Ptr+1、Ctr−1。建立 invariant 並追蹤至終止。",
+        steps: [
+          "定義 k 為已處理元素數；invariant 是 Sum=前 k 項之和、Ptr=120+k、Ctr=3−k。",
+          "進入 loop 前 k=0：Sum=0 是空前綴之和，Ptr=120，Ctr=3，所以 invariant 成立。",
+          "第一次 AddI 加 M[120]=4；更新後 k=1，Sum=4、Ptr=121、Ctr=2，invariant 維持。 必須先 Load Sum，再 AddI Ptr，最後 Store Sum；因 Ptr 與 Ctr 的更新也會使用 AC，下輪不能直接沿用 AC。",
+          "第二次加 M[121]=−1；更新後 k=2，Sum=3、Ptr=122、Ctr=1。",
+          "第三次加 M[122]=6；更新後 k=3，Sum=9、Ptr=123、Ctr=0。",
+          "Ctr=0 使 Skipcond 400 成立並略過 backward Jump；在退出條件 k=3 下，invariant 給出 Sum 等於全部三項之和。",
+          "Ctr 從 3 開始、每次減 1 且不在負值時回跳，因此它是單調遞減的 termination variant，同時證明 loop 會終止。"
+        ],
+        result: "退出時 Sum=9、Ptr=123、Ctr=0；invariant 證明結果正確，Ctr 證明有限步內終止。"
       }
     ],
     misconceptions: [
@@ -2259,7 +2364,17 @@ const chapterDetails = [
       ["JnS X 直接跳到 X 執行。", "X 是 return-address slot；JnS 將 PC 存入 M[X]，再跳到 X+1。"],
       ["DEC、HEX、ORG 都是 CPU 會執行的 instructions。", "它們是 assembler directives，用來配置 location 或 data，不會被 opcode decoder 執行。"],
       ["MARIE 的 PC+1 和 MIPS 的 PC+4 矛盾。", "MARIE 以 word 定址，MIPS 基礎模型以 byte 定址；兩者都前進一個固定長度 instruction。"],
-      ["MARIE.js 能接受的語法一定就是第 4 版 ISA。", "現行 simulator 有 LoadImmi 與額外 Skipcond condition；本章的編碼答案以第 4 版語意為準。"]
+      ["MARIE.js 能接受的語法一定就是第 4 版 ISA。", "MARIE.js v2.3.0 保留 v2.1.0 引入的 LoadImmi 與額外 Skipcond condition；編碼答案必須先固定第 4 版或 simulator ISA。"],
+      ["每條 instruction 的低 12 bits 都是 memory address。", "Input、Output、Halt 與第 4 版 Clear 不使用一般 memory address；Skipcond 則把其中的 bits 解讀為 condition。"],
+      ["decode 完成就已經把 memory operand 讀入 AC。", "decode 只辨認 opcode 與必要欄位；Load/Add/Subt 還要透過 MAR、MBR 發生 execute-phase memory read。"],
+      ["一個 microoperation 就是一條 ISA instruction。", "instruction 是對程式可見的完整 state transition；microoperation 是實作該 transition 的一個基本 transfer 或 ALU/memory step。"],
+      ["執行 10 條 instructions 就只會存取 memory 10 次。", "10 次 instruction fetch 只是下界；direct、indirect、Store 與 JnS 還有額外 execute-phase reads/writes。"],
+      ["LoadI 會自動把 pointer 加 1。", "LoadI 只做 AC←M[M[X]]；array traversal 中的 pointer increment 必須由另外的 Load/Add/Store sequence 明確實作。"],
+      ["MARIE 發生 signed overflow 時會自動設定可供 Skipcond 檢查的 overflow flag。", "第 4 版基本模型沒有這個 programmer-visible flag；Skipcond 只根據 wrapped 16-bit AC 判斷負、零、正。"],
+      ["JnS label 所在的 word 只是 code，執行期不會改變。", "JnS 將 fetch 後 PC 寫入 M[label]，所以 label word 是會被修改的 return-address data，body 從 label+1 開始。"],
+      ["沒有 push/pop opcodes 的 ISA 無法建立 stack。", "只要能讀寫 memory、修改 pointer 與 indirect access，就能以軟體實作 stack；專用 opcodes 只是較直接的 mechanism。"],
+      ["在 simulator 按 reset 必然會把所有 memory 清為 0。", "reset 對 registers、memory 與已載入 program 的影響是 tool contract；MARIE.js v2.3.0 的 register reset 會重置 PC/registers 而不清除已載入 memory。"],
+      ["MARIE.js 顯示的 micro-step 次數是所有 MARIE hardware 唯一合法的 cycle count。", "它是一個可重現 implementation；其他 hardwired 或 microprogrammed design 可合併或拆分 steps，只要結果符合 ISA 與 timing constraints。"]
     ],
     exercises: [
       { level: "基礎", question: "12-bit MAR 最多可指定多少個 memory words？若每 word 16 bits，內容容量是多少 bytes？", solution: ["2^12=4096 個 word addresses。", "4096×16 bits=65536 bits=8192 bytes；address unit 仍是 word。"] },
@@ -2276,7 +2391,11 @@ const chapterDetails = [
       { level: "進階", question: "為何 Store X 可改變 memory 卻不必改變 AC？列出其 RTN。", solution: ["Store 的 source 是 AC，copy 不會清除來源 register。", "RTN 為 MAR←X、MBR←AC、M[MAR]←MBR；完成後 AC 保持原值。"] },
       { level: "進階", question: "某 loop 在 Ctr 從 3 每次減 1 後執行 Skipcond 400、Jump Loop。Jump Loop 會執行幾次？", solution: ["Ctr 依序成為 2、1、0。前兩次不為零，因此 Jump Loop 執行 2 次。", "第三次 condition 成立，Skipcond 略過 Jump，離開 loop。loop body 總共執行 3 iterations。"] },
       { level: "挑戰", question: "為何同一個 return slot 無法直接支援 recursive JnS？", solution: ["每次 JnS 都把新的 return address 寫入 M[X]，下一層呼叫會覆蓋上一層 linkage。", "recursive convention 必須把每一層 return address 移到不同 storage，例如軟體管理的 stack，返回前再恢復。"] },
-      { level: "挑戰", question: "現行 MARIE.js 的 LoadImmi 2A5 編成 A2A5。以第 4 版 ISA 解讀同一 word 時應如何處理？", solution: ["第 4 版把 opcode A 定義為 Clear，低 12 bits 不形成一般 immediate operand。", "因此第 4 版答案應視為 Clear，而不是載入 0x2A5；跨 simulator 比較前必須先固定 ISA version。"] }
+      { level: "挑戰", question: "現行 MARIE.js 的 LoadImmi 2A5 編成 A2A5。以第 4 版 ISA 解讀同一 word 時應如何處理？", solution: ["第 4 版把 opcode A 定義為 Clear，低 12 bits 不形成一般 immediate operand。", "因此第 4 版答案應視為 Clear，而不是載入 0x2A5；跨 simulator 比較前必須先固定 ISA version。"] },
+      { level: "進階", question: "動態執行 JnS Sub、LoadI Ptr、JumpI Sub、Halt 各一次。不計 I/O，共有幾次 memory reads、writes 與 transactions？", solution: ["4 條 instructions 各有 1 次 fetch，先有 4 reads。", "LoadI 增加 pointer/data 兩次 reads，JumpI 增加 target read 一次，所以 reads=4+2+1=7。", "JnS 寫入 return slot 一次，所以 writes=1、總 transactions=8。"] },
+      { level: "進階", question: "AC=0x8000、M[MinusOne]=0xFFFF，執行 Add MinusOne 後 AC 為何？是否發生 signed overflow？Skipcond 800 是否成立？", solution: ["0x8000 是 −32768，0xFFFF 是 −1，數學和 −32769 超出 16-bit signed 下界。", "保留低 16 bits 得 0x7FFF，解讀為 +32767；兩個負 operands 得正 result，因此發生 signed overflow。", "Skipcond 800 只看 wrapped AC>0，因此會成立；它不表示數學和可表示。"] },
+      { level: "挑戰", question: "向高位址成長的 stack 初始 SP=0x400，依序 push 0x0AAA、push 0x0BBB、pop 一次。列出 M[400]、M[401]、pop value 與最後 SP。", solution: ["第一次 push 寫 M[400]=0x0AAA，SP 變 0x401。", "第二次 push 寫 M[401]=0x0BBB，SP 變 0x402。", "pop 先將 SP 減為 0x401，再讀 M[401]，所以 pop value=0x0BBB，最後 SP=0x401；M[400]、M[401] 內容仍分別是 0x0AAA、0x0BBB，只是後者已不在 active stack 區間。"] },
+      {"level":"實作","question":"把本章三元素加總改寫成可執行的 MARIE loop，避免更新 Ptr/Ctr 時覆蓋累加結果。","solution":["ORG 100\nLoop, Load Sum\nAddI Ptr\nStore Sum\nLoad Ptr\nAdd One\nStore Ptr\nLoad Ctr\nSubt One\nStore Ctr\nSkipcond 400\nJump Loop\nLoad Sum\nOutput\nHalt\nSum, DEC 0\nPtr, HEX 112\nCtr, DEC 3\nOne, DEC 1\nArray, DEC 4\nDEC -1\nDEC 6","本例將同樣的三個數值放在連續資料區 Array=0x112，n=3。Sum 每輪先載入再寫回；Ptr/Ctr 可安全使用 AC。輸出 9，Ptr=0x115、Ctr=0。一般化至 n=0 時需在進入 loop 前先檢查 Ctr。"]}
     ],
     glossary: [
       ["Accumulator machine", "以單一主要累加器作為 arithmetic 隱含來源與目的的 ISA 模型。"],
@@ -2299,7 +2418,35 @@ const chapterDetails = [
       ["Symbol table", "assembler 建立的 label 到 numeric address 對照。"],
       ["Hardwired control", "以固定 combinational/sequential logic 直接產生 control signals。"],
       ["Microprogrammed control", "由 control memory 中的 microinstructions 產生 datapath signals。"],
-      ["Architectural state", "ISA 程式可觀察、會影響後續行為的 registers、memory 與 I/O state。"]
+      ["Architectural state", "ISA 程式可觀察、會影響後續行為的 registers、memory 與 I/O state。"],
+      ["Instruction set architecture", "定義 instruction encodings、programmer-visible state 與每條 instruction state effect 的軟硬體合約。"],
+      ["Datapath", "由 registers、ALU、bus、mux 與 memory interface 組成，真正搬移與處理 bits 的路徑。"],
+      ["Control unit", "依 control state、opcode 與 conditions 產生 datapath control signals 的邏輯。"],
+      ["Memory image", "assembler 安排好 addresses 後，準備載入 memory 的 instruction/data words 序列。"],
+      ["Location counter", "assembler 在排列 source lines 時追蹤下一個 word address 的內部值。"],
+      ["Forward reference", "source 在 label 定義之前就使用該 symbol 的參照。"],
+      ["Effective address", "執行 memory operation 時最終實際存取的 address；direct 時 EA=X，indirect 時 EA=M[X]。"],
+      ["Dereference", "把 memory 中的 pointer value 當作 address，再存取其指向內容的動作。"],
+      ["Return address", "subroutine 完成後應恢復到 PC，使執行回到 caller 的 instruction address。"],
+      ["Return-address slot", "JnS 寫入 fetch 後 PC 的 memory word；MARIE subroutine body 從該 slot 的下一 word 開始。"],
+      ["Calling convention", "程式對 parameters、results、return linkage 與可修改 storage 所共同遵守的規則。"],
+      ["Stack", "以 last-in first-out 順序保存 active values、return addresses 或 call frames 的儲存區。"],
+      ["Stack pointer", "指向 stack top 或下一個空位置的 pointer；本章約定 SP 指向下一空 word。"],
+      ["Push", "把新 value 放入 stack top 並更新 SP，同時維持 stack invariant 的動作。"],
+      ["Pop", "依 SP convention 移除並返回最後 push 的 active value。"],
+      ["LIFO", "Last In, First Out；最後加入 stack 的 value 最先被取出。"],
+      ["Reentrant subroutine", "同一 routine 尚未返回時仍能被另一次呼叫，且每次 invocation 的 linkage/state 不相互覆寫。"],
+      ["Recursion", "subroutine 直接或間接呼叫自己，因而需要保存多層獨立 return state。"],
+      ["Microcode", "儲存在 control memory 中、用來排序 datapath microoperations 的控制程式。"],
+      ["Control word", "同一 control step 中指定 bus source、register loads、ALU op 與 memory action 的 control-bit 集合。"],
+      ["Control store", "保存 microinstructions/control words 的 memory，屬於 microarchitecture 而非一般 program memory。"],
+      ["Instruction cycle", "一條 instruction 從 fetch、decode 到 execute 完成並建立 next PC 的全部活動。"],
+      ["Memory transaction", "對一個指定 memory address 完成的一次 word read 或 word write。"],
+      ["Instruction fetch", "以 PC 為 address 讀取 instruction word、放入 IR 並建立 sequential successor 的共同步驟。"],
+      ["Loop invariant", "在 loop 開始前成立，且每次 iteration 都維持，可在退出時推導結果的性質。"],
+      ["Termination variant", "每次 iteration 都單調朝有界終點移動，用來證明 loop 不會永遠執行的量。"],
+      ["Signed overflow", "精確數學結果超出目標 signed width 範圍，使保留的 bits 被解讀成錯誤符號或數值。"],
+      ["Simulator extension", "特定 simulator 版本在基準 ISA 之外提供的 instruction、condition 或介面行為。"]
     ],
     sources: [
       { key: "S1", title: "Penn State CMPSC 312: Computer Organization and Architecture", url: "https://h3turing.vmhost.psu.edu/cmpsc312/", accessed: "2026-08-18", use: "作者 Linda Null 公開的第 4 章課程投影片、MARIE simulator、datapath simulator 與 guide 資源入口。" },
@@ -2310,15 +2457,24 @@ const chapterDetails = [
       { key: "S6", title: "Gordon College CS311: The Architecture of a Simple Computer", url: "https://www.math-cs.gordon.edu/courses/cs311/lectures-2003/simple_computer.pdf", accessed: "2026-08-18", use: "register widths、word-addressed memory、fetch-decode-execute 與 register-transfer semantics。" },
       { key: "S7", title: "Brooklyn College CISC 3310: MARIE Skipcond Instruction", url: "https://www.sci.brooklyn.cuny.edu/~briskman/cisc/3310/lecture_notes/topic_06/09.html", accessed: "2026-08-18", use: "IR condition bits 與 Skipcond 的 negative、zero、positive control behavior。" },
       { key: "S8", title: "MARIE.js Wiki: Subroutines", url: "https://github.com/MARIE-js/MARIE.js/wiki/Subroutines", accessed: "2026-08-18", use: "JnS 與 JumpI 的 call/return 組合及 simulator behavior。" },
-      { key: "S9", title: "MARIE.js Releases", url: "https://github.com/MARIE-js/MARIE.js/releases", accessed: "2026-08-18", use: "現行 simulator 的 datapath visualization 與 v2.1 opcode A、Skipcond extensions，供版本相容性註記。" },
-      { key: "S10", title: "University of Northern Iowa: The Fetch-Decode-Execute Cycle", url: "https://www.cs.uni.edu/~schafer/cohort26/FCCS/lessons/week2/topic2e/t2e_r2_fde.html", accessed: "2026-08-18", use: "以公開教材核對 fetch、decode、execute、register 與 ALU data movement 的通用模型。" }
+      { key: "S9", title: "MARIE.js Releases", url: "https://github.com/MARIE-js/MARIE.js/releases", accessed: "2026-09-11", use: "核對 simulator 的版本沿革、v2.1 language changes 與最新 v2.3.0 release。" },
+      { key: "S10", title: "University of Northern Iowa: The Fetch-Decode-Execute Cycle", url: "https://www.cs.uni.edu/~schafer/cohort26/FCCS/lessons/week2/topic2e/t2e_r2_fde.html", accessed: "2026-09-11", use: "以公開教材核對 fetch、decode、execute、register 與 ALU data movement 的通用模型。" },
+      { key: "S11", title: "MARIE.js v2.3.0 Release", url: "https://github.com/MARIE-js/MARIE.js/releases/tag/v2.3.0", accessed: "2026-09-11", use: "2026-04-15 最新 release 的 editor PC tracking、micro-stepping 與 RTL log 改善。" },
+      { key: "S12", title: "MARIE.js v2.3.0 Simulator Source", url: "https://github.com/MARIE-js/MARIE.js/blob/v2.3.0/src/marie.ts", accessed: "2026-09-11", use: "以固定 tag 下的 TypeScript 核對 4096-word memory、register masks、fetchDecode、opcode semantics、microSteps 與 reset behavior。" },
+      { key: "S13", title: "Southern Methodist University: MARIE Simulator Tutorial", url: "https://s2.smu.edu/~manikas/Courses/CS2340_Tools/MARIE_Tutorial.html", accessed: "2026-09-11", use: "2025-07-24 更新的大學公開教材，核對 MARIE.js assembly、run、output mode 與程式範例流程。" },
+      { key: "S14", title: "Stephen F. Austin State University CSCI 2314, Spring 2026", url: "https://orion.sfasu.edu/courseinformation/syl/202602/CSCI23141.pdf", accessed: "2026-09-11", use: "2026 計算機組織課程中 fetch cycle、CPU/memory/I/O、pointers 與 MARIE 章節的現行課程脈絡。" },
+      { key: "S15", title: "University of Denver COMP 4003: Computer Organization", url: "https://crisp.cs.du.edu/curriculum/comp-4003/", accessed: "2026-09-11", use: "2026-03-25 更新的 MARIE opcode、memory layout、program stack、stack frame 與 ISA 轉譯學習目標。" },
+      { key: "S16", title: "RISC-V Ratified Specifications Library", url: "https://docs.riscv.org/", accessed: "2026-09-11", use: "核對 2026 年 ratified unprivileged ISA v20260120，作為現代 programmer-visible state 與 load/store 合約對照。" },
+      { key: "S17", title: "RISC-V Sail Formal ISA Model", url: "https://github.com/riscv/sail-riscv", accessed: "2026-09-11", use: "以可執行 formal model 說明 ISA semantics 可與特定 pipeline/microstep implementation 分離。" },
+      { key: "S18", title: "NTHU OpenCourseWare: Computer Abstractions and Instruction Set Architecture", url: "https://ocw.nthu.edu.tw/chapter/76/802?lang=en", accessed: "2026-09-11", use: "現行大學開放課程對 stored program、ISA、registers、memory 與 procedure abstraction 的完整脈絡。" },
+      { key: "S19", title: "Australian National University ENGN2219 Computer Architecture 2026", url: "https://programsandcourses.anu.edu.au/2026/course/ENGN2219", accessed: "2026-09-11", use: "2026 年大學部課程對數位電路、simple instructions 與由高階程式到 CPU 的課程邊界。" }
     ]
   },
   {
     chapter: 5,
     title: "指令集架構：編碼、定址與管線化執行",
     english: "Instruction Set Architecture: Encoding, Addressing, and Pipelined Execution",
-    revised: "2026-08-19",
+    revised: "2026-09-13",
     readingTime: "約 200–240 分鐘",
     intro: "指令集架構（ISA）是 machine code 與處理器共同遵守的二進位合約。每一個 opcode、register field、immediate、位址計算與控制轉移規則，都必須精確到單一 bit；同一份合約卻能由單週期、多週期、pipeline 或 out-of-order 處理器實作。本章先以 operand 數量與 instruction format 建立設計空間，再以經典 MIPS32 子集完成 assembly、machine word、effective address、branch 與 procedure call 的雙向追蹤。最後把相同 instructions 放入五階段 pipeline，分清 instruction latency、throughput、structural/data/control hazard，以及 forwarding、stall 與 flush 各自解決的問題，並用 RISC-V、A64 與 x86-64 對照哪些特性屬於 RISC 慣例、哪些才是特定 ISA 的規則。",
     outcomes: [
@@ -2424,7 +2580,8 @@ const chapterDetails = [
         paragraphs: [
           "I format 提供 16-bit immediate，但 ALU 與 address 通常是 32 bits，因此執行前必須擴展。addi、slti、load/store offset 與 branch displacement 把 immediate 視為 signed two's complement 並 sign-extend；andi、ori、xori 則 zero-extend。lui 不做一般低位 operand，而是把 immediate 放到 result 的 bits 31..16，低 16 bits 填 0。",
           "16-bit signed immediate 範圍是 −32768 到 32767，unsigned bit pattern 範圍是 0 到 65535。0xFFFF 經 sign extension 是 0xFFFFFFFF=−1，經 zero extension 是 0x0000FFFF=65535。operation 決定 interpretation；看到最高 bit 為 1 不能自行決定一定是負數。",
-          "超過單一 immediate 的 32-bit constant 通常由多條 instructions 建立。例如 0x1234ABCD 可用 lui $t0,0x1234 產生 0x12340000，再用 ori $t0,$t0,0xABCD 合併低 16 bits。li 是 assembler pseudo-instruction，常數較小時可能只展開一條，較大時才需要兩條；因此 static instruction count 取決於 expansion。"
+          "超過單一 immediate 的 32-bit constant 通常由多條 instructions 建立。例如 0x1234ABCD 可用 lui $t0,0x1234 產生 0x12340000，再用 ori $t0,$t0,0xABCD 合併低 16 bits。li 是 assembler pseudo-instruction，常數較小時可能只展開一條，較大時才需要兩條；因此 static instruction count 取決於 expansion。",
+          "add/addi/sub 在 signed overflow 時觸發 exception；addu/addiu/subu 保留低 32 bits 而不因整數 overflow trap。addiu 的 u 不代表 immediate 做 zero extension：0xFFFF 仍 sign-extend 為 −1；sltiu 也先 sign-extend immediate，再以 unsigned operands 比較。"
         ],
         figure: {
           type: "matrix",
@@ -2632,17 +2789,17 @@ const chapterDetails = [
       },
       {
         title: "例題六：non-leaf procedure 的 stack state",
-        prompt: "函式 F 會修改 $s0 並呼叫 G。entry 時 $sp=0x7FFFFFF0、$ra=0x00400108。F 配置 8-byte frame，將 $ra 存 4($sp)、$s0 存 0($sp)。追蹤 prologue 與 epilogue。",
+        prompt: "函式 F 會修改 $s0 並呼叫最多四個 word arguments 的 G。採 MIPS o32 的 8-byte stack alignment 與 16-byte outgoing argument area；entry 時 $sp=0x7FFFFFF0、$ra=0x00400108。F 配置 24-byte frame，$s0 存 16($sp)、$ra 存 20($sp)。追蹤 prologue 與 epilogue。",
         steps: [
-          "addiu $sp,$sp,−8 後 $sp=0x7FFFFFE8，frame 範圍為 0x7FFFFFE8..0x7FFFFFEF。",
-          "sw $s0,0($sp) 把 caller 可觀察的原 $s0 保存於 0x7FFFFFE8。",
-          "sw $ra,4($sp) 把 return address 0x00400108 保存於 0x7FFFFFEC。",
+          "addiu $sp,$sp,−24 後 $sp=0x7FFFFFD8，frame 範圍為 0x7FFFFFD8..0x7FFFFFEF；offsets 0..15 保留給 G 的 argument slots，不能放需要跨 call 保存的值。",
+          "sw $s0,16($sp) 把 caller 可觀察的原 $s0 保存於 0x7FFFFFE8。",
+          "sw $ra,20($sp) 把 return address 0x00400108 保存於 0x7FFFFFEC。",
           "jal G 會建立新的 $ra，因此 F 不能依賴 register 中仍保留 0x00400108。",
-          "G 返回後，lw $s0,0($sp) 與 lw $ra,4($sp) 還原兩個 architectural values。",
-          "addiu $sp,$sp,8 恢復 0x7FFFFFF0；jr $ra 以 0x00400108 返回。",
+          "G 返回後，lw $s0,16($sp) 與 lw $ra,20($sp) 還原兩個 architectural values。",
+          "addiu $sp,$sp,24 恢復 0x7FFFFFF0；jr $ra 以 0x00400108 返回。 此處省略的 classic MIPS jal/jr delay slots 均填 nop；epilogue loads 必須在 jr 前完成。",
           "若 restore 順序所用 addresses 都以目前 frame $sp 為 base，必須在回收 frame 前完成 loads。"
         ],
-        result: "return 前 $s0、$ra、$sp 均恢復 entry state；F 可安全地成為 non-leaf procedure。"
+        result: "F 的 24-byte frame 同時容納 outgoing argument area、saved $s0 與 $ra，並保持 8-byte alignment；return 前三個 registers 恢復 entry state。其他 MIPS ABIs 的規則可能不同。"
       },
       {
         title: "例題七：由 stage delays 計算 pipeline time 與 speedup",
@@ -2686,7 +2843,8 @@ const chapterDetails = [
       { level: "進階", question: "caller 在 call 後仍需要 $t0，callee 會任意修改 $t0。依 caller-saved 規則，責任與操作為何？", solution: ["$t0 屬 caller-saved，因此 caller 在 jal 前把 live value 保存到 stack 或其他安全位置。", "callee return 後 caller 再 restore；不能要求 callee 自動保存所有 $t registers。"] },
       { level: "進階", question: "五階段 pipeline 理想執行 20 條 instructions 需要幾 cycles？若 Tclk=400 ps，總時間為何？", solution: ["cycles=k+n−1=5+20−1=24。", "time=24×400 ps=9600 ps=9.6 ns。"] },
       { level: "進階", question: "基準 CPI=1，20% instructions 是 load，其中 30% 緊接 dependent consumer 並各 stall 1 cycle。新 CPI 為何？", solution: ["每條 instruction 的 load-use stall contribution=0.20×0.30×1=0.06。", "CPI=1+0.06=1.06；這裡假設其他 hazards 與 misses 都不存在。"] },
-      { level: "挑戰", question: "某 pipeline stage delays 為 180、220、170、260、190 ps，register overhead 30 ps。若可把 260 ps stage 均分成兩個 130 ps stages，原五階段與新六階段的 clock periods 各為何？對大量 instructions 的理想 throughput 改善多少？", solution: ["原 Tclk=max(...)+30=260+30=290 ps；新 Tclk=max(180,220,170,130,130,190)+30=220+30=250 ps。", "大量 instructions 的 throughput 約與 1/Tclk 成正比，改善比=290/250=1.16，也就是約 16%；stage 增加會提高單條 latency 與短序列 fill cost。"] }
+      { level: "挑戰", question: "某 pipeline stage delays 為 180、220、170、260、190 ps，register overhead 30 ps。若可把 260 ps stage 均分成兩個 130 ps stages，原五階段與新六階段的 clock periods 各為何？對大量 instructions 的理想 throughput 改善多少？", solution: ["原 Tclk=max(...)+30=260+30=290 ps；新 Tclk=max(180,220,170,130,130,190)+30=220+30=250 ps。", "大量 instructions 的 throughput 約與 1/Tclk 成正比，改善比=290/250=1.16，也就是約 16%；stage 增加會提高單條 latency 與短序列 fill cost。"] },
+      {"level":"邊界","question":"$t0=0x7FFFFFFF 時，addi $t1,$t0,1 與 addiu $t1,$t0,1 有何差異？addiu $t2,$zero,0xFFFF 又得到什麼？","solution":["addi 產生 signed overflow exception，不寫入正常結果；addiu 不因這個 overflow trap，$t1=0x80000000。","addiu 的 16-bit immediate 仍 sign-extend，故 0xFFFF→0xFFFFFFFF，$t2=0xFFFFFFFF；u 指不因 overflow trap，不能拿來判斷延伸方式。"]}
     ],
     glossary: [
       ["Instruction set architecture", "software-visible instructions、state、memory、exception 與 encoding 的合約。"],
@@ -2734,7 +2892,7 @@ const chapterDetails = [
     chapter: 6,
     title: "記憶體階層：Cache、虛擬記憶體與位址轉譯",
     english: "Memory Hierarchy: Caches, Virtual Memory, and Address Translation",
-    revised: "2026-08-20",
+    revised: "2026-09-13",
     readingTime: "約 220–270 分鐘",
     intro: "處理器可以在極短時間內產生 memory request，但容量大的儲存體無法同時具備最低延遲、最高頻寬、最低成本與非揮發性。記憶體系統因此不是單一陣列，而是由 registers、SRAM caches、DRAM、persistent storage 與位址轉譯共同構成的階層。本章以『一次 byte address 最後在哪裡命中、為何命中、付出多少成本』作為共同證據鏈：先從 memory technology 與 locality 推導 cache，再精確計算 tag/index/offset、mapping、replacement、write policy 與多層 AMAT；接著把 virtual address 切成 VPN/page offset，追蹤 page table、TLB、permission 與 page fault。每個模型都明確區分 data copy、address translation 與 architectural state，讓 cache miss、TLB miss 和 page fault 不再混為同一件事。",
     outcomes: [
@@ -2776,7 +2934,8 @@ const chapterDetails = [
         paragraphs: [
           "SRAM cell 以穩定的電路狀態保存 bit，只要供電存在便不需週期 refresh；它速度快但 cell 面積大，因此適合 on-chip cache。DRAM cell 以 capacitor charge 表示 bit，密度較高但 charge 會洩漏，必須 refresh。DRAM read 牽涉 row activate、sense/restore、column transfer 與可能的 precharge，不能用單一『RAM latency』涵蓋所有情況。",
           "DRAM 被分成 channels、ranks、banks、rows 與 columns。若 request 命中同 bank 已開啟的 row，row-buffer hit 可省去部分 activate/precharge；若要切換 row，memory controller 必須遵守 timing constraints。bank-level parallelism 可重疊不同 banks 的工作，但同 bank 的相依 requests 仍受序列化限制。容量、first-word latency 與 sustained bandwidth 是三個不同指標。",
-          "SSD/flash 提供 nonvolatile storage，erase/program/read granularity 與 DRAM 不同，延遲也高得多。virtual memory 可把未 resident page 的內容放在 executable/file 或 swap backing store，但 storage 不是 CPU load/store 直接同步存取的普通 memory cell；page fault 會陷入 OS，安排 I/O、更新 mapping，再重新執行 faulting instruction。"
+          "SSD/flash 提供 nonvolatile storage，erase/program/read granularity 與 DRAM 不同，延遲也高得多。virtual memory 可把未 resident page 的內容放在 executable/file 或 swap backing store，但 storage 不是 CPU load/store 直接同步存取的普通 memory cell；page fault 會陷入 OS，安排 I/O、更新 mapping，再重新執行 faulting instruction。",
+          "上述是需要從 backing store 讀入內容的 fault；demand-zero、copy-on-write 或已 resident 的 page-cache mapping 可能不需 storage I/O。page fault 不是磁碟讀取的同義詞。"
         ],
         figure: {
           type: "matrix",
@@ -2929,7 +3088,8 @@ const chapterDetails = [
         paragraphs: [
           "virtual memory 讓每個 process 使用 virtual addresses，再由 MMU 轉成 physical addresses。固定 page size=2^p bytes 時，virtual address 分成 VPN 與 p-bit page offset；page table 將 VPN 映射到 PPN，physical address 由 PPN 與原 offset 串接。offset 不翻譯，因為 virtual page 與 physical frame 大小相同。",
           "32-bit VA、4 KiB pages 有 12-bit offset 與 20-bit VPN，共 2^20 virtual pages。VA 0x12345ABC 的 VPN=0x12345、offset=0xABC；若 PTE 給 PPN=0x2ABCD，PA=0x2ABCDABC。page size 增大會增加 offset bits、減少 page count 和 TLB pressure，但也可能增加 internal fragmentation 與 fault transfer。",
-          "paging 允許不連續 virtual pages 放到任意 free frames，提供 relocation、isolation、sharing 與 demand allocation。兩個 processes 可把不同 VPN 映到同一 read-only physical frame 共享 library code；也可把相同 VA 映到不同 frames，讓彼此看見獨立 address space。"
+          "paging 允許不連續 virtual pages 放到任意 free frames，提供 relocation、isolation、sharing 與 demand allocation。兩個 processes 可把不同 VPN 映到同一 read-only physical frame 共享 library code；也可把相同 VA 映到不同 frames，讓彼此看見獨立 address space。",
+          "Sv32 的 VA 是 32 bits，但 PTE 提供 22-bit PPN，可組成最多 34-bit PA；不能假設 VA 與 PA 等寬。有效 leaf PTE 可位於較高層形成 4 MiB superpage，必須符合對齊及 R/W/X 合法性；non-leaf PTE 才繼續指向下一層。"
         ],
         figure: {
           type: "flow",
@@ -2985,15 +3145,16 @@ const chapterDetails = [
         paragraphs: [
           "一般 physically addressed cache path 先以 VA 查 TLB 得 PA，再以 PA 的 index/tag 查 cache。為縮短 L1 hit path，VIPT cache 可用不經 translation 的 page-offset bits先 index，同時查 TLB，之後以 physical tag 比對；cache geometry 必須避免 virtual aliases 造成不一致。這是 microarchitecture timing optimization，不改變程式的 VA→PA contract。",
           "TLB 保存 translations，cache 保存 instructions/data copies，page table 保存 authoritative mappings。context switch 可能切換 page-table root；ASID 可讓不同 address spaces 的 TLB entries 共存。當 OS 修改 mapping，需要依 ISA 規則同步 page-table update、translation cache invalidation 與 execution ordering，不能只改 memory 中 PTE 就假設所有 cores 立即看見。",
+          "對簡單、不依賴額外 alias 處理的 VIPT cache，index bits+block-offset bits 必須不超過最小 page-offset bits，等價於 data capacity/ways≤page size。否則同一 physical page 的不同 virtual aliases 可能索引到不同 sets；可增加 associativity、使用 page coloring 或其他 synonym 機制。前面的 tag/index/offset 算術是 generic/PIPT 位址模型，不自動保證 VIPT 可行。",
           "多核心還需要 cache coherence，確保同一 physical block 的 writable copies 依 protocol 取得 ownership 並傳播 invalidation/update。coherence 不等於 consistency：coherence 處理單一 address 的 copies，memory consistency 規定不同 addresses 的可觀察 ordering。基礎 cache mapping 題可假設單核心，但把結果外推到共享 memory 前必須加入這兩層規則。"
         ],
         figure: {
           type: "flow",
           title: "一次 load 的整合路徑",
           items: ["instruction forms VA", "TLB lookup", "permission check / PA", "L1 tag + data", "lower cache levels", "memory controller / DRAM", "return value"],
-          caption: "TLB miss 走 page table；cache miss 走 lower memory hierarchy；page fault 才由 OS 建立 residency，三條 slow path 不同。"
+          caption: "TLB miss 查 page table；cache miss 查較低記憶體階層；page fault 交由 OS 處理 mapping、residency 或 permission，可能不需 I/O，也可能無法恢復。"
         },
-        sourceRefs: ["S2", "S9", "S13", "S14", "S15"]
+        sourceRefs: ["S2", "S9", "S13", "S14", "S15", "S16"]
       }
     ],
     workedExamples: [
@@ -3028,7 +3189,7 @@ const chapterDetails = [
       },
       {
         title: "例題三：同一 trace 比較 LRU 與 FIFO",
-        prompt: "一個 2-way set 已滿／空間可容兩 blocks，依序 access blocks 0,2,0,4,2,0；所有 blocks 映到同 set。比較 LRU 與 FIFO。",
+        prompt: "一個 2-way set 初始為空（兩個 ways 都 invalid）、最多容納兩個 blocks，依序 access blocks 0,2,0,4,2,0；所有 blocks 映到同 set。比較 LRU 與 FIFO。",
         steps: [
           "LRU：0 miss、2 miss，set={0,2}；再 access 0 hit，使 2 成為 least recent。",
           "access 4 miss，LRU evict 2，set={0,4}；access 2 miss，evict 0；最後 0 miss。LRU 只有 1 hit。",
@@ -3117,7 +3278,8 @@ const chapterDetails = [
           "若 fault probability 提高到 10^-4，extra 會變 500 ns，立刻超過正常 translation/access 成本。"
         ],
         result: "TLB/page-table EAT=106 ns；加入 10^-6 fault probability 後約 111 ns。低機率事件仍因巨大 penalty 影響平均值。"
-      }
+      },
+      {"title":"例題十：VIPT 的 page-offset 容量限制","prompt":"32 KiB cache、64-byte blocks、4 KiB pages。比較 4-way 與 8-way 是否滿足 index/offset 都落在 page offset 的簡單 VIPT 條件。","steps":["4 KiB page 的 offset 寬度為 log2(4096)=12 bits。","64-byte block 的 offset 是 6 bits。","4-way：sets=32768/(4×64)=128，index=7 bits；合計 13>12，因此需要額外 synonym 處理。","8-way：sets=32768/(8×64)=64，index=6 bits；合計 12≤12，滿足此索引條件。","等價容量檢查：4-way 每路 8 KiB>4 KiB；8-way 每路 4 KiB=page size。","此條件只解決索引 alias 的基本限制，仍需 TLB permission 與 physical-tag comparison 才能完成存取。"],"result":"32 KiB/8-way 可滿足 4 KiB pages 的基本 VIPT 索引條件；32 KiB/4-way 不可直接套用這個簡單設計。"}
     ],
     misconceptions: [
       ["Cache 容量就是晶片為 cache 配置的全部 bits。", "標示容量通常只算 data；tag、valid、dirty、replacement、ECC 與 ports 都是額外成本。"],
@@ -3200,14 +3362,15 @@ const chapterDetails = [
       { key: "S12", title: "Intel: Loop Optimizations Where Blocks Are Required", url: "https://www.intel.com/content/www/us/en/developer/articles/technical/loop-optimizations-where-blocks-are-required.html", accessed: "2026-08-20", use: "loop blocking/tiling、working-set fit 與 cache reuse 的官方案例。" },
       { key: "S13", title: "RISC-V Supervisor-Level ISA: Sv32 Virtual Memory", url: "https://docs.riscv.org/reference/isa/priv/supervisor.html", accessed: "2026-08-20", use: "Sv32 10/10/12 address fields、two-level page tables、PTE V/R/W/X permissions 與 page-fault semantics。" },
       { key: "S14", title: "Linux Kernel Documentation: Page Tables", url: "https://docs.kernel.org/mm/page_tables.html", accessed: "2026-08-20", use: "hierarchical page tables、MMU、TLB/page-walk caches、page faults、dirty/permission state 與 huge pages。" },
-      { key: "S15", title: "UC Berkeley CS61C: Page Table Design", url: "https://notes.cs61c.org/content/vm/page-table/", accessed: "2026-08-20", use: "page placement/replacement/write policy、PTE size、protection、per-process tables 與 hierarchical design。" }
+      { key: "S15", title: "UC Berkeley CS61C: Page Table Design", url: "https://notes.cs61c.org/content/vm/page-table/", accessed: "2026-08-20", use: "page placement/replacement/write policy、PTE size、protection、per-process tables 與 hierarchical design。" },
+      {"key":"S16","title":"VESPA: VIPT Enhancements for Superpage Accesses","url":"https://arxiv.org/abs/1701.03499","accessed":"2026-09-13","use":"VIPT 的 cache 容量、associativity、page offset 與 superpage 限制。"}
     ]
   },
   {
     chapter: 7,
     title: "輸出入、儲存與現代裝置介面",
     english: "Input/Output, Storage, and Modern Device Interfaces",
-    revised: "2026-08-21",
+    revised: "2026-09-13",
     readingTime: "約 230–280 分鐘",
     intro: "輸出入系統把處理器的同步指令世界連到速度、資料單位與故障模式各不相同的裝置。一次 I/O request 不是 CPU 對裝置做一次 load 就結束，而是經過 driver、device registers、command queue、interconnect、controller、DMA buffers 與 completion path；儲存 request 還要進入 HDD mechanical positioning 或 SSD flash translation。這條路徑同時牽涉 correctness、ordering、latency、throughput、CPU overhead 與 durability。本章以『誰發出命令、誰搬資料、誰宣告完成、完成到哪一層』追蹤 programmed I/O、interrupt、DMA、PCIe、NVMe、HDD、NAND SSD 與 RAID，並用可重算的模型辨認瓶頸與可靠性邊界。",
     outcomes: [
@@ -3286,7 +3449,7 @@ const chapterDetails = [
         paragraphs: [
           "external interrupt 在 instruction stream 之外非同步到達；exception 通常由目前 instruction 同步觸發；system call 是程式主動執行 trap instruction。三者都可能進入 privileged handler，但 cause、return PC 與 restart semantics 不同。precise state 要讓 handler 看見等同於某個 instruction boundary 的 architectural state。",
           "概念步驟為：event 令 pending bit 成立；enable/mask 與 priority 判斷是否接受；CPU 保存 return PC、先前 privilege 與 interrupt-enable state；由 vector 或 common entry 取得 handler；software 保存還會使用的 registers、辨認來源、service/acknowledge，最後 restore 並執行 return-from-trap。acknowledge 過早可能遺失狀態，過晚可能重複進入。",
-          "RISC-V supervisor mode 以 sip/sie 表示 pending/enable，sstatus.SIE 控制全域接受，stvec 提供 Direct 或 Vectored entry，scause 記錄原因，sepc 保存 return PC，sret 恢復 privilege/control state。Vectored mode 的 asynchronous interrupt entry 為 BASE+4×cause，但 synchronous exceptions 仍到 BASE。"
+          "RISC-V supervisor mode 以 sip/sie 表示 pending/enable，目前在 S-mode 執行時，sstatus.SIE 控制 S-mode interrupts 的全域接受；目前在 U-mode 時，S-mode interrupts 不受 SIE 遮罩，但仍受對應 pending/enable 與 delegation/routing 控制；在 M-mode 不會向下 trap 到 S-mode。stvec 提供 Direct 或 Vectored entry，scause 記錄原因，sepc 保存 return PC，sret 恢復 privilege/control state。Vectored mode 的 asynchronous interrupt entry 為 BASE+4×cause，但 synchronous exceptions 仍到 BASE。"
         ],
         figure: {
           type: "flow",
@@ -3427,7 +3590,7 @@ const chapterDetails = [
       {
         title: "12. RAID 在 capacity、performance 與 failure tolerance 間交換",
         paragraphs: [
-          "RAID 0 將 stripes 分散到 N drives，usable capacity=N×smallest-drive capacity，但沒有 redundancy，任一 drive failure 都破壞 array。RAID 1 保存 mirror copies，two-way mirror 的 usable capacity 約為總容量一半，可從任一健康 copy 讀取。RAID 10 先 mirror 再 stripe，兼具 parallelism 與 redundancy，但 failure tolerance 取決於失效是否落在同一 mirror group。",
+          "RAID 0 將 stripes 分散到 N drives，usable capacity=N×smallest-drive capacity，但沒有 redundancy，任一 drive failure 都破壞 array。RAID 1 的單一 N-way mirror 保存 N 份相同內容，usable capacity=S，可從任一健康 copy 讀取；常見雙路鏡像 N=2 才是總容量的一半。RAID 10 先 mirror 再 stripe，兼具 parallelism 與 redundancy，但 failure tolerance 取決於失效是否落在同一 mirror group。",
           "RAID 5 以 distributed single parity 提供 N−1 drives 的容量並容忍一顆失效；RAID 6 以 dual parity 提供 N−2 drives 容量並容忍兩顆失效。full-stripe write 可直接由新 data 算 parity；small partial-stripe write 常需 read old data、read old parity、write new data、write new parity，RAID 5 形成典型 4 I/O read-modify-write penalty，RAID 6 需要更多 parity work。",
           "RAID 不是 backup。它無法防止誤刪、ransomware、controller/software corruption、site failure 或所有 correlated faults。degraded mode 與 rebuild 期間，每筆 request 可能要由 surviving drives 重建資料，performance 下降且其餘 drives 承受更高 load；capacity 計算也必須以 smallest member 為基準。"
         ],
@@ -3437,12 +3600,12 @@ const chapterDetails = [
           columns: ["Level", "Usable capacity（N×S）", "最少 drives", "保證容忍", "small-write 特性"],
           rows: [
             ["RAID 0", "N×S", "2", "0 drive", "parallel data writes"],
-            ["RAID 1", "約 N/2×S", "2", "每 mirror group 1 drive", "duplicate writes"],
+            ["RAID 1（單一 N-way mirror）", "S", "2", "任意 N−1 drives", "N copies"],
             ["RAID 5", "(N−1)×S", "3", "1 drive", "single-parity RMW"],
             ["RAID 6", "(N−2)×S", "4", "2 drives", "dual-parity RMW"],
-            ["RAID 10", "N/2×S", "4", "依 mirror group", "mirror + stripe"]
+            ["RAID 10（雙路鏡像）", "N/2×S", "4（N 為偶數）", "任意 1 drive；更多依分布", "mirror + stripe"]
           ],
-          caption: "S 是 smallest member capacity；RAID level 只定義 mapping/redundancy，不自動提供獨立歷史版本或異地副本。"
+          caption: "S 是 smallest member capacity；RAID level 只定義 mapping/redundancy，不自動提供獨立歷史版本或異地副本。 本表只考慮磁碟完全失效且其餘副本完整，不包含 metadata、spare、重建讀取錯誤與共同故障。"
         },
         sourceRefs: ["S13"]
       },
@@ -3575,16 +3738,16 @@ const chapterDetails = [
       },
       {
         title: "例題九：比較六顆 4 TB drives 的 RAID capacity",
-        prompt: "六顆相同 4 TB drives，分別建 RAID 0、RAID 1（三組 mirror 再合併容量）、RAID 5、RAID 6、RAID 10，求 usable capacity 與最低保證容錯。",
+        prompt: "六顆相同 4 TB drives，分別建 RAID 0、RAID 1（六路鏡像，同一份資料複製六份）、RAID 5、RAID 6、RAID 10（三組雙路鏡像再條帶化）。忽略 metadata 與 spare，只考慮獨立磁碟完全失效，求容量與保證容錯。",
         steps: [
           "總 raw capacity=6×4=24 TB。",
           "RAID 0：6×4=24 TB，保證容忍 0 顆。",
-          "RAID 1 / RAID 10 two-way mirrors：6/2×4=12 TB；每個 mirror group 可失效一顆。",
+          "RAID 1 六路鏡像：usable capacity=4 TB；在本題磁碟失效模型下，只要任一副本完整，即可容忍任意 5 顆失效。",
           "RAID 5：(6−1)×4=20 TB，保證容忍任意 1 顆。",
           "RAID 6：(6−2)×4=16 TB，保證容忍任意 2 顆。",
-          "RAID 10 可能容忍多顆，但若同一 mirror group 全失效就失敗，因此不能簡化為保證任意 3 顆。"
+          "RAID 10：三組雙路鏡像再條帶化，capacity=3×4=12 TB，保證容忍任意 1 顆；若每組各失效一顆則可容忍 3 顆，但同組兩顆全失效就會失去該組資料。"
         ],
-        result: "RAID0/1/5/6/10 分別為 24/12/20/16/12 TB；容錯語意取決於 level 與失效分布。"
+        result: "RAID 0/1/5/6/10 的容量分別為 24/4/20/16/12 TB，保證容忍任意磁碟失效數為 0/5/1/2/1。單一六路 RAID 1 與三組雙路鏡像的 RAID 10 是不同配置；此模型不涵蓋共同故障、重建錯誤或誤刪。"
       },
       {
         title: "例題十：用 Amdahl's Law 評估 SSD 升級",
@@ -3688,7 +3851,7 @@ const chapterDetails = [
     chapter: 8,
     title: "系統軟體：從原始碼到受保護的執行環境",
     english: "System Software: From Source Code to Protected Execution",
-    revised: "2026-08-22",
+    revised: "2026-09-13",
     readingTime: "約 240–300 分鐘",
     intro: "系統軟體把硬體提供的指令、特權與位址轉譯機制，組合成程式可使用的執行環境。原始碼先經編譯器與組譯器形成帶有符號和重定位資訊的目的檔，連結器解析跨檔案參照並配置位址，載入器建立虛擬位址空間，作業系統再以行程、系統呼叫和排程管理執行。虛擬機器與容器則在不同邊界上重複或隔離這些資源。本章沿著一個程式從文字到 CPU 執行的生命週期，逐位元追蹤符號、節區、重定位、ELF segment、trap、context switch、動態連結與兩階段位址轉譯，並以可重算例題區分語言語意、ABI、ISA 與作業系統政策各自負責的部分。",
     outcomes: [
@@ -3720,7 +3883,8 @@ const chapterDetails = [
         paragraphs: [
           "user mode 不能任意修改 page tables、interrupt state 或 device registers；這些 privileged operations 由 kernel mode 執行。hardware 在每次 instruction、memory access 或 control transfer 檢查目前 privilege 與權限。保護不是靠應用程式自律，而是靠 CPU privilege、MMU page permissions 與 kernel-maintained ownership 共同強制。",
           "process 是受保護的執行個體，通常包含 virtual address space、register context、open-file table、credentials、signal state 與 scheduling state。thread 是可被排程的 control flow，擁有自己的 PC、general registers 與 stack，但可與同 process 的其他 threads 共享 address space 和 files。因而 process isolation 與 thread concurrency 是不同問題。",
-          "kernel 以 handle 或 descriptor 表示資源，使應用程式不必直接操控 controller 或 physical page。系統呼叫入口會驗證 number、argument pointer、length 與 permission，之後才執行資源操作。即使參數型別在 source code 正確，kernel 仍須視 user pointer 為不可信，因為 mapping 可缺頁、越界或在 concurrent execution 中改變。"
+          "kernel 以 handle 或 descriptor 表示資源，使應用程式不必直接操控 controller 或 physical page。系統呼叫入口會驗證 number、argument pointer、length 與 permission，之後才執行資源操作。即使參數型別在 source code 正確，kernel 仍須視 user pointer 為不可信，因為 mapping 可缺頁、越界或在 concurrent execution 中改變。",
+          "當 U-mode 的 ecall 由 S-mode handler 處理時，RISC-V 將 sepc 設為 ecall 本身的位址；正常返回這個 32-bit system-call instruction 之後，kernel 必須將保存的返回 PC 加 4，再以 sret 恢復（實際入口可能先由 firmware 轉送）。sret 本身不替 sepc 加 4。相反地，可修復的 page fault 通常保留 faulting PC，修正 mapping 後重試同一條 instruction。"
         ],
         figure: { type: "hierarchy", title: "保護邊界由軟硬體共同建立", items: [{ label: "Application", detail: "functions, virtual addresses, descriptors" }, { label: "ABI / system-call boundary", detail: "registers, trap, validated arguments" }, { label: "Kernel", detail: "scheduler, VM, files, drivers" }, { label: "Hardware enforcement", detail: "privilege, page permissions, interrupts" }], caption: "抽象由 software 命名，越權行為則由 privilege checks 與 address translation 阻止。" },
         sourceRefs: ["S1", "S2", "S3", "S13"]
@@ -3733,7 +3897,7 @@ const chapterDetails = [
           "process state 常以 running、runnable、blocked 等狀態表示。blocked thread 正等待 event，放進 run queue 只會浪費 CPU；event completion 使它轉回 runnable，但不保證立刻 running。preemption 是 scheduler 暫停仍可執行的 thread，blocking 則是 thread 當下無法前進，兩者的原因與 accounting 不同。"
         ],
         figure: { type: "timeline", title: "一次 blocking I/O 前後的排程狀態", columns: ["t0", "t1", "t2", "t3", "t4", "t5"], rows: [{ label: "Thread A", cells: ["running", "syscall", "blocked", "blocked", "runnable", "running"] }, { label: "Thread B", cells: ["runnable", "runnable", "running", "running", "running", "runnable"] }, { label: "Kernel/event", cells: ["", "submit", "switch", "completion", "wakeup", "switch"] }], caption: "completion 只把 A 變成 runnable；實際取得 CPU 還取決於 scheduler。" },
-        sourceRefs: ["S1", "S2", "S3"]
+        sourceRefs: ["S1", "S2", "S3", "S16", "S17"]
       },
       {
         title: "4. System call 是受控的同步 trap",
@@ -3838,7 +4002,7 @@ const chapterDetails = [
     ],
     workedExamples: [
       { title: "例題一：量化 context-switch 直接成本", prompt: "2 GHz CPU 每次 context switch 花 12,000 cycles，每秒發生 1000 次。求單次時間與單核心時間比例。", steps: ["單次時間=cycles/clock rate。", "12,000/(2×10^9)=6×10^-6 s=6 µs。", "每秒總時間=1000×6 µs=6000 µs。", "6000 µs=6 ms=0.006 s。", "單核心比例=0.006/1=0.6%。", "這只含直接 cycles；cache、TLB 與 migration 的後續成本未計。"], result: "單次 6 µs，每秒直接使用 6 ms，也就是單核心 0.6%。" },
-      { title: "例題二：追蹤 RISC-V write system call", prompt: "以 Linux RISC-V ABI 表示 write(fd=1, buf, count=5)，追蹤入口到返回所需的 architectural state。", steps: ["將 system-call number 64 放入 a7。", "將 fd=1 放入 a0，buffer address 放入 a1，count=5 放入 a2。", "執行 ecall，CPU 以 environment-call exception 進入 trap path。", "kernel 從 trap frame 取得 number/arguments，驗證 user buffer range 與 descriptor。", "service 完成後把 result 或 ABI 定義的錯誤表示放回 a0。", "exception return 恢復 user PC/privilege；若 I/O 曾阻塞，中間可能另有 scheduler switch。"], result: "入口關鍵值為 a7=64、a0=1、a1=buf、a2=5；ecall 本身不等於一定換行程。" },
+      { title: "例題二：追蹤 RISC-V write system call", prompt: "以 Linux RISC-V ABI 表示 write(fd=1, buf, count=5)，追蹤入口到返回所需的 architectural state。", steps: ["將 system-call number 64 放入 a7。", "將 fd=1 放入 a0，buffer address 放入 a1，count=5 放入 a2。", "執行 ecall，CPU 以 environment-call exception 進入 trap path。", "kernel 從 trap frame 取得 number/arguments，驗證 user buffer range 與 descriptor。", "write 可能只完成部分資料，成功時 a0 是實際完成的 byte count，不能一律假定為 5。raw Linux syscall 失敗以負 errno 返回；libc wrapper 通常轉成 −1 並設定 errno。成功也不保證資料已 durable。", "正常 system-call return 先把保存的 ecall PC 加 4，再恢復 user PC/privilege；若 I/O 曾阻塞，中間可能另有 scheduler switch。若處理的是可重試 page fault，則通常返回原 faulting PC。"], result: "入口關鍵值為 a7=64、a0=1、a1=buf、a2=5；ecall 本身不等於一定換行程。" },
       { title: "例題三：計算 two-pass branch label", prompt: "MIPS 指令固定 4 bytes。branch 在 0x1004，下一指令為 0x1008，target label 位於 0x1010。求 branch immediate。", steps: ["Pass 1 由 base 與每條 4 bytes 計出 label address=0x1010。", "MIPS branch base 是 PC+4，因此 base=0x1008。", "byte displacement=0x1010−0x1008=8 bytes。", "欄位以 word 為單位，8/4=2。", "2 可放入 signed 16-bit immediate，且 target 為 4-byte aligned。", "執行時重建 target=0x1008+(2<<2)=0x1010。"], result: "branch immediate=2；若誤用目前 PC，會得到 3 並跳到錯誤位置。" },
       { title: "例題四：套用 PC-relative relocation", prompt: "某 relocation 使用 S+A−P。已知 S=0x2400、A=−4、P=0x1010，求待寫值。", steps: ["S 是目標 symbol runtime/link address 0x2400。", "A 是 relocation addend −4。", "P 是被修補欄位地址 0x1010。", "代入：0x2400−4−0x1010。", "0x2400−0x1010=0x13F0，再減 4 得 0x13EC。", "寫入前還須依 relocation type 檢查 signed range、縮放與欄位切割。"], result: "抽象 relocation value=0x13EC；是否直接寫完整值由實際 relocation type 決定。" },
       { title: "例題五：配置對齊後的 output sections", prompt: "`.text` 從 0x1000 開始、size 0x1A0；`.rodata` 與 `.data` 都需 0x100 alignment，rodata size 0x90。求各起訖位置。", steps: ["text start=0x1000。", "text end-exclusive=0x1000+0x1A0=0x11A0。", "把 0x11A0 向上對齊 0x100，rodata start=0x1200，產生 0x60 padding。", "rodata end-exclusive=0x1200+0x90=0x1290。", "把 0x1290 向上對齊 0x100，data start=0x1300，產生 0x70 padding。", "因此 symbol address 必須在 layout 完成後計算，不能只串接 sizes。"], result: "text [0x1000,0x11A0)、rodata [0x1200,0x1290)、data 從 0x1300 開始。" },
@@ -3880,7 +4044,8 @@ const chapterDetails = [
       { level: "進階", question: "lazy binding 的第一次與後續函式呼叫各走什麼路徑？", solution: ["第一次經 PLT/GOT 進 resolver，搜尋 symbol 並把結果寫入 slot。", "後續呼叫讀取已解析 slot，直接跳到 target，省去重複 lookup。"] },
       { level: "進階", question: "register allocation 發生 spill 為何可能同時改變 IC 與 CPI？", solution: ["spill 插入 load/store，直接增加 dynamic instruction count。", "新增 memory operations 也會改變 dependency、cache miss 與 pipeline pressure，因此 CPI 也可能變動。"] },
       { level: "整合", question: "兩階段轉譯中，VS-stage 允許 write、G-stage 禁止 write，guest store 是否成功？", solution: ["不成功；有效權限必須通過兩個 stage 的檢查。", "G-stage write permission fault 會把控制交給 hypervisor-defined trap path，即使 guest page table 允許 write。"] },
-      { level: "整合", question: "程式出現 `undefined reference`，應優先檢查哪些 artifact，而不是執行時 page table？", solution: ["檢查 object symbol tables、definition visibility、archive/library order、link command 與 link map。", "這是 link-time name resolution 失敗，尚未產生可載入映像，runtime page table 不是第一層原因。"] }
+      { level: "整合", question: "程式出現 `undefined reference`，應優先檢查哪些 artifact，而不是執行時 page table？", solution: ["檢查 object symbol tables、definition visibility、archive/library order、link command 與 link map。", "這是 link-time name resolution 失敗，尚未產生可載入映像，runtime page table 不是第一層原因。"] },
+      {"level":"追蹤","question":"ecall 位於 0x1000；另一情境是 0x2000 的 load 發生可修復 page fault。兩者正常恢復時保存的 PC 應如何處理？","solution":["ecall 的 saved PC 指向 0x1000，正常 syscall continuation 由 kernel 改成 0x1004，避免再次執行同一個 ecall。","load 的 mapping 修復後通常保留 0x2000，返回並重試 load。exception-return instruction 使用保存的 PC，不會自動對所有 traps 一律加 4。"]}
     ],
     glossary: [
       ["System software", "管理、轉換或提供執行環境的 compiler、assembler、linker、loader、kernel 與 runtime 等軟體。"],
@@ -3929,14 +4094,16 @@ const chapterDetails = [
       { key: "S12", title: "LLVM: ORCv2 JIT APIs", url: "https://llvm.org/docs/ORCv2.html", accessed: "2026-08-22", use: "JIT linking、symbol lookup、lazy materialization、concurrent compilation 與 runtime lifecycle。" },
       { key: "S13", title: "RISC-V Privileged ISA: Hypervisor Extension", url: "https://docs.riscv.org/reference/isa/priv/hypervisor", accessed: "2026-08-22", use: "HS/VS/VU privilege、two-stage address translation、guest traps 與 virtualized interrupts。" },
       { key: "S14", title: "Oracle VirtualBox 7.2: Introduction", url: "https://docs.oracle.com/en/virtualization/virtualbox/7.2/user/Introduction.html", accessed: "2026-08-22", use: "hosted virtualization、guest/host、virtual hardware、VM lifecycle 與 deployment boundary。" },
-      { key: "S15", title: "Linux Kernel: Control Group v2", url: "https://docs.kernel.org/admin-guide/cgroup-v2.html", accessed: "2026-08-22", use: "cgroup hierarchy、process membership、CPU/memory/I/O resource control 與 delegation。" }
+      { key: "S15", title: "Linux Kernel: Control Group v2", url: "https://docs.kernel.org/admin-guide/cgroup-v2.html", accessed: "2026-08-22", use: "cgroup hierarchy、process membership、CPU/memory/I/O resource control 與 delegation。" },
+      {"key":"S16","title":"RISC-V Supervisor-Level ISA: sepc and SRET","url":"https://docs.riscv.org/reference/isa/priv/supervisor.html","accessed":"2026-09-13","use":"ecall 的 saved PC、trap state 與 exception return。"},
+      {"key":"S17","title":"Linux man-pages: write(2)","url":"https://man7.org/linux/man-pages/man2/write.2.html","accessed":"2026-09-13","use":"部分寫入、return value 與 write completion 不等於 durability。"}
     ]
   },
   {
     chapter: 9,
     title: "替代型計算機架構：從 ILP 到異質平行系統",
     english: "Alternative Architectures: From ILP to Heterogeneous Parallel Systems",
-    revised: "2026-08-23",
+    revised: "2026-09-13",
     readingTime: "約 260–320 分鐘",
     intro: "單一順序指令流不是唯一的計算組織方式。現代 CPU 在不改變程式順序語意的前提下，以 superscalar、out-of-order 與 speculation 挖掘 instruction-level parallelism；vector processor 和 GPU 把同一運算擴展到許多資料元素；multicore 與 cluster 讓多個指令流透過共享記憶體或 message passing 協作；dataflow、systolic array 與 neural accelerator 則把運算和資料移動固定成更專用的空間結構。量子處理器更換了 state、operation 與 measurement 的基本模型。本章以『平行工作由誰發現、由誰排程、資料放在哪裡、如何同步、上限由什麼決定』為主線，建立各種架構可比較、可計算且不混淆抽象層次的共同框架。",
     outcomes: [
@@ -3996,8 +4163,9 @@ const chapterDetails = [
       {
         title: "5. Vector architecture 以 VL 控制資料平行",
         paragraphs: [
-          "vector instruction 對一組 elements 執行相同 operation，vector registers 保存多個 elements，lanes 提供平行 datapaths。以 RISC-V V extension 為例，VLEN 是 implementation 的 vector-register bit width，SEW 是 selected element width，LMUL 可把多個 registers 組成較大的 register group；當 LMUL=1 時，VLMAX 約為 VLEN/SEW。",
+          "vector instruction 對一組 elements 執行相同 operation，vector registers 保存多個 elements，lanes 提供平行 datapaths。以 RISC-V V extension 為例，VLEN 是 implementation 的 vector-register bit width，SEW 是 selected element width，LMUL 可把多個 registers 組成較大的 register group；當 LMUL=1 時，VLMAX=VLEN/SEW。",
           "程式以 strip mining 處理任意長度 N：每輪 `vsetvli` 依剩餘 elements 和 hardware capacity 設定 VL，vector load/compute/store 只處理 active elements，再把 index 增加 VL。最後一輪可自然使用較小 VL，避免為固定 SIMD width 另寫 scalar tail。vector-length agnostic binary 因而能在不同 VLEN implementations 上運作。",
+          "vsetvli 並非在所有情況都保證 VL=min(AVL,VLMAX)：AVL≤VLMAX 時 VL=AVL；AVL≥2×VLMAX 時 VL=VLMAX；中間區間允許 ceil(AVL/2)≤VL≤VLMAX。程式必須依返回的 VL 前進 pointer 並扣除剩餘量；選擇每輪最大合法 VL 只是規格允許的一種實作。",
           "mask register 讓每個 element 可選擇是否更新，適合 conditionals 與 tail；但 masked-off lanes 不產生有用 operation，不能視為滿利用率。vector chaining、memory stride、gather/scatter、bank conflicts 與 memory bandwidth 會使 peak lane count 與實際 throughput 出現差距。"
         ],
         figure: { type: "bits", title: "VLEN=256、SEW=32、LMUL=1 的 vector register", totalBits: 256, items: [{ label: "e0", bits: 32, detail: "element 0" }, { label: "e1", bits: 32, detail: "element 1" }, { label: "e2", bits: 32, detail: "element 2" }, { label: "e3", bits: 32, detail: "element 3" }, { label: "e4", bits: 32, detail: "element 4" }, { label: "e5", bits: 32, detail: "element 5" }, { label: "e6", bits: 32, detail: "element 6" }, { label: "e7", bits: 32, detail: "element 7" }], caption: "此設定 VLMAX=8 elements；實際 VL 可小於 8，例如最後一輪只啟用 3 個 elements。" },
@@ -4026,9 +4194,10 @@ const chapterDetails = [
       {
         title: "8. Synchronization 建立 ordering，不替代工作分解",
         paragraphs: [
-          "data race 是兩個 concurrent accesses 指向同一 memory location、至少一個是 write，且缺少足以排序它們的 synchronization。lost update 可由兩個 threads 都讀到舊值、各自加一再寫回造成。cache coherence 只確保 writes 的傳播規則，不把 read-modify-write 三步自動變成 atomic transaction。",
+          "在 C/C++ memory model 中，data race 是不同 threads 對同一 memory location 的 conflicting accesses，至少一個是 write、至少一個是 non-atomic，且沒有 happens-before 關係；這會導致 undefined behavior。兩個 atomic operations 的競爭不因此構成語言層 data race，但多步邏輯仍可能出錯。lost update 可由兩個 threads 都讀到舊值、各自加一再寫回造成。cache coherence 只確保 writes 的傳播規則，不把 read-modify-write 三步自動變成 atomic transaction。",
           "mutex 把 critical section 序列化；atomic read-modify-write 對一個位置提供 indivisible update，並依 memory order 建立同步；barrier 讓一組 participants 在 phase boundary 等待；condition/event 處理狀態尚未成立時的等待。選擇 primitive 要依 invariant，而不是把所有 shared accesses 都加同一種 barrier。",
-          "lock contention、atomic serialization、barrier imbalance 與 cache-line bouncing 都是 synchronization overhead。細粒度 locking 可增加 concurrency 卻提高 bookkeeping 和 deadlock complexity；粗粒度 locking 較簡單但限制 parallel fraction。correctness 必須先由 happens-before 證明，再量測 contention。"
+          "lock contention、atomic serialization、barrier imbalance 與 cache-line bouncing 都是 synchronization overhead。細粒度 locking 可增加 concurrency 卻提高 bookkeeping 和 deadlock complexity；粗粒度 locking 較簡單但限制 parallel fraction。correctness 必須先由 happens-before 證明，再量測 contention。",
+          "C/C++ 原始碼需要使用語言層 atomics、locks 等同步，僅在硬體插入 FENCE 不能自動讓有 data race 的程式變合法，也不取代 compiler ordering。"
         ],
         figure: { type: "timeline", title: "Lost update 與 atomic update 的差異", columns: ["1", "2", "3", "4", "5", "6"], rows: [{ label: "Thread A (racy)", cells: ["load 0", "", "add→1", "", "store 1", ""] }, { label: "Thread B (racy)", cells: ["", "load 0", "", "add→1", "", "store 1"] }, { label: "Atomic version", cells: ["fetch_add→1", "serialized", "fetch_add→2", "", "", ""] }], caption: "兩次普通 increment 最後可能只得到 1；atomic RMW 讓兩個更新在線性化順序中各生效一次。" },
         sourceRefs: ["S8", "S11"]
@@ -4085,10 +4254,10 @@ const chapterDetails = [
       }
     ],
     workedExamples: [
-      { title: "例題一：由 issue width 與 IPC 分開計算 cycles", prompt: "4-wide superscalar core 執行 20 條 instructions。理想無限制與實測 IPC=2.5 時各需多少 cycles？", steps: ["issue width=4 表示每 cycle 理論最多 4 條。", "理想 cycles=ceil(20/4)=5。", "實測平均 IPC=2.5，cycles=instruction count/IPC。", "20/2.5=8 cycles。", "實測相對理想多 8−5=3 cycles。", "差距可能來自 dependencies、misses 或 port conflicts，不能由 IPC 單獨定位原因。"], result: "理想 5 cycles；IPC=2.5 時 8 cycles，達到理論 issue capacity 的 62.5%。" },
+      { title: "例題一：由 issue width 與 IPC 分開計算 cycles", prompt: "4-wide superscalar core 執行 20 條 instructions。理想無限制與實測 IPC=2.5 時各需多少 cycles？ 僅計 issue 階段的理想下界，忽略 pipeline fill、execution latency 與 retirement。", steps: ["issue width=4 表示每 cycle 理論最多 4 條。", "理想 cycles=ceil(20/4)=5。", "實測平均 IPC=2.5，cycles=instruction count/IPC。", "20/2.5=8 cycles。", "實測相對理想多 8−5=3 cycles。", "差距可能來自 dependencies、misses 或 port conflicts，不能由 IPC 單獨定位原因。"], result: "理想 5 cycles；IPC=2.5 時 8 cycles，達到理論 issue capacity 的 62.5%。" },
       { title: "例題二：建立 out-of-order ready schedule", prompt: "I1: r1=a+b（latency 2）；I2: r2=r1×c（3）；I3: r3=d+e（1）；I4: r4=r3+f（1）。假設每 cycle 可發出兩條且 units 足夠，求最早完成 cycle。", steps: ["I1→I2 是 RAW chain；I3→I4 是另一條 RAW chain。", "cycle 1 可同時 issue I1 與 I3。", "I3 latency 1，在 cycle 2 前 ready，因此 cycle 2 issue I4。", "I1 latency 2，在 cycle 3 前 ready，因此 cycle 3 issue I2。", "I4 在 cycle 3 前完成；I2 latency 3，在 cycle 6 前完成。", "in-order machine 若被 I2 阻擋可能延後 I3/I4；out-of-order 可先利用獨立 chain。"], result: "critical path I1→I2 決定最早完成時間，於 cycle 6 前完成；I3/I4 可穿插執行。" },
       { title: "例題三：計算 VLIW bundle slot utilization", prompt: "四槽 VLIW schedule 使用 5 個 bundles，共放入 13 個 useful operations。求 slot utilization 與 NOP/empty slots。", steps: ["總 slots=4×5=20。", "useful slots=13。", "empty slots=20−13=7。", "utilization=13/20=0.65。", "empty fraction=7/20=35%。", "這只量化 static packing；不包含 cache miss 造成整個 schedule 等待。"], result: "slot utilization=65%，共有 7 個 empty/NOP slots。" },
-      { title: "例題四：RISC-V vector strip mining", prompt: "VLEN=256、SEW=32、LMUL=1，處理 N=1003 elements。求 VLMAX、迴圈輪數、最後 VL 與平均 lane utilization。", steps: ["VLMAX=VLEN/SEW=256/32=8 elements。", "full rounds=floor(1003/8)=125，處理 1000 elements。", "remaining=3，所以還需一輪，總 rounds=126。", "最後 `vsetvli` 設 VL=3。", "總 lane capacity=126×8=1008 element-slots。", "平均 utilization=1003/1008≈99.504%。"], result: "VLMAX=8、126 輪、最後 VL=3，平均 lane utilization 約 99.50%。" },
+      { title: "例題四：RISC-V vector strip mining", prompt: "VLEN=256、SEW=32、LMUL=1，處理 N=1003 elements，假設實作每輪選最大合法 VL，且不使用 mask。求 VLMAX、迴圈輪數、最後 VL 與平均 lane utilization。", steps: ["VLMAX=VLEN/SEW=256/32=8 elements。", "full rounds=floor(1003/8)=125，處理 1000 elements。", "remaining=3，所以還需一輪，總 rounds=126。", "最後 `vsetvli` 設 VL=3。", "總 lane capacity=126×8=1008 element-slots。", "平均 utilization=1003/1008≈99.504%。"], result: "VLMAX=8、126 輪、最後 VL=3，平均 lane utilization 約 99.50%。 這個最後 VL=3 依賴題設；若倒數兩輪剩 11 個時選 VL=6，最後可為 5，同樣合法且總輪數仍為 126。element-slots 利用率不是實體 execution lanes 的 cycle 利用率。" },
       { title: "例題五：量化 warp branch divergence", prompt: "32-lane warp 中 20 lanes 走 5-cycle path A，12 lanes 走 7-cycle path B，兩路需序列化。求 elapsed warp cycles 與 useful lane-cycle utilization。", steps: ["divergent paths serial execution，elapsed=5+7=12 cycles。", "capacity=32 lanes×12 cycles=384 lane-cycles。", "path A useful work=20×5=100 lane-cycles。", "path B useful work=12×7=84 lane-cycles。", "total useful=184 lane-cycles。", "utilization=184/384≈47.9167%。"], result: "warp 經過 12 cycles，active useful lane-cycle utilization 約 47.92%。" },
       { title: "例題六：追蹤 false-sharing ownership", prompt: "Core A、B 交替對同一 64-byte line 中不同 counters 做 8 次 writes；line 起初不在任一 cache。計算取得 ownership 與 core-to-core ownership transfers。", steps: ["第 1 次 A write 取得 exclusive/modified ownership。", "第 2 次 B write 使 A copy invalid，ownership A→B。", "之後每次 writer 都與前一次不同，因此每次都轉移 ownership。", "8 次 writes 中，第 1 次是初次取得，後 7 次是 core-to-core transfers。", "若 counters padding 到不同 lines，各 core 首次取得自己的 line 後不必因對方 write 轉移。", "variables 不同仍會 bouncing，因 coherence granularity 是 cache line。"], result: "共有 8 次 ownership acquisitions，其中 7 次為 A/B 間轉移；padding 可消除這個交替 transfer pattern。" },
       { title: "例題七：估算 MPI point-to-point message time", prompt: "模型 T=α+n/β，startup α=2 µs、bandwidth β=20 GB/s（十進位）、payload=64 KiB。求理想時間與有效 payload bandwidth。", steps: ["n=64×1024=65,536 bytes。", "transfer term=n/β=65,536/(20×10^9) s。", "transfer=3.2768 µs。", "total=2+3.2768=5.2768 µs。", "effective bandwidth=n/T=65,536/(5.2768 µs)≈12.419 GB/s。", "固定 startup 使小 message 尚未達到 20 GB/s link ceiling。"], result: "理想 message time 約 5.2768 µs，有效 payload bandwidth 約 12.42 GB/s。" },
@@ -4120,9 +4289,9 @@ const chapterDetails = [
       { level: "基礎", question: "Warp divergence 為何只需在同一 warp 內判斷？", solution: ["同一 warp 的 lanes 共用 instruction issue，分支路徑需用不同 masks 序列化。", "不同 warps 本來就可由 scheduler 獨立前進，走不同 path 不會互相遮罩 lanes。"] },
       { level: "基礎", question: "Cache coherence 與 memory consistency 各回答什麼問題？", solution: ["coherence 回答同一 location 的多份 cached copies 和 writes 如何保持一致。", "consistency 回答跨 locations、跨 harts 的 memory operations 可以被觀察成哪些順序。"] },
       { level: "基礎", question: "OpenMP 與 MPI 的 address-space 假設有何典型差異？", solution: ["OpenMP threads 通常共享一個 process address space，以 shared/private rules 區分資料。", "MPI ranks 通常各有 address space，透過明確 send/receive/collective 交換資料。"] },
-      { level: "計算", question: "8-wide core 執行 100 instructions，實測 IPC=5，理想與實測 cycles 各是多少？", solution: ["理想 cycles=ceil(100/8)=13。", "實測 cycles=100/5=20；issue-capacity utilization=5/8=62.5%。"] },
+      { level: "計算", question: "8-wide core 執行 100 instructions，實測 IPC=5，理想與實測 cycles 各是多少？ 僅計理想 issue 下界，忽略 fill、執行與 retire 延遲。", solution: ["理想 cycles=ceil(100/8)=13。", "實測 cycles=100/5=20；issue-capacity utilization=5/8=62.5%。"] },
       { level: "計算", question: "三槽 VLIW 使用 8 bundles 放入 18 useful operations，slot utilization 為多少？", solution: ["總 slots=3×8=24。", "utilization=18/24=75%，empty slots=6。"] },
-      { level: "計算", question: "VLEN=512、SEW=64、LMUL=1，處理 130 elements 需幾輪，最後 VL 是多少？", solution: ["VLMAX=512/64=8。", "ceil(130/8)=17 輪；16 輪處理 128，最後 VL=2。"] },
+      { level: "計算", question: "VLEN=512、SEW=64、LMUL=1，處理 130 elements 需幾輪，最後 VL 是多少？ 假設每輪採最大合法 VL 且不使用 mask。", solution: ["VLMAX=512/64=8。", "ceil(130/8)=17 輪；16 輪處理 128，最後 VL=2。"] },
       { level: "計算", question: "32-lane warp 只有 24 lanes 執行一段 6-cycle 無其他分支程式，lane utilization 為多少？", solution: ["useful lane-cycles=24×6，capacity=32×6。", "utilization=24/32=75%。"] },
       { level: "計算", question: "T=α+n/β，α=1 µs、β=10 GB/s、n=10 KB（十進位），求 message time。", solution: ["transfer=10,000/(10×10^9)=1 µs。", "total=1+1=2 µs。"] },
       { level: "計算", question: "p=0.95、N=20 時 Amdahl speedup 與 efficiency 為多少？", solution: ["S=1/(0.05+0.95/20)=1/0.0975≈10.256。", "E=S/20≈0.5128=51.28%。"] },
@@ -4151,7 +4320,7 @@ const chapterDetails = [
       ["EPIC", "Explicitly Parallel Instruction Computing，以 bundles、predication 等顯式描述平行性的 ISA 取向。"],
       ["VLEN", "RISC-V vector implementation 每個 vector register 的 bit width。"],
       ["SEW", "Selected Element Width，vector operation 當前 element bit width。"],
-      ["VL", "Vector Length，當前 vector instruction 實際處理的 active element count。"],
+      ["VL", "Vector Length，界定目前 vector operation 的 element 範圍上限；其中 masked-off elements 不執行有用運算，實際 active 數也受 vstart 影響。"],
       ["Strip mining", "將任意長迴圈切成每輪最多 VL elements 的 vectorized execution 方法。"],
       ["SIMT", "Single Instruction, Multiple Threads，以 thread semantics 表達、以 warp-like group 執行的模型。"],
       ["Warp", "CUDA 中由 32 threads 組成、共同接受 instruction issue 的 execution group。"],
@@ -4197,7 +4366,7 @@ const chapterDetails = [
     chapter: 10,
     title: "嵌入式系統：從硬體邊界到可預測且可更新的裝置",
     english: "Embedded Systems: From Hardware Boundaries to Predictable and Updateable Devices",
-    revised: "2026-08-24",
+    revised: "2026-09-13",
     readingTime: "約 280–340 分鐘",
     intro: "嵌入式系統不是縮小版桌上型電腦，而是為特定物理任務配置計算、記憶體、通訊、能源與可靠度的完整系統。感測器送入的事件有截止時間，致動器的錯誤輸出可能直接改變真實世界；Flash 和 SRAM 容量固定，電池能量有限，韌體還必須能在部署後安全更新。本章從 MCU、MPU、SoC、FPGA 與 ASIC 的選型開始，逐層追蹤 reset、memory map、MMIO、interrupt、DMA、RTOS scheduling、serial buses、low-power state、watchdog 與 signed firmware update。每個主題都以 state、時間上界、資源預算與失敗後果描述，使系統是否正確不只憑『平均看起來夠快』判斷。",
     outcomes: [
@@ -4269,6 +4438,7 @@ const chapterDetails = [
         paragraphs: [
           "DMA controller 依 source、destination、length、direction 和 trigger 搬移資料，CPU 只負責 descriptor/setup 與 completion。它降低每 byte 的 instruction work，卻不保證整體更快：短 transfer 可能被 setup cost 主導，DMA 與 CPU 也可能競爭 memory bus。circular、scatter-gather 或 linked descriptors 可連續處理 streams，但增加狀態數量。",
           "buffer 必須有明確 ownership。TX 路徑中 CPU 填滿 buffer、完成必要 cache clean/barrier 後交給 DMA，直到 completion 前不得修改；RX 路徑中 DMA 寫完後，CPU 要等待 completion 並依平台規則 invalidate cache 才能讀。Zephyr DMA 文件指出 cache coherence 不由通用 API 自動提供，且同一 channel 通常由單一 client 擁有。",
+          "RX buffer 交給非 coherent DMA 之前，也要依平台 DMA API 做 sync-for-device／必要 cache maintenance，避免舊 dirty line 日後 write-back 覆蓋裝置的新資料；完成後再 sync-for-CPU。buffer 應以 cache line 對齊且不與其他可寫資料共用 line，CPU 在 device ownership 期間不得碰它。具體 clean/invalidate 次序依 CPU、mapping 與 DMA 方向決定，不能只在結尾任意 invalidate。",
           "double buffering 讓 DMA 填 A 時 CPU 處理 B，吞吐量由較慢階段決定；若 CPU 偶爾超過一個 buffer period，仍會 overrun。descriptor、buffer、length 和 cache line 的 alignment 要依 controller 限制，completion interrupt 也只證明 DMA 定義的完成點；若資料還要送到 device FIFO 或 nonvolatile media，可能另有 drain/flush 狀態。"
         ],
         figure: { type: "flow", title: "RX DMA buffer 的 ownership handoff", items: ["CPU allocates empty B0", "cache/device preparation", "DMA owns B0", "peripheral fills bytes", "DMA completion", "barrier + cache maintenance", "CPU owns valid B0", "process then recycle"], caption: "在 ownership 交接前讀寫同一 buffer 會形成 race；cache maintenance 的方向取決於 DMA 讀或寫 memory。" },
@@ -4289,6 +4459,7 @@ const chapterDetails = [
         paragraphs: [
           "對 fixed-priority preemptive uniprocessor，一個常用 response-time recurrence 是 Ri^(k+1)=Ci+Bi+Σ ceil((Ri^k+Jj)/Tj)Cj，總和遍歷較高優先 tasks。從 Ri^0=Ci+Bi 迭代到 fixed point；若在收斂前超過 Di，就無法在這組假設下保證 deadline。ceil 表示 response window 內可能到達的完整干擾工作數。",
           "priority inversion 發生在 high-priority task 等 low-priority task 持有的 mutex，而 medium-priority work 又搶占 low task，使 high task 間接等待 medium work。priority inheritance 暫時提升 lock owner，限制這種 unbounded inversion；priority ceiling 可同時限制 blocking 和某些 deadlock pattern。binary semaphore 只表示 token/event，沒有 mutex owner，因此不能自然提供 inheritance。",
+          "這個基本 response-time test 另假設單處理器 fixed-priority preemptive tasks、constrained deadlines D≤T、無 self-suspension，且 blocking 已依使用的資源協定界定。Ri 從工作 ready 到完成計時；若自己的 release jitter Ji 也要算入相對 nominal release 的 deadline，應檢查 Ji+Ri≤Di。",
           "降低 critical-section 長度、禁止在持鎖時 blocking I/O、使用 bounded data structure，都能縮小 B。單純把所有 tasks priority 調高沒有意義，priority 是相對順序；過多 interrupt-level work還可能繞過 thread priority protocol。每個 shared resource 都要知道 owner、最大持有時間與允許的 call context。"
         ],
         figure: { type: "timeline", title: "Priority inheritance 限制反轉", columns: ["t0", "t1", "t2", "t3", "t4", "t5", "t6"], rows: [{ label: "Low L", cells: ["lock", "run", "inherits H", "run", "unlock", "", ""] }, { label: "High H", cells: ["", "blocks on lock", "blocked", "blocked", "ready", "run", "done"] }, { label: "Medium M", cells: ["", "ready", "cannot preempt L@H", "waiting", "waiting", "", "run"] }], caption: "inheritance 讓 L 以 H 的有效 priority 完成 bounded critical section；它不縮短 critical section 本身。" },
@@ -4318,7 +4489,7 @@ const chapterDetails = [
         title: "11. Serial bus 的有效時間由 framing、turnaround 與 arbitration 決定",
         paragraphs: [
           "UART 是 asynchronous point-to-point stream，雙方以 baud、data bits、parity 和 stop bits 約定 frame；8N1 每個 8-bit payload 需 start+8 data+stop 共 10 bit times。SPI 以 clock、controller select 和分離資料線進行 full-duplex shift，沒有統一的高層 framing；mode、word size、select timing 與 maximum clock 由 peripheral 規格決定。",
-          "I2C 以 SDA/SCL 兩線連接 addressable targets，byte 後有第九個 ACK/NACK clock，還包含 START、address+R/W、可能的 repeated START 和 STOP。open-drain 與 pull-up 使 rise time、bus capacitance 和 clock stretching 影響可用速率。計算 2-byte write 時至少要計 address byte、register byte、data byte各 9 clocks，而不是只算 16 payload bits。",
+          "I2C 以 SDA/SCL 兩線連接 addressable targets，byte 後有第九個 ACK/NACK clock，還包含 START、address+R/W、可能的 repeated START 和 STOP。open-drain 與 pull-up 使 rise time、bus capacitance 和 clock stretching 影響可用速率。計算 一次包含 1-byte register address 與 1-byte data 的 write 時至少要計 address byte、register byte、data byte各 9 clocks，而不是只算 16 payload bits。",
           "CAN 以 message identifier 進行 non-destructive bitwise arbitration，較高優先 identifier 可在競爭時繼續，其他 sender 稍後重試；CRC、bit stuffing、acknowledgement 和 error handling 都占 bus time。Classical CAN、CAN FD 與 CAN XL 的 frame/bit-rate 規則不同。選 bus 要比較 topology、距離、noise、determinism、payload、software stack 和 fault containment，不只 peak Mbit/s。"
         ],
         figure: { type: "timeline", title: "UART 8N1 傳送 0x53 的十個 bit times", columns: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"], rows: [{ label: "Line", cells: ["START=0", "D0=1", "D1=1", "D2=0", "D3=0", "D4=1", "D5=0", "D6=1", "D7=0", "STOP=1"] }], caption: "UART 通常 least-significant data bit first；0x53=01010011₂，因此 D0 到 D7 為 1,1,0,0,1,0,1,0。" },
@@ -4338,11 +4509,11 @@ const chapterDetails = [
         title: "13. 可靠啟動與更新把失敗限制在可恢復狀態",
         paragraphs: [
           "watchdog 偵測 software 未在期限內證明健康並觸發 reset；正確 feed point 應在關鍵工作完成後，而不是由獨立高優先 thread 無條件餵狗。brownout detector 在 supply 不足時阻止錯誤執行或寫 Flash。reset cause、monotonic boot count 與 crash record 讓重啟後能分辨 power、watchdog、fault 或 software request。",
-          "secure boot 建立從 immutable/root-of-trust code 到後續 image 的驗證鏈：計算 image hash、驗證由受信 private key 產生的 signature、檢查 metadata/policy，再交出執行權。checksum 只能偵測意外損壞，不能證明發布者。NIST IR 8259 Rev.1 把裝置識別、組態、資料保護、介面限制、更新與 cybersecurity state awareness 視為核心能力。",
+          "secure boot 建立從 immutable/root-of-trust code 到後續 image 的驗證鏈：計算 image hash、驗證由受信 private key 產生的 signature、檢查 metadata/policy，再交出執行權。checksum 只能偵測意外損壞，不能證明發布者。NISTIR 8259A 把裝置識別、組態、資料保護、介面限制、更新與 cybersecurity state awareness 視為核心能力。 8259 Rev. 1 則描述製造商的 foundational activities；兩份文件互補，不能把 baseline 的六類技術能力歸到同一份文件。",
           "A/B 或 primary/secondary slots 讓新 image 先被驗證並以 test mode 啟動；application 完成 self-test 後才標記 confirmed，否則下次 reset revert 到舊 image。MCUboot 也支援 security counter 防止回退到已知脆弱版本。power loss 可發生在下載、erase、swap 或 metadata write 任一點，因此狀態轉移要 idempotent，且 recovery image、signing key custody、version policy 和 end-of-support 都是 lifecycle 的一部分。"
         ],
         figure: { type: "flow", title: "可回復的 signed A/B update 狀態機", items: ["download to inactive slot", "verify hash + signature + policy", "mark TEST", "boot candidate", "runtime self-test", "confirm → keep new", "no confirm/reset → revert old", "record outcome"], caption: "signature 驗證、runtime health 與 rollback prevention 是不同檢查；任一步驟失敗都要留下可再次啟動的已知良好映像。" },
-        sourceRefs: ["S22", "S23", "S24"]
+        sourceRefs: ["S22", "S23", "S24", "S25"]
       }
     ],
     workedExamples: [
@@ -4352,7 +4523,7 @@ const chapterDetails = [
       { title: "例題四：求 interrupt 的 CPU utilization", prompt: "某事件每秒 8,000 次，ISR 每次 1.5 µs，deferred thread 每次再用 4 µs。求兩部分 CPU utilization。", steps: ["ISR CPU time/s=8,000×1.5 µs=12,000 µs。", "ISR utilization=12,000/1,000,000=1.2%。", "thread CPU time/s=8,000×4 µs=32,000 µs。", "thread utilization=3.2%。", "total=4.4%，但它不包含 scheduling、cache 與 burst interference。", "ISR 的 1.2% 具有較高 priority，對低優先 tasks 的影響不能只和 thread time 合併看平均。"], result: "ISR 1.2%、deferred work 3.2%，合計平均 CPU work 4.4%。" },
       { title: "例題五：判斷 DMA 的 break-even transfer size", prompt: "PIO 每 byte 要 6 CPU cycles；DMA setup+completion 固定共 1,200 cycles，忽略每 byte DMA CPU cost。何時 DMA 節省 CPU cycles？", steps: ["PIO cost=6N cycles。", "DMA CPU cost=1,200 cycles。", "要節省 CPU：1,200<6N。", "N>200 bytes。", "N=200 時兩者同為 1,200 cycles，尚未嚴格節省。", "N=1,024 時 PIO=6,144 cycles，DMA 節省 4,944 CPU cycles；bus elapsed time另算。"], result: "transfer 大於 200 bytes 時 DMA 才在此模型下降低 CPU work。" },
       { title: "例題六：檢查 EDF 與 RM utilization bound", prompt: "三個 periodic tasks 的 (C,T) 分別為 (1,5)、(1.5,10)、(2,20) ms，且 D=T、獨立、可搶占。求 U 並套用 EDF 與 RM sufficient test。", steps: ["U1=1/5=0.20。", "U2=1.5/10=0.15；U3=2/20=0.10。", "total U=0.45。", "EDF 在列出的理想假設下以 U≤1 檢查，因此通過。", "n=3 的 RM bound=3(2^(1/3)−1)≈0.779763。", "0.45≤0.779763，也通過 RM sufficient test；尚需加入實際 overhead/blocking。"], result: "U=45%；在題設假設下同時通過 EDF 與 RM sufficient bound。" },
-      { title: "例題七：迭代 fixed-priority response time", prompt: "高優先 τ1: C1=1,T1=4 ms；低優先 τ2: C2=2,D2=10 ms，blocking B2=0.5 ms，J1=0。求 R2。", steps: ["初值 R2⁰=C2+B2=2.5 ms。", "R2¹=2.5+ceil(2.5/4)×1=3.5 ms。", "R2²=2.5+ceil(3.5/4)×1=3.5 ms。", "兩次相同，fixed point 為 3.5 ms。", "R2=3.5≤D2=10 ms，因此 τ2 在此模型下通過。", "若 B2 增加或 τ1 release jitter 非零，必須重新迭代。"], result: "R2=3.5 ms，小於 10 ms deadline。" },
+      { title: "例題七：迭代 fixed-priority response time", prompt: "高優先 τ1: C1=1,T1=4 ms；低優先 τ2: C2=2,T2=D2=10 ms，blocking B2=0.5 ms，J1=0。求 R2。", steps: ["初值 R2⁰=C2+B2=2.5 ms。", "R2¹=2.5+ceil(2.5/4)×1=3.5 ms。", "R2²=2.5+ceil(3.5/4)×1=3.5 ms。", "兩次相同，fixed point 為 3.5 ms。", "R2=3.5≤D2=10 ms，因此 τ2 在此模型下通過。", "若 B2 增加或 τ1 release jitter 非零，必須重新迭代。"], result: "R2=3.5 ms，小於 10 ms deadline。" },
       { title: "例題八：閉合 Flash 與 SRAM 預算", prompt: "512 KiB Flash 配 boot 32、app A 180、OTA B 180、config 16 KiB；128 KiB SRAM 配 static 24、4 個 2 KiB stacks、buffers 36、kernel 12 KiB。求餘量。", steps: ["Flash 使用=32+180+180+16=408 KiB。", "Flash reserve=512−408=104 KiB。", "stack total=4×2=8 KiB。", "SRAM 使用=24+8+36+12=80 KiB。", "SRAM reserve=128−80=48 KiB。", "reserve 還要覆蓋 alignment、interrupt stack、heap 或未列出的 peripheral descriptors。"], result: "Flash 餘 104 KiB；SRAM 餘 48 KiB。" },
       { title: "例題九：計算 UART 8N1 傳輸時間", prompt: "UART 115,200 baud、8N1，傳 256 payload bytes，忽略 gaps。求 line bits、時間與有效 payload rate。", steps: ["8N1 每 byte=1 start+8 data+1 stop=10 bits。", "line bits=256×10=2,560 bits。", "time=2,560/115,200 s=0.022222... s。", "即約 22.22 ms。", "payload bits=256×8=2,048。", "有效 payload rate=2,048/0.022222...=92,160 bit/s，為 baud 的 80%。"], result: "需 2,560 line bits、約 22.22 ms；有效 payload 92.16 kbit/s。" },
       { title: "例題十：計算 I2C transaction 的 clock 下限", prompt: "I2C 400 kHz 對既有 target 做 1-byte register address + 1-byte data write；計入 address+W、兩個 bytes與各自 ACK，忽略 START/STOP hold time。求 clocks 與理想時間。", steps: ["address+W 是 8 bits，再加 ACK 1 clock，共 9。", "register address 是 8+ACK=9 clocks。", "data byte 也是 8+ACK=9 clocks。", "總 clocks=9+9+9=27。", "time=27/400,000 s=67.5 µs。", "若有 clock stretching、bus contention、rise-time 限制或 software gaps，實際更久。"], result: "理想下限為 27 clocks，即 67.5 µs。" },
@@ -4457,7 +4628,8 @@ const chapterDetails = [
       { key: "S21", title: "Arm CMSIS Core: Power Management Functions", url: "https://arm-software.github.io/CMSIS_6/latest/Core/group__intrinsic__CPU__gr.html", accessed: "2026-08-24", use: "WFI/WFE、barriers 與 processor low-power entry primitives。" },
       { key: "S22", title: "MCUboot Bootloader Design", url: "https://docs.mcuboot.com/design.html", accessed: "2026-08-24", use: "signed image validation、primary/secondary slots、test/confirm/revert、power-loss recovery 與 downgrade prevention。" },
       { key: "S23", title: "NIST IR 8259 Rev. 1: Foundational Cybersecurity Activities for IoT Device Manufacturers", url: "https://csrc.nist.gov/pubs/ir/8259/r1/final", accessed: "2026-08-24", use: "2026 final revision 的 device cybersecurity lifecycle、risk、support 與 capability foundation。" },
-      { key: "S24", title: "NIST IoT Device Cybersecurity Capability Catalogs", url: "https://pages.nist.gov/IoT-Device-Cybersecurity-Requirement-Catalogs/", accessed: "2026-08-24", use: "device identification、configuration、data protection、interface access、software update 與 state awareness。" }
+      { key: "S24", title: "NIST IoT Device Cybersecurity Capability Catalogs", url: "https://pages.nist.gov/IoT-Device-Cybersecurity-Requirement-Catalogs/", accessed: "2026-08-24", use: "device identification、configuration、data protection、interface access、software update 與 state awareness。" },
+      {"key":"S25","title":"NISTIR 8259A: IoT Device Cybersecurity Capability Core Baseline","url":"https://doi.org/10.6028/NIST.IR.8259A","accessed":"2026-09-13","use":"device identification、configuration、data protection、logical access、software update 與 cybersecurity state awareness 六類技術能力。"}
     ]
   },
   {
@@ -4746,7 +4918,7 @@ const chapterDetails = [
     chapter: 12,
     title: "網路組織與架構：從 frame 到端到端連線",
     english: "Network Organization and Architecture: From Frames to End-to-End Connections",
-    revised: "2026-08-26",
+    revised: "2026-09-13",
     readingTime: "約 320–380 分鐘",
     intro: "網路不是一條把資料送到遠端的抽象管線，而是一連串具有不同位址、封裝、佇列與故障邊界的系統。應用程式交付 bytes 後，傳輸層建立程序到程序的語意，網路層選擇跨網路路徑，鏈路層在每一跳重建 frame，實體層才把位元轉成電或光訊號。本章由一個封包的生命週期出發，逐步推導 transmission、propagation、processing、queueing delay，建立 Ethernet switching、CIDR、IPv4/IPv6、ARP/Neighbor Discovery、longest-prefix forwarding 與 routing 的完整模型，再以 TCP sequence space、RTO、flow/congestion control、BDP 及現代 QUIC/TLS/HTTP 收束端到端效能。所有位址、長度、offset、window 與時間例題均可獨立重算。",
     outcomes: [
@@ -4789,8 +4961,8 @@ const chapterDetails = [
         title: "3. Physical channel 的 bit rate 受頻寬、訊號品質與編碼共同限制",
         paragraphs: [
           "媒介可為twisted pair、coaxial cable、fiber或wireless spectrum；bit不是以抽象0/1直接飛行，而是由voltage、light intensity、phase、frequency等symbols承載。bandwidth B以Hz描述通道可通過的頻率範圍，bit rate以bit/s描述資訊速率，兩者不是同一單位。調變讓一個symbol可代表多個bits，但可區分的levels越多，越容易受noise影響。",
-          "對含additive noise的理想化channel，Shannon capacity C=B log2(1+S/N)給出可靠通訊的理論上限。S/N必須使用線性power ratio；若給SNRdB，先用10^(SNRdB/10)轉換。公式不指定實際modulation或error-correcting code，也不保證達到上限，只說任何可靠方案都不能長期超過此bound。",
-          "line rate、payload throughput與goodput要分開。line rate包含frame header、FCS、preamble、coding overhead與idle規則；payload throughput扣除協定overhead；goodput再扣掉重傳與應用不需要的bytes。1 Gbit/s Ethernet不代表application每秒必定收到125 MB，CPU、switch、receiver window及storage也可能形成瓶頸。"
+          "對band-limited additive white Gaussian noise（AWGN）的理想化channel，Shannon capacity C=B log2(1+S/N)給出可靠通訊的理論上限。S/N必須使用線性power ratio；若給SNRdB，先用10^(SNRdB/10)轉換。公式不指定實際modulation或error-correcting code，也不保證達到上限，只說任何可靠方案都不能長期超過此bound。",
+          "line rate、payload throughput與goodput要分開。首先區分 MAC data rate 與 PHY encoded rate：例如某些 1 Gbit/s Ethernet PHY 因 8b/10b 使用 1.25 Gbaud；不能把標示的 1 Gbit/s 再一律扣同一份 coding overhead。MAC 傳輸仍包含 frame header、FCS、preamble 與 idle 時間；payload throughput扣除協定overhead；goodput再扣掉重傳與應用不需要的bytes。1 Gbit/s Ethernet不代表application每秒必定收到125 MB，CPU、switch、receiver window及storage也可能形成瓶頸。"
         ],
         figure: { type: "matrix", title: "通道與可觀察速率不可混用", columns: ["量", "單位", "決定因素", "包含overhead", "用途"], rows: [["Bandwidth", "Hz", "channel response", "不適用", "頻域範圍"], ["Symbol rate", "baud", "symbols/s", "encoding相關", "訊號變化"], ["Line rate", "bit/s", "PHY/MAC", "是", "link規格"], ["Payload throughput", "bit/s", "frame效率", "扣link overhead", "協定資料"], ["Goodput", "bit/s", "loss/retransmit/app", "只算有用資料", "應用效果"]], caption: "同一條link可同時具有1 Gbit/s line rate與較低的payload throughput、goodput。" },
         sourceRefs: ["S3", "S4"]
@@ -4838,7 +5010,7 @@ const chapterDetails = [
       {
         title: "8. ARP 與 IPv6 Neighbor Discovery 只解析下一跳，不解析整條路徑",
         paragraphs: [
-          "IPv4 sender先用prefix判斷destination是否on-link。若同subnet，next-hop IP就是destination IP；若off-link，next-hop IP是default gateway。ARP request以broadcast詢問某IPv4對應的link address，owner以ARP reply回覆，結果進入有期限的cache。真正Ethernet destination MAC永遠是當前link上的next hop，不是遠端Internet server的MAC。",
+          "IPv4 sender先用prefix判斷destination是否on-link。若同subnet，next-hop IP就是destination IP；若 off-link，先查 routing table 選 next hop；本章基本情境沒有更 specific route，才使用 default gateway。ARP request以broadcast詢問某IPv4對應的link address，owner以ARP reply回覆，結果進入有期限的cache。真正Ethernet destination MAC永遠是當前link上的next hop，不是遠端Internet server的MAC。",
           "每經router，incoming frame被移除；router依destination IP做forwarding，再解析新next hop的MAC並建立outgoing frame。因此端到端IP destination通常不變，但source/destination MAC逐hop改變。NAT或tunnel會另外改寫/封裝network-layer欄位，那是不同機制。",
           "IPv6 Neighbor Discovery使用ICMPv6 Neighbor Solicitation/Advertisement與multicast，並整合router discovery、prefix discovery、neighbor reachability及redirect等功能。ND不只是把ARP換成IPv6 address；Router Advertisement還可提供on-link prefix與autoconfiguration相關資訊。ARP/ND cache miss會增加首包延遲，cache entry也不是永久真理。"
         ],
@@ -4878,7 +5050,7 @@ const chapterDetails = [
       {
         title: "12. TCP 的 timer、flow control 與 congestion control 限制不同",
         paragraphs: [
-          "RTO必須高於典型RTT又能追蹤變化。RFC 6298以SRTT與RTTVAR平滑samples：首次R時SRTT=R、RTTVAR=R/2；後續先以RTTVAR=(1−β)RTTVAR+β|SRTT−R'|，再以SRTT=(1−α)SRTT+αR'，α=1/8、β=1/4；RTO=SRTT+max(G,4RTTVAR)，且計算後RTO小於1秒可round up到1秒。timeout後採exponential backoff。",
+          "RTO必須高於典型RTT又能追蹤變化。RFC 6298以SRTT與RTTVAR平滑samples：首次R時SRTT=R、RTTVAR=R/2；後續先以RTTVAR=(1−β)RTTVAR+β|SRTT−R'|，再以SRTT=(1−α)SRTT+αR'，α=1/8、β=1/4；RTO=SRTT+max(G,4RTTVAR)，且計算後RTO小於 1 秒時，RFC 6298 的建議（SHOULD）是 round up 到 1 秒；實際平台可能採不同下限，例題依 RFC 建議計算。timeout後採exponential backoff。",
           "receiver advertised window rwnd是flow control，防止sender超過receiver buffer；congestion window cwnd由sender依network feedback維護，保護共享path。實際可在途資料受min(rwnd,cwnd)及已發未ACK bytes限制。slow start、congestion avoidance、loss/ECN response調整cwnd；CUBIC是現代廣泛部署且已標準化的演算法，但不是TCP唯一合法控制器。",
           "BDP=path bottleneck bandwidth×RTT，近似填滿pipe所需in-flight bits。若window W小於BDP且application有足夠資料，window-limited throughput上限約W/RTT。高BDP path需要TCP window scale讓rwnd超過原16-bit欄位範圍；但盲目增大buffer/window可能提高queueing與tail latency，不能把最大in-flight等同最佳值。"
         ],
@@ -4922,7 +5094,7 @@ const chapterDetails = [
       ["/24就是class C，因此可忽略CIDR。", "現代routing依明示prefix length，不依舊classful default。"],
       ["每個IPv4 subnet永遠只能用2^h−2個host。", "/31 point-to-point與/32 host route等情況不能套一般規則。"],
       ["IPv6沒有fragmentation。", "IPv6 source可使用Fragment header；intermediate router不fragment。"],
-      ["ARP會查到遠端server的MAC。", "off-link destination只解析local default gateway的MAC。"],
+      ["ARP會查到遠端server的MAC。", "off-link destination 解析 routing table 選出的 on-link next hop；基本情境通常是 default gateway，並非直接解析遠端 server。"],
       ["IP TTL精確表示packet還能存活幾秒。", "實務上每hop至少減1，主要是loop bound。"],
       ["route metric較小一定勝過prefix較長的route。", "先做longest-prefix match，再依同prefix候選規則選route。"],
       ["routing protocol對每個packet執行Dijkstra。", "控制平面計算route並安裝FIB；資料平面只做快速lookup。"],
@@ -4956,7 +5128,7 @@ const chapterDetails = [
     ],
     sources: [
       { key: "S1", title: "RFC 1122: Requirements for Internet Hosts — Communication Layers", url: "https://www.rfc-editor.org/info/rfc1122/", accessed: "2026-08-26", use: "Internet host分層、link/IP/transport service、datagram forwarding與端點架構。" },
-      { key: "S2", title: "Stanford CS144: Introduction to Computer Networking", url: "https://cs144.github.io/", accessed: "2026-08-26", use: "datagram、encapsulation、reliability、packet switching、routing與end-to-end教學模型。" },
+      { key: "S2", title: "Stanford CS144: Introduction to Computer Networking", url: "https://cs144.stanford.edu/", accessed: "2026-09-13", use: "datagram、encapsulation、reliability、packet switching、routing與end-to-end教學模型。" },
       { key: "S3", title: "MIT 6.02 Digital Communication Systems Resources", url: "https://www.ocw.mit.edu/courses/6-02-introduction-to-eecs-ii-digital-communication-systems-fall-2012/download/", accessed: "2026-08-26", use: "channel capacity、packet switching、MAC、routing與reliable transport公開課程資料。" },
       { key: "S4", title: "IEEE Std 802.3-2022: Ethernet", url: "https://standards.ieee.org/ieee/802.3/10422/", accessed: "2026-08-26", use: "Ethernet MAC、PHY、speeds、frame與full/half-duplex標準範圍。" },
       { key: "S5", title: "RFC 894: IP Datagrams over Ethernet Networks", url: "https://www.rfc-editor.org/info/rfc894/", accessed: "2026-08-26", use: "EtherType 0x0800、Ethernet payload、padding、1500-byte MTU與IPv4 encapsulation。" },
@@ -4987,7 +5159,7 @@ const chapterDetails = [
     chapter: 13,
     title: "儲存系統與介面：從 I/O 命令到雲端物件",
     english: "Storage Systems and Interfaces: From I/O Commands to Cloud Objects",
-    revised: "2026-08-27",
+    revised: "2026-09-13",
     readingTime: "約 320–380 分鐘",
     intro: "儲存裝置不只是保存位元的媒體，而是一組跨越應用程式、檔案系統、作業系統佇列、主機介面、控制器韌體與實體媒體的契約。一次 read 或 write 的正確性，同時取決於名稱如何映射到 block、命令何時完成、資料是否真正成為 non-volatile、佇列是否允許重排，以及故障發生在哪一層。本章由端到端 I/O 路徑出發，建立 block、file、object 三種存取模型，再逐步解析 SCSI、SATA、SAS、PCI Express、NVMe、USB mass storage、SAN、iSCSI、NVMe over Fabrics 與雲端物件儲存。效能部分以 queue depth、Little's Law、IOPS、throughput 與 tail latency 推導；可靠性部分則區分 completion、ordering、durability、integrity、availability 與 backup。所有傳輸率、LBA、ring queue、flush/FUA 與分段上傳例題均明示邊界，可獨立重算。",
     outcomes: [
@@ -5109,7 +5281,7 @@ const chapterDetails = [
       {
         title: "11. Queue depth 以 concurrency 隱藏等待，也同時累積 latency",
         paragraphs: [
-          "在穩定、已飽和且平均值適用的系統中，Little's Law給N=λW。若平均outstanding requests為Q、平均latency為L seconds，完成率可估為IOPS≈Q/L。這不是裝置保證，而是守恆關係：QD=32、平均200 microseconds時，上限估計為160,000 IOPS；若每筆4 KiB，資料率約625 MiB/s。",
+          "在穩定且平均值適用的系統中，Little's Law 給 N=λW。令 Q 為實際平均在途 requests、L 為同一邊界的平均 latency（秒），則完成率 IOPS=Q/L；它不要求裝置已飽和。Q=32、L=200 microseconds 對應 160,000 IOPS，每筆 4 KiB 時為 625 MiB/s。若 32 只是設定的最大 queue depth，實際平均 Q 可能更低，因此只能在相同 L 下作為上限估計。",
           "throughput=IOPS×I/O size，但兩者受到不同瓶頸。小random I/O常受每命令latency與controller processing限制；大sequential I/O較快碰到link或media bandwidth。若算出的throughput超過介面上限，實際系統只能降低IOPS、增加latency或兩者同時發生，不能同時保留互相矛盾的數字。",
           "提高queue depth可讓controller、channels與NAND dies並行，卻也讓每筆request排在更多工作後面。平均latency不能代表99th/99.9th percentile；garbage collection、error recovery、network retransmission與queue buildup會拉長tail。benchmark必須明示read/write ratio、block size、randomness、queue depth、dataset、warm-up、duration與latency percentiles。"
         ],
@@ -5145,7 +5317,7 @@ const chapterDetails = [
       { title: "例題五：SATA 6 Gb/s 的raw transfer下界", prompt: "忽略所有協定overhead，只用6 Gbit/s傳送1 GiB資料，至少需要多久？若採8b/10b概略上限呢？", steps: ["1 GiB=2^30 B=1,073,741,824 B。", "bits=8,589,934,592。", "raw時間=8,589,934,592/(6×10^9)=1.4317 s。", "若有效資料率先乘0.8為4.8 Gbit/s，時間=1.7896 s。", "實際還有protocol與device限制，不能快於這些理想下界。"], result: "raw下界約1.432 s；只計8b/10b後約1.790 s。" },
       { title: "例題六：SAS wide port 的aggregate upper bound", prompt: "一個wide port含4條12 Gbit/s phys，求單向raw aggregate rate。為何單一command不保證達到？", steps: ["每條phy的標示速率為12 Gbit/s。", "raw aggregate=4×12=48 Gbit/s。", "除8得6 GB/s十進位raw ceiling。", "protocol encoding與frames會扣除payload。", "drive media、controller、command size與可平行工作數也可能先飽和。"], result: "單向raw上限48 Gbit/s=6 GB/s，但不是application throughput保證。" },
       { title: "例題七：PCIe 4.0 x4 的encoding ceiling", prompt: "PCIe 4.0為16 GT/s/lane、128b/130b encoding。求x4單向編碼後資料率。", steps: ["x4表示四條lanes聚合，且這裡只算一個方向。", "transfers=16×10^9×4=64×10^9 transfers/s。", "encoding後bit rate=64×10^9×128/130=63.01538 Gbit/s。", "除8得7.87692 GB/s。", "TLP/DLLP、flow control與endpoint processing尚未扣除。"], result: "單向編碼後理論上限約7.877 GB/s。" },
-      { title: "例題八：追蹤 NVMe circular queues", prompt: "深度8的SQ目前tail=6，host連續提交3筆CID 20、21、22。新位置與tail為何？若CID 21先完成是否錯誤？", steps: ["CID 20寫SQ index 6。", "CID 21寫index 7。", "CID 22wrap到index 0。", "新tail=(6+3) mod 8=1。", "controller可out of order完成；CQE以CID 21對回request，所以先完成不構成錯誤。"], result: "使用SQ indices 6、7、0，新tail=1；CID 21可先完成。" },
+      { title: "例題八：追蹤 NVMe circular queues", prompt: "深度8的SQ目前tail=6，host連續提交3筆CID 20、21、22。新位置與tail為何？若CID 21先完成是否錯誤？ 假設 SQ 有足夠可用 entries，三次提交都不會追上尚未回收的 head。", steps: ["CID 20寫SQ index 6。", "CID 21寫index 7。", "CID 22wrap到index 0。", "新tail=(6+3) mod 8=1。", "controller可out of order完成；CQE以CID 21對回request，所以先完成不構成錯誤。"], result: "使用SQ indices 6、7、0，新tail=1；CID 21可先完成。" },
       { title: "例題九：USB link 與 I/O latency 的雙重上限", prompt: "128 KiB I/O平均latency 80 μs、QD=1，USB raw line為10 Gbit/s。分別由latency與line rate估算上限。", steps: ["80 μs=80×10^-6 s。", "latency-limited IOPS=1/80 μs=12,500。", "要求資料率=12,500×128 KiB=1,638,400,000 B/s。", "USB raw ceiling=10 Gbit/s÷8=1,250,000,000 B/s。", "要求值高於line ceiling，因此兩者不可能同時成立；實際IOPS最多約1.25×10^9/131,072≈9,537，且protocol overhead後更低。"], result: "raw line先成為上限；實際低於約9,537 IOPS與1.25 GB/s。" },
       { title: "例題十：iSCSI request 的 serialization 下界", prompt: "在25 Gbit/s link傳送256 KiB data，忽略headers，單純serialization多久？若path RTT為120 μs，完成不可能低於多少？", steps: ["256 KiB=262,144 B=2,097,152 bits。", "link rate=25×10^9 bit/s。", "serialization=2,097,152/(25×10^9)=83.886 μs。", "若command需一個request/response round trip，另有至少120 μs。", "下界=83.886+120=203.886 μs，尚未含software、switch queue與target media。"], result: "理想下界約203.9 μs。" },
       { title: "例題十一：Little's Law、IOPS 與throughput", prompt: "平均QD=32、latency=200 μs、I/O size=4 KiB。估計穩態IOPS與throughput。", steps: ["L=200 μs=0.0002 s。", "IOPS≈Q/L=32/0.0002=160,000。", "throughput=160,000×4096=655,360,000 B/s。", "除2^20得625 MiB/s。", "若介面或media低於此值，latency會上升或完成率下降。"], result: "約160 kIOPS與625 MiB/s。" },

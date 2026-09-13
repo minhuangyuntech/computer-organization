@@ -19,8 +19,8 @@
       </div>
     </a>
     <nav class="top-actions" aria-label="工具列">
-      <button id="toggleTheme" type="button" title="切換明暗色調">◐</button>
-      <button id="printPage" type="button" title="列印目前內容">⎙</button>
+      <button id="toggleTheme" type="button" title="切換明暗色調" aria-label="深色模式" aria-pressed="false">◐</button>
+      <button id="printPage" type="button" title="列印目前內容" aria-label="列印目前內容">⎙</button>
     </nav>
   </header>
   <nav class="chapter-nav" aria-label="課程章節導覽">
@@ -60,11 +60,11 @@
       <article class="chapter-page">
         <nav class="breadcrumb" aria-label="麵包屑"><a href="../index.html">課程首頁</a><a href="../fourth-edition-map.html">第 4 版對照</a><span>第 13 章</span></nav>
         <header class="chapter-hero">
-          <p class="eyebrow">Chapter 13 · Revised 2026-08-27</p>
+          <p class="eyebrow">Chapter 13 · Revised 2026-09-13</p>
           <h2>第 13 章<br>儲存系統與介面：從 I/O 命令到雲端物件</h2>
           <p class="chapter-english">Storage Systems and Interfaces: From I/O Commands to Cloud Objects</p>
           <p>儲存裝置不只是保存位元的媒體，而是一組跨越應用程式、檔案系統、作業系統佇列、主機介面、控制器韌體與實體媒體的契約。一次 read 或 write 的正確性，同時取決於名稱如何映射到 block、命令何時完成、資料是否真正成為 non-volatile、佇列是否允許重排，以及故障發生在哪一層。本章由端到端 I/O 路徑出發，建立 block、file、object 三種存取模型，再逐步解析 SCSI、SATA、SAS、PCI Express、NVMe、USB mass storage、SAN、iSCSI、NVMe over Fabrics 與雲端物件儲存。效能部分以 queue depth、Little&#039;s Law、IOPS、throughput 與 tail latency 推導；可靠性部分則區分 completion、ordering、durability、integrity、availability 與 backup。所有傳輸率、LBA、ring queue、flush/FUA 與分段上傳例題均明示邊界，可獨立重算。</p>
-          <dl class="chapter-meta"><div><dt>教材對照</dt><dd>第 13 章 Selected Storage Systems and Interfaces</dd></div><div><dt>預估時間</dt><dd>約 320–380 分鐘</dd></div><div><dt>更新日期</dt><dd>2026-08-27</dd></div></dl>
+          <dl class="chapter-meta"><div><dt>教材對照</dt><dd>第 13 章 Selected Storage Systems and Interfaces</dd></div><div><dt>預估時間</dt><dd>約 320–380 分鐘</dd></div><div><dt>更新日期</dt><dd>2026-09-13</dd></div></dl>
         </header>
         <section class="chapter-outcomes">
           <h3>完成本章後應能做到</h3>
@@ -164,7 +164,7 @@
       <p class="source-ref">資料基礎：<a href="#source-S24">S24</a>、<a href="#source-S25">S25</a>、<a href="#source-S26">S26</a>、<a href="#source-S27">S27</a></p>
     </section><section class="chapter-section" id="section-11">
       <h3>11. Queue depth 以 concurrency 隱藏等待，也同時累積 latency</h3>
-      <p>在穩定、已飽和且平均值適用的系統中，Little&#039;s Law給N=λW。若平均outstanding requests為Q、平均latency為L seconds，完成率可估為IOPS≈Q/L。這不是裝置保證，而是守恆關係：QD=32、平均200 microseconds時，上限估計為160,000 IOPS；若每筆4 KiB，資料率約625 MiB/s。</p><p>throughput=IOPS×I/O size，但兩者受到不同瓶頸。小random I/O常受每命令latency與controller processing限制；大sequential I/O較快碰到link或media bandwidth。若算出的throughput超過介面上限，實際系統只能降低IOPS、增加latency或兩者同時發生，不能同時保留互相矛盾的數字。</p><p>提高queue depth可讓controller、channels與NAND dies並行，卻也讓每筆request排在更多工作後面。平均latency不能代表99th/99.9th percentile；garbage collection、error recovery、network retransmission與queue buildup會拉長tail。benchmark必須明示read/write ratio、block size、randomness、queue depth、dataset、warm-up、duration與latency percentiles。</p>
+      <p>在穩定且平均值適用的系統中，Little&#039;s Law 給 N=λW。令 Q 為實際平均在途 requests、L 為同一邊界的平均 latency（秒），則完成率 IOPS=Q/L；它不要求裝置已飽和。Q=32、L=200 microseconds 對應 160,000 IOPS，每筆 4 KiB 時為 625 MiB/s。若 32 只是設定的最大 queue depth，實際平均 Q 可能更低，因此只能在相同 L 下作為上限估計。</p><p>throughput=IOPS×I/O size，但兩者受到不同瓶頸。小random I/O常受每命令latency與controller processing限制；大sequential I/O較快碰到link或media bandwidth。若算出的throughput超過介面上限，實際系統只能降低IOPS、增加latency或兩者同時發生，不能同時保留互相矛盾的數字。</p><p>提高queue depth可讓controller、channels與NAND dies並行，卻也讓每筆request排在更多工作後面。平均latency不能代表99th/99.9th percentile；garbage collection、error recovery、network retransmission與queue buildup會拉長tail。benchmark必須明示read/write ratio、block size、randomness、queue depth、dataset、warm-up、duration與latency percentiles。</p>
       <figure class="learning-figure">
     <h4>Storage performance 的相互約束</h4>
     <div class="factor-diagram"><div><strong>Latency</strong><span>service + queue + network</span></div><span class="factor-op" aria-hidden="true">×</span><div><strong>Queue depth</strong><span>outstanding requests</span></div><span class="factor-op" aria-hidden="true">×</span><div><strong>IOPS</strong><span>Q / L at steady state</span></div><span class="factor-op" aria-hidden="true">×</span><div><strong>I/O size</strong><span>bytes per completion</span></div><span class="factor-op" aria-hidden="true">×</span><div><strong>Bandwidth</strong><span>IOPS × size</span></div><span class="factor-op" aria-hidden="true">×</span><div><strong>Tail</strong><span>p99 / p99.9</span></div></div>
@@ -235,7 +235,7 @@
     </section><section class="worked-example chapter-worked">
       <p class="eyebrow">Worked example 8</p>
       <h3>例題八：追蹤 NVMe circular queues</h3>
-      <p><strong>題目：</strong>深度8的SQ目前tail=6，host連續提交3筆CID 20、21、22。新位置與tail為何？若CID 21先完成是否錯誤？</p>
+      <p><strong>題目：</strong>深度8的SQ目前tail=6，host連續提交3筆CID 20、21、22。新位置與tail為何？若CID 21先完成是否錯誤？ 假設 SQ 有足夠可用 entries，三次提交都不會追上尚未回收的 head。</p>
       <ol><li>CID 20寫SQ index 6。</li><li>CID 21寫index 7。</li><li>CID 22wrap到index 0。</li><li>新tail=(6+3) mod 8=1。</li><li>controller可out of order完成；CQE以CID 21對回request，所以先完成不構成錯誤。</li></ol>
       <p class="worked-result"><strong>結論：</strong>使用SQ indices 6、7、0，新tail=1；CID 21可先完成。</p>
     </section><section class="worked-example chapter-worked">

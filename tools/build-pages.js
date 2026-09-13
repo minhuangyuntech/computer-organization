@@ -75,8 +75,8 @@ function topbar(depth = 0) {
       </div>
     </a>
     <nav class="top-actions" aria-label="工具列">
-      <button id="toggleTheme" type="button" title="切換明暗色調">◐</button>
-      <button id="printPage" type="button" title="列印目前內容">⎙</button>
+      <button id="toggleTheme" type="button" title="切換明暗色調" aria-label="深色模式" aria-pressed="false">◐</button>
+      <button id="printPage" type="button" title="列印目前內容" aria-label="列印目前內容">⎙</button>
     </nav>
   </header>`;
 }
@@ -530,7 +530,7 @@ function indexPage() {
       <section class="chapter-index" id="chapters">
         <header class="index-heading">
           <div><p class="eyebrow">Chapter-based materials</p><h2>13 章教材</h2></div>
-          <p>章次依《The Essentials of Computer Organization and Architecture》第 4 版編排，從資料表示、數位邏輯與 ISA，逐步進入處理器、記憶體、I/O、效能與系統介面。</p>
+          <p>章次依《The Essentials of Computer Organization and Architecture》第 4 版編排。本學期選讀第 1、4、5、6、7、8 章；第 2、3 章提供資料表示與數位邏輯先備知識。<a href="chapters/chapter-01.html#course-schedule">查看本學期課程進度與考試範圍</a>。</p>
         </header>
         <div class="home-chapter-grid">${homeChapterCards}</div>
       </section>
@@ -639,9 +639,9 @@ function fourthEditionPage() {
         <nav class="breadcrumb" aria-label="麵包屑"><a href="index.html">課程首頁</a><span>第 4 版章節對照</span></nav>
         <header class="edition-hero">
           <p class="eyebrow">Textbook companion · Fourth edition</p>
-          <h2>第 4 版中譯本章節對照</h2>
+          <h2>第 4 版章節對照</h2>
           <p>${esc(fourthEdition.authors.join("、"))}，${esc(fourthEdition.title)}，第 ${fourthEdition.edition} 版，${fourthEdition.year}，ISBN ${esc(fourthEdition.isbn)}。</p>
-          <p>課程依正式課綱使用 MIPS 作為主要 ISA；第 4 版第 4 章則以 MARIE 建立 CPU 基本模型。兩條路徑共享 register transfer、instruction cycle、datapath 與 control 等核心概念。</p>
+          <p>以上為英文第 4 版書目；中文章名用於教材對照。課程以 MARIE 建立 CPU 基本模型，再以 MIPS 延伸 ISA、datapath 與 pipeline，並使用 RISC-V 等官方規格補充現代系統的語意。</p>
         </header>
         <section class="section">
           <h3>第 4 版 13 章學習地圖</h3>
@@ -713,7 +713,7 @@ function chapterPage(chapter) {
   const misconceptions = chapter.misconceptions.map(([claim, correction]) => `<article><h4>${esc(claim)}</h4><p>${esc(correction)}</p></article>`).join("");
   const exercises = chapter.exercises.map((exercise, index) => `<details>
       <summary><span>${esc(exercise.level)}</span>${index + 1}. ${esc(exercise.question)}</summary>
-      <div><h4>完整解答</h4><ol>${exercise.solution.map((step) => `<li>${esc(step)}</li>`).join("")}</ol></div>
+      <div><h4>完整解答</h4><ol>${exercise.solution.map((step) => `<li>${step.includes("\n") ? `<pre><code>${esc(step)}</code></pre>` : esc(step)}</li>`).join("")}</ol></div>
     </details>`).join("");
   const glossary = chapter.glossary.map(([term, definition]) => `<tr><th>${esc(term)}</th><td>${esc(definition)}</td></tr>`).join("");
   const sources = chapter.sources.map((source) => `<li id="source-${esc(source.key)}"><a href="${esc(source.url)}" rel="noreferrer">${esc(source.key)} · ${esc(source.title)}</a><p>${esc(source.use)}（查閱：${esc(source.accessed)}）</p></li>`).join("");

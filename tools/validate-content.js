@@ -858,9 +858,13 @@ for (const file of htmlFiles) {
 
   for (const match of html.matchAll(/(?:href|src)="([^"]+)"/g)) {
     const reference = match[1];
-    if (/^(?:https?:|data:|#|mailto:)/.test(reference)) continue;
-    const target = path.resolve(path.dirname(file), reference.split("#")[0]);
+    if (/^(?:https?:|data:|mailto:)/.test(reference)) continue;
+    const [filename, fragment] = reference.split("#");
+    const target = filename ? path.resolve(path.dirname(file), filename) : file;
     assert(fs.existsSync(target), `Broken local reference ${reference} in ${path.relative(root, file)}`);
+    if (fragment && target.endsWith(".html")) {
+      assert(fs.readFileSync(target, "utf8").includes(`id="${decodeURIComponent(fragment)}"`), `Missing local anchor ${reference} in ${path.relative(root, file)}`);
+    }
   }
 }
 
@@ -903,4 +907,5 @@ for (const item of semesterSchedule.weeks) {
 }
 assert(!fs.existsSync(path.join(root, "weeks")), "Legacy week pages must not be generated");
 
+require("./validate-review-examples.js");
 console.log(`Validated chapter-first navigation, 18 source supplements, 13 chapter pages, introduction-only schedule, worked calculations, and ${htmlFiles.length} generated pages.`);

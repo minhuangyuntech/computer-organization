@@ -19,8 +19,8 @@
       </div>
     </a>
     <nav class="top-actions" aria-label="工具列">
-      <button id="toggleTheme" type="button" title="切換明暗色調">◐</button>
-      <button id="printPage" type="button" title="列印目前內容">⎙</button>
+      <button id="toggleTheme" type="button" title="切換明暗色調" aria-label="深色模式" aria-pressed="false">◐</button>
+      <button id="printPage" type="button" title="列印目前內容" aria-label="列印目前內容">⎙</button>
     </nav>
   </header>
   <nav class="chapter-nav" aria-label="課程章節導覽">
@@ -60,11 +60,11 @@
       <article class="chapter-page">
         <nav class="breadcrumb" aria-label="麵包屑"><a href="../index.html">課程首頁</a><a href="../fourth-edition-map.html">第 4 版對照</a><span>第 2 章</span></nav>
         <header class="chapter-hero">
-          <p class="eyebrow">Chapter 2 · Revised 2026-08-29</p>
+          <p class="eyebrow">Chapter 2 · Revised 2026-09-13</p>
           <h2>第 2 章<br>位元模式、數值與文字的表示</h2>
           <p class="chapter-english">Representing Bits, Numbers, and Text</p>
           <p>記憶體只保存位元模式，不會自行標記某一串 bits 是負整數、小數、字元、指令或錯誤檢查碼。真正賦予位元意義的是一份完整表示契約：寬度、欄位、signedness、scaling、byte order、合法特殊值，以及 overflow、rounding 與 error rules。本章從 positional notation 建立二進位與十六進位模型，推導 fixed-width unsigned、two&#039;s complement、定點與 IEEE 754；再以 mask、shift、packed field、widening multiply、signed divide、ULP 與五類浮點例外追蹤 operation 如何改變位元。最後把 multi-byte serialization、Unicode 17 UTF-8、Hamming/SECDED 與 CRC 放回跨系統資料邊界。每個結果都能由欄位權重、模數運算、round-trip 或 reference calculation 逐步驗證。</p>
-          <dl class="chapter-meta"><div><dt>教材對照</dt><dd>第 2 章 Data Representation in Computer Systems</dd></div><div><dt>預估時間</dt><dd>約 280–340 分鐘</dd></div><div><dt>更新日期</dt><dd>2026-08-29</dd></div></dl>
+          <dl class="chapter-meta"><div><dt>教材對照</dt><dd>第 2 章 Data Representation in Computer Systems</dd></div><div><dt>預估時間</dt><dd>約 280–340 分鐘</dd></div><div><dt>更新日期</dt><dd>2026-09-13</dd></div></dl>
         </header>
         <section class="chapter-outcomes">
           <h3>完成本章後應能做到</h3>
@@ -101,7 +101,7 @@
       <p class="source-ref">資料基礎：<a href="#source-S1">S1</a>、<a href="#source-S2">S2</a></p>
     </section><section class="chapter-section" id="section-4">
       <h3>4. 加減法、Carry、Overflow 與位元延伸</h3>
-      <p>subtraction A-B 可改寫為 A+(~B+1)，所以 adder-subtractor 只需在 subtract mode 反相 B 並令初始 carry-in 為 1。無論 operands 被解讀為 signed 或 unsigned，硬體產生的低 n-bit result 完全相同；差別在於程式如何判定結果是否落在目標型別範圍內。</p><p>unsigned addition 的精確結果若超過 2^n-1，會出現 carry out；signed addition 則在兩個同號 operands 產生異號 result 時 overflow。兩個異號 signed values 相加不會 overflow，因為結果位於兩者之間。carry out 與 signed overflow 可以一個發生、另一個不發生，不能互相代替。</p><p>把較窄值放入較寬 register 時，unsigned 使用 zero extension；two&#039;s complement signed 使用 sign extension，也就是複製原最高位。8-bit -5 為 11111011，sign-extend 到 16 bits 是 11111111 11111011，權重仍為 -5；若誤用 zero extension，會得到 251。縮窄則會捨棄高 bits，必須另外確認被捨棄部分是否只是不影響值的 sign copies。</p>
+      <p>subtraction A-B 可改寫為 A+(~B+1)，所以 adder-subtractor 只需在 subtract mode 反相 B 並令初始 carry-in 為 1。無論 operands 被解讀為 signed 或 unsigned，硬體產生的低 n-bit result 完全相同；差別在於程式如何判定結果是否落在目標型別範圍內。</p><p>unsigned addition 的精確結果若超過 2^n-1，會出現 carry out；signed addition 則在兩個同號 operands 產生異號 result 時 overflow。兩個異號 signed values 相加不會 overflow，因為結果位於兩者之間。carry out 與 signed overflow 可以一個發生、另一個不發生，不能互相代替。</p><p>把較窄值放入較寬 register 時，unsigned 使用 zero extension；two&#039;s complement signed 使用 sign extension，也就是複製原最高位。8-bit -5 為 11111011，sign-extend 到 16 bits 是 11111111 11111011，權重仍為 -5；若誤用 zero extension，會得到 251。縮窄會捨棄高 bits；unsigned 要求被捨棄 bits 全為 0，two&#039;s complement 則要求它們全是縮窄後 sign bit 的延伸，才能保留數值。語言層的轉型規則仍需另行確認。</p>
       <figure class="learning-figure">
     <h4>8-bit addition 的 Carry 與 Signed Overflow</h4>
     <div class="diagram-table-wrap"><table class="diagram-table"><thead><tr><th>Operands</th><th>8-bit result</th><th>Carry out</th><th>Signed overflow</th></tr></thead><tbody><tr><td>250 + 10</td><td>00000100</td><td>1</td><td>不適用於 unsigned 解讀</td></tr><tr><td>100 + 60</td><td>10100000</td><td>0</td><td>是：正 + 正得到負</td></tr><tr><td>-100 + -60</td><td>01100000</td><td>1</td><td>是：負 + 負得到正</td></tr><tr><td>-20 + 30</td><td>00001010</td><td>1</td><td>否：異號相加</td></tr></tbody></table></div>

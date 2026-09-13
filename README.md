@@ -16,6 +16,8 @@
 - `content/course-schedule.js`：115 學年度第 1 學期的 18 週日期、指定章節、放假與考試安排；第 1 章進度表以此為準
 - `tools/build-pages.js`：從內容資料產生首頁與 13 個章節頁面
 - `tools/validate-content.js`：檢查圖表欄位、例題計算、頁面結構與內部連結
+- `tools/validate-review-examples.js`：執行教材內的 MARIE 程式與邊界案例；由主驗證程式自動呼叫
+- `docs/content-review-2026-09-13.md`：全站審查範圍、修正與驗證紀錄
 
 ## 本機預覽
 
@@ -50,6 +52,8 @@ Repository 根目錄就是這個 `lectures/` 資料夾。GitHub Pages 目前從 
 內容對照 Linda Null 與 Julia Lobur《The Essentials of Computer Organization and Architecture》第 4 版（2015，ISBN 9781284033144）的章節架構。網站的中文敘述、例題、推導與圖表均為獨立編寫。
 
 ## 修訂紀錄
+
+- 2026-09-13：完成首頁、版本對照及 13 章教材的全站審查；整合第 4 章草稿並新增可執行 MARIE 範例，修正 reset 時序、MIPS stack frame、VIPT、RAID、ecall、RVV 與 DMA 等語意及適用條件。加入來源連結檢查、窄螢幕檢查與可重算的邊界驗證；詳見 [審查紀錄](docs/content-review-2026-09-13.md)。
 
 - 2026-08-30：完成第 3 章第二輪品質審查，擴充為 13 個概念單元、13 幅原創圖表、10 個逐步例題、18 題分級練習、49 個術語與 20 項權威來源；新增 generate/propagate、block/prefix carry-lookahead、static/dynamic hazard、consensus term、glitch 取樣邊界、MTBF 指數模型、pulse/multi-bit CDC、asynchronous assert/synchronous deassert、recovery/removal、clock enable 與 reset cost，並加入 carry equation、adder delay、hazard pulse、MTBF 及 reset timeline 的可重算驗證；來源核對至 AMD Vivado 2026.1、Altera Quartus Prime Pro 25.3、IEEE 1800-2023 與 Berkeley CS61C Fall 2026。
 - 2026-08-29：完成第 2 章第二輪品質審查，擴充為 13 個概念單元、13 幅原創圖表、10 個逐步例題、18 題分級練習、50 個術語與 20 項權威來源；新增 mask/shift、packed-field round-trip、widening multiply、high/low product、toward-zero signed division、binary32 ULP、ties-to-even、五類 IEEE 754 exception、FMA、浮點非結合性與 deterministic serialization，並加入欄位擷取、乘除不變式、ULP 及每步 binary32 rounding 的可重算驗證；來源核對至 RISC-V 20260120 B/M extensions、Unicode 17、IEEE 754-2019、RFC 8949 與 Berkeley CS61C Fall 2026。
