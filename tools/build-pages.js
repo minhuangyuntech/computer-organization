@@ -7,6 +7,7 @@ const appSource = fs.readFileSync(path.join(root, "app.js"), "utf8");
 const supplementSource = fs.readFileSync(path.join(root, "content", "supplements.js"), "utf8");
 const fourthEditionSource = fs.readFileSync(path.join(root, "content", "fourth-edition.js"), "utf8");
 const chapterSource = fs.readFileSync(path.join(root, "content", "chapters.js"), "utf8");
+const scheduleSource = fs.readFileSync(path.join(root, "content", "course-schedule.js"), "utf8");
 
 function extractConst(source, name) {
   const start = source.indexOf(`const ${name} = `);
@@ -22,6 +23,7 @@ const registers = extractConst(appSource, "registers");
 const supplements = extractConst(supplementSource, "supplements");
 const fourthEdition = extractConst(fourthEditionSource, "fourthEdition");
 const chapterDetails = extractConst(chapterSource, "chapterDetails");
+const semesterSchedule = extractConst(scheduleSource, "semesterSchedule");
 
 const favicon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23006d77'/%3E%3Cpath d='M14 18h36v28H14z' fill='%23f6bd60' stroke='%2320231f' stroke-width='4'/%3E%3Cpath d='M22 28h20M22 36h14' stroke='%2320231f' stroke-width='4'/%3E%3C/svg%3E";
 
@@ -404,12 +406,16 @@ function standaloneChapterSections(chapter) {
 }
 
 function courseSchedule() {
-  const rows = lectures.map((lecture) => `<tr><th>第 ${lecture.week} 週</th><td>${esc(lecture.title)}</td><td>${esc(lecture.goals[0])}</td></tr>`).join("");
+  const rows = semesterSchedule.weeks.map((item) => {
+    const chapters = item.chapters.map((chapter) => `<a href="chapter-${String(chapter).padStart(2, "0")}.html">第 ${chapter} 章</a>`).join("、") || "—";
+    return `<tr><th>第 ${item.week} 週</th><td><time datetime="${esc(item.date)}">${esc(item.date.replaceAll("-", "/"))}</time></td><td>${chapters}</td><td>${esc(item.title)}</td><td>${esc(item.outcome) || "—"}</td></tr>`;
+  }).join("");
   return `<section class="chapter-schedule" id="course-schedule">
     <p class="eyebrow">Course schedule</p>
     <h2>18 週課程進度</h2>
-    <p>進度由抽象層次與效能開始，接續資料表示、MIPS、datapath、pipeline 與記憶體階層，最後以跨層效能分析整合全課。</p>
-    <div class="diagram-table-wrap"><table class="course-schedule-table"><thead><tr><th>週次</th><th>主題</th><th>核心成果</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <p>${esc(semesterSchedule.term)}每週一上課，自 2026 年 9 月 7 日至 2027 年 1 月 4 日。本學期範圍為第 1、4、5、6、7、8 章，依序涵蓋導論、MARIE、ISA、記憶體、I/O 與系統軟體。</p>
+    <p>9 月 28 日（第 4 週）與 10 月 26 日（第 8 週）放假，不安排課程內容。期中考維持第 9 週（11 月 2 日），期末測驗維持第 18 週（2027 年 1 月 4 日）。</p>
+    <div class="diagram-table-wrap"><table class="course-schedule-table"><thead><tr><th>週次</th><th>日期（週一）</th><th>章節</th><th>主題</th><th>核心成果／考試範圍</th></tr></thead><tbody>${rows}</tbody></table></div>
   </section>`;
 }
 

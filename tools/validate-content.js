@@ -21,6 +21,26 @@ const lectures = extractConst(path.join(root, "app.js"), "lectures");
 const supplements = extractConst(path.join(root, "content", "supplements.js"), "supplements");
 const fourthEdition = extractConst(path.join(root, "content", "fourth-edition.js"), "fourthEdition");
 const chapterDetails = extractConst(path.join(root, "content", "chapters.js"), "chapterDetails");
+const semesterSchedule = extractConst(path.join(root, "content", "course-schedule.js"), "semesterSchedule");
+
+assert(semesterSchedule.chapters.join(",") === "1,4,5,6,7,8", "Semester scope must cover chapters 1, 4, 5, 6, 7, and 8");
+assert(semesterSchedule.weeks.length === 18, "Semester schedule must retain all 18 calendar weeks");
+const semesterStart = Date.UTC(2026, 8, 7);
+const semesterHolidays = ["2026-09-28", "2026-10-26"];
+for (const [index, item] of semesterSchedule.weeks.entries()) {
+  const expectedDate = new Date(semesterStart + index * 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  assert(item.week === index + 1 && item.date === expectedDate, `Week ${index + 1} must follow the consecutive Monday calendar`);
+  const expectedType = semesterHolidays.includes(item.date) ? "holiday" : item.week === 9 ? "midterm" : item.week === 18 ? "final" : "class";
+  assert(item.type === expectedType, `Week ${item.week} holiday or exam placement changed`);
+  assert(item.chapters.every((chapter) => semesterSchedule.chapters.includes(chapter)), `Week ${item.week} contains a chapter outside the semester scope`);
+  if (item.type === "holiday") {
+    assert(item.chapters.length === 0 && item.outcome === "" && item.title === "放假", `Holiday week ${item.week} must not assign course content`);
+  } else {
+    assert(item.chapters.length > 0 && item.title && item.outcome, `Week ${item.week} course or exam details are missing`);
+  }
+}
+const scheduledChapters = new Set(semesterSchedule.weeks.filter((item) => item.type === "class").flatMap((item) => item.chapters));
+assert(semesterSchedule.chapters.every((chapter) => scheduledChapters.has(chapter)), "All six selected chapters need actual class time");
 
 assert(lectures.length === 18, "Expected 18 lectures");
 assert(supplements.length === 18, "Expected 18 supplements");
@@ -873,6 +893,14 @@ assert(chapterDetails.length === 13, "All thirteen chapters need detailed self-s
 const introductionHtml = fs.readFileSync(chapterFiles[0], "utf8");
 assert(introductionHtml.includes("class=\"chapter-schedule\""), "Introduction must contain the course schedule");
 assert((introductionHtml.match(/<tr><th>第 \d+ 週<\/th>/g) || []).length === 18, "Introduction course schedule must contain 18 weeks");
+const scheduleHtml = introductionHtml.match(/<section class="chapter-schedule"[\s\S]*?<\/section>/)[0];
+for (const item of semesterSchedule.weeks) {
+  const row = scheduleHtml.match(new RegExp(`<tr><th>第 ${item.week} 週</th>(.*?)</tr>`));
+  assert(row && row[1].includes(`datetime="${item.date}"`) && row[1].includes(item.title), `Generated week ${item.week} date or topic differs from its schedule`);
+  const links = [...row[1].matchAll(/href="chapter-(\d+)\.html"/g)].map((match) => Number(match[1]));
+  assert(links.join(",") === item.chapters.join(","), `Generated week ${item.week} has incorrect chapter links`);
+  if (item.type === "holiday") assert(row[1].endsWith("<td>放假</td><td>—</td>"), `Generated holiday week ${item.week} must have no course outcome`);
+}
 assert(!fs.existsSync(path.join(root, "weeks")), "Legacy week pages must not be generated");
 
 console.log(`Validated chapter-first navigation, 18 source supplements, 13 chapter pages, introduction-only schedule, worked calculations, and ${htmlFiles.length} generated pages.`);

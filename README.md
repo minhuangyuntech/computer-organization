@@ -13,6 +13,7 @@
 - `content/supplements.js`：各主題圖表、推導例題與自我檢核
 - `content/fourth-edition.js`：第 4 版書目、章節摘要、週次對照與 MARIE 資料
 - `content/chapters.js`：完整章節教材、圖表、例題、練習詳解、術語與研究來源
+- `content/course-schedule.js`：115 學年度第 1 學期的 18 週日期、指定章節、放假與考試安排；第 1 章進度表以此為準
 - `tools/build-pages.js`：從內容資料產生首頁與 13 個章節頁面
 - `tools/validate-content.js`：檢查圖表欄位、例題計算、頁面結構與內部連結
 
@@ -28,7 +29,7 @@ python3 -m http.server 8000
 
 ## 更新教材內容
 
-1. 編輯 `app.js`、`content/supplements.js`、`content/fourth-edition.js` 或 `content/chapters.js` 中的資料。
+1. 編輯 `app.js`、`content/supplements.js`、`content/fourth-edition.js` 或 `content/chapters.js` 中的資料。修改本學期進度時，編輯 `content/course-schedule.js`。
 2. 執行：
 
 ```bash

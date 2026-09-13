@@ -878,6 +878,11 @@ dd { margin: 0; }
   background: color-mix(in srgb, var(--accent-3) 22%, var(--panel));
 }
 
+.course-schedule-table thead th:nth-child(2),
+.course-schedule-table time {
+  white-space: nowrap;
+}
+
 .chapter-week-path > h2 {
   margin-top: 0;
 }
