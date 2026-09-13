@@ -19,6 +19,6 @@ const semesterSchedule = {
     { week: 15, date: "2026-12-14", type: "class", chapters: [7], title: "儲存系統與 I/O 效能", outcome: "比較 HDD、SSD 與 NVMe，分析 RAID 容量與容錯，計算 latency、IOPS、throughput 與 queue depth 的關係。" },
     { week: 16, date: "2026-12-21", type: "class", chapters: [8], title: "組譯、編譯、連結與載入", outcome: "追蹤原始碼到執行映像的流程，說明 symbols、relocation、靜態／動態連結，並比較 compiler、interpreter 與 JIT。" },
     { week: 17, date: "2026-12-28", type: "class", chapters: [8], title: "作業系統、保護與虛擬化整合", outcome: "區分 privilege、system call 與 context switch，比較虛擬機與 container，整合程式執行、位址轉譯及 I/O 的端到端路徑。" },
-    { week: 18, date: "2027-01-04", type: "final", chapters: [1, 4, 5, 6, 7, 8], title: "期末測驗", outcome: "整合本學期第 1、4、5、6、7、8 章，串連 ISA、指令執行、記憶體、I/O 與系統軟體。" }
+    { week: 18, date: "2027-01-04", type: "final", chapters: [5, 6, 7, 8], title: "期末測驗", outcome: "範圍為第 10–17 週：第 5 章的函式呼叫、指令管線與 Hazard，以及第 6、7、8 章。排除期中考範圍，即第 1、4 章及第 5 章的指令格式與定址模式。" }
   ]
 };
