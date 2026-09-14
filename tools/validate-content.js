@@ -73,7 +73,7 @@ for (const chapter of chapterDetails) {
   assert(chapter.sources.length >= 4, `Chapter ${chapter.chapter} needs at least four authoritative sources`);
   const sourceKeys = new Set(chapter.sources.map((source) => source.key));
   assert(sourceKeys.size === chapter.sources.length, `Chapter ${chapter.chapter} source keys must be unique`);
-  assert(chapter.sources.every((source) => /^https:\/\//.test(source.url)), `Chapter ${chapter.chapter} source URLs must use HTTPS`);
+  assert(chapter.sources.every((source) => source.url ? /^https:\/\//.test(source.url) : source.kind === "provided" && source.title && source.use), `Chapter ${chapter.chapter} sources need HTTPS links or an identified teacher-provided reference`);
   for (const section of chapter.sections) {
     assert(section.sourceRefs.every((key) => sourceKeys.has(key)), `Chapter ${chapter.chapter} section references an unknown source`);
     const figure = section.figure;
@@ -106,13 +106,19 @@ for (const chapter of chapterDetails) {
 }
 
 const chapterOne = chapterDetails.find((chapter) => chapter.chapter === 1);
-assert(chapterOne, "Chapter 1 detailed architecture-foundations material is missing");
-assert(chapterOne.sections.length >= 13, "Chapter 1 needs at least thirteen complete concept sections");
-assert(chapterOne.sections.filter((item) => item.figure).length >= 13, "Chapter 1 needs at least thirteen verifiable diagrams");
+assert(chapterOne, "Chapter 1 textbook introduction is missing");
+assert(chapterOne.sections.length === 11, "Chapter 1 must follow the eleven textbook sections");
+assert(chapterOne.sections.every((section, index) => section.title.startsWith(`1.${index + 1} `) && section.slideRange), "Chapter 1 needs ordered textbook sections and slide references");
+for (const topic of ["標準組織", "歷史", "七階層", "SaaS", "PaaS", "IaaS", "Harvard", "Deep Blue", "Watson"]) {
+  assert(JSON.stringify(chapterOne.sections).includes(topic), `Chapter 1 is missing textbook topic ${topic}`);
+}
+assert(chapterOne.sources.some((source) => source.key === "P1" && source.kind === "provided" && !source.url), "Publisher slides must be attributed without a public download");
+assert(chapterOne.editorialNote.includes("自編"), "Chapter 1 must identify the independently written teaching material");
+assert(chapterOne.sections.filter((item) => item.figure).length === 11, "Chapter 1 needs a figure or table for each section");
 assert(chapterOne.workedExamples.length >= 10, "Chapter 1 needs at least ten worked examples");
 assert(chapterOne.exercises.length >= 18, "Chapter 1 needs at least eighteen exercises with solutions");
 assert(chapterOne.glossary.length >= 40, "Chapter 1 needs a broad architecture-foundations glossary");
-assert(chapterOne.sources.length >= 20, "Chapter 1 needs broad authoritative source coverage");
+assert(chapterOne.sources.length >= 10, "Chapter 1 needs references supporting its textbook topics and corrections");
 
 const chapterTwo = chapterDetails.find((chapter) => chapter.chapter === 2);
 assert(chapterTwo, "Chapter 2 detailed data-representation material is missing");
@@ -272,37 +278,15 @@ assert((address >>> 12) === 0x12345, "Cache tag check failed");
 assert(5 + 5 - 1 === 9, "Ideal pipeline cycle check failed");
 assert(Math.abs((1 + 0.04 * (10 + 0.20 * 100)) - 2.2) < 1e-12, "Two-level AMAT check failed");
 assert(Math.abs((1 + 0.15 * 0.08 * 3 + 0.30 * 0.04 * 50) - 1.636) < 1e-12, "Integrated CPI check failed");
-assert(Math.abs((8e8 * 1.4 / 2.5e9) - 0.448) < 1e-12, "Chapter 1 processor P time check failed");
-assert(Math.abs((8e8 * 1.0 / 2.0e9) - 0.4) < 1e-12, "Chapter 1 processor Q time check failed");
-assert(Math.abs((2e9 * 1.2 / 3e9) - 0.8) < 1e-12, "Chapter 1 exercise CPU A time check failed");
-assert(Math.abs((1.5e9 * 1.8 / 3.6e9) - 0.75) < 1e-12, "Chapter 1 exercise CPU B time check failed");
-const chapterOneSingleCyclePs = 250 + 120 + 180 + 300 + 100;
-const chapterOnePipelinePs = Math.max(250, 120, 180, 300, 100) + 20;
-assert(chapterOneSingleCyclePs === 950, "Chapter 1 single-cycle critical path failed");
-assert(chapterOnePipelinePs === 320, "Chapter 1 pipeline clock period failed");
-assert(Math.abs(1e12 / chapterOnePipelinePs - 3.125e9) < 1e-3, "Chapter 1 pipeline throughput failed");
-assert(5 * chapterOnePipelinePs === 1600, "Chapter 1 pipeline instruction latency failed");
-const chapterOneAmdahlTime = 0.65 + 0.35 / 8;
-assert(Math.abs(chapterOneAmdahlTime - 0.69375) < 1e-12, "Chapter 1 Amdahl improved time failed");
-assert(Math.abs(1 / chapterOneAmdahlTime - 1.4414414414414414) < 1e-12, "Chapter 1 Amdahl speedup failed");
-assert(Math.abs(1 / 0.65 - 1.5384615384615383) < 1e-12, "Chapter 1 Amdahl upper bound failed");
-assert(Math.abs((0.8 ** 2) * (1.5 / 2.0) - 0.48) < 1e-12, "Chapter 1 DVFS power ratio failed");
-assert(80 * 2 === 160 && 110 * 1.2 === 132, "Chapter 1 energy comparison failed");
-assert(160 * 2 === 320 && 132 * 1.2 === 158.4, "Chapter 1 EDP comparison failed");
-assert(8 + 3 + 6 + 5 === 22 && Math.abs(30 / 22 - 1.3636363636363635) < 1e-12, "Chapter 1 accelerator offload failed");
-
-const chapterOneExercisePipelinePs = Math.max(180, 240, 150, 210) + 25;
-assert(chapterOneExercisePipelinePs === 265, "Chapter 1 pipeline exercise clock period failed");
-assert(Math.abs(1e12 / chapterOneExercisePipelinePs - 3.7735849056603775e9) < 1e-3, "Chapter 1 pipeline exercise throughput failed");
-assert(4 * chapterOneExercisePipelinePs === 1060, "Chapter 1 pipeline exercise latency failed");
-const chapterOneExerciseAmdahlTime = 0.4 + 0.6 / 5;
-assert(Math.abs(chapterOneExerciseAmdahlTime - 0.52) < 1e-12, "Chapter 1 Amdahl exercise time failed");
-assert(Math.abs(1 / chapterOneExerciseAmdahlTime - 1.923076923076923) < 1e-12, "Chapter 1 Amdahl exercise speedup failed");
-assert(1 / 0.4 === 2.5, "Chapter 1 Amdahl exercise upper bound failed");
-assert(Math.abs((0.9 ** 2) * (2.4 / 2.0) - 0.972) < 1e-12, "Chapter 1 DVFS exercise failed");
-assert(65 * 3 === 195 && 90 * 1.8 === 162, "Chapter 1 energy exercise failed");
-assert(195 * 3 === 585 && 162 * 1.8 === 291.6, "Chapter 1 EDP exercise failed");
-assert(7 + 3 + 4 + 5 === 19 && Math.abs(24 / 19 - 1.263157894736842) < 1e-12, "Chapter 1 offload exercise failed");
+// Chapter 1: original introductory examples accompanying the supplied slides.
+assert(Math.abs(2e12 / 2**30 - 1862.645149230957) < 1e-8, "Chapter 1 TB to GiB conversion failed");
+assert(1e9 / 2.5e9 === 0.4 && 800 * 2 === 1600, "Chapter 1 period and DDR transfer units failed");
+assert(1280 * 720 * 24 / 8 === 2764800, "Chapter 1 raw image size failed");
+assert(Math.abs(2764800 / 2**20 - 2.63671875) < 1e-12, "Chapter 1 image MiB conversion failed");
+assert(25 + 75 / 5 === 40 && 100 / 40 === 2.5, "Chapter 1 parallel example failed");
+assert(6 * 2 * 8 === 96 && 6 * 64 === 384, "Chapter 1 cluster resource accounting failed");
+assert(512 * 2**20 === 536870912 && 1e9 / 250e6 === 4, "Chapter 1 units exercises failed");
+assert(20 + 60 / 4 === 35 && Math.abs(80 / 35 - 2.2857142857142856) < 1e-12, "Chapter 1 parallel exercise failed");
 
 const neg37 = ((~37 + 1) & 0xff);
 assert(neg37 === 0xdb, "Chapter 2 two's-complement encoding for -37 failed");

@@ -12,9 +12,9 @@ const fourthEdition = {
     {
       chapter: 1,
       title: "Introduction",
-      zh: "導論",
-      summary: "從主要硬體元件、計算機層次結構與歷史發展建立全貌，再以 von Neumann 模型說明程式與資料如何共用記憶體，以及平行處理為何需要不同的執行模型。",
-      courseUse: "第 1 週的抽象層次、ISA 與微架構分工、von Neumann 狀態模型。"
+      zh: "緒論",
+      summary: "依教師提供的第 1 章投影片整理 1.1–1.11：組織與架構、主要組件、規格術語、標準組織、歷史、七階層、雲端服務、馮紐曼及替代模型、平行處理與 Deep Blue／Watson。",
+      courseUse: "第 1–2 週，依本學期進度表完成第 1 章 1.1–1.11。"
     },
     {
       chapter: 2,

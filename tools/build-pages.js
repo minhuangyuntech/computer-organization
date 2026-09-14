@@ -28,7 +28,7 @@ const semesterSchedule = extractConst(scheduleSource, "semesterSchedule");
 const favicon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23006d77'/%3E%3Cpath d='M14 18h36v28H14z' fill='%23f6bd60' stroke='%2320231f' stroke-width='4'/%3E%3Cpath d='M22 28h20M22 36h14' stroke='%2320231f' stroke-width='4'/%3E%3C/svg%3E";
 
 const chapterNavLabels = [
-  "導論", "資料表示", "數位邏輯", "MARIE", "ISA", "記憶體", "I/O",
+  "緒論", "資料表示", "數位邏輯", "MARIE", "ISA", "記憶體", "I/O",
   "系統軟體", "替代架構", "嵌入式", "效能", "網路", "儲存介面"
 ];
 
@@ -698,7 +698,7 @@ function chapterPage(chapter) {
   const schedule = chapter.chapter === 1 ? courseSchedule() : "";
   const scheduleNav = chapter.chapter === 1 ? `<a href="#course-schedule">18 週課程進度</a>` : "";
   const sections = chapter.sections.map((section, index) => `<section class="chapter-section" id="section-${index + 1}">
-      <h3>${esc(section.title)}</h3>
+      <h3>${esc(section.title)}</h3>${section.slideRange ? `\n      <p class="source-ref">教學投影片對照：第 ${esc(section.slideRange)} 頁</p>` : ""}
       ${section.paragraphs.map((paragraph) => `<p>${esc(paragraph)}</p>`).join("")}
       ${section.figure ? diagram(section.figure) : ""}
       <p class="source-ref">資料基礎：${section.sourceRefs.map((ref) => `<a href="#source-${esc(ref)}">${esc(ref)}</a>`).join("、")}</p>
@@ -716,7 +716,7 @@ function chapterPage(chapter) {
       <div><h4>完整解答</h4><ol>${exercise.solution.map((step) => `<li>${step.includes("\n") ? `<pre><code>${esc(step)}</code></pre>` : esc(step)}</li>`).join("")}</ol></div>
     </details>`).join("");
   const glossary = chapter.glossary.map(([term, definition]) => `<tr><th>${esc(term)}</th><td>${esc(definition)}</td></tr>`).join("");
-  const sources = chapter.sources.map((source) => `<li id="source-${esc(source.key)}"><a href="${esc(source.url)}" rel="noreferrer">${esc(source.key)} · ${esc(source.title)}</a><p>${esc(source.use)}（查閱：${esc(source.accessed)}）</p></li>`).join("");
+  const sources = chapter.sources.map((source) => `<li id="source-${esc(source.key)}">${source.url ? `<a href="${esc(source.url)}" rel="noreferrer">${esc(source.key)} · ${esc(source.title)}</a>` : `<strong>${esc(source.key)} · ${esc(source.title)}</strong>`}<p>${esc(source.use)}（查閱：${esc(source.accessed)}）</p></li>`).join("");
 
   return pageShell({
     title: `第 ${chapter.chapter} 章 ${chapter.title} | 計算機組織完整自學教材`,
@@ -727,7 +727,7 @@ function chapterPage(chapter) {
           <p class="eyebrow">Chapter ${chapter.chapter} · Revised ${esc(chapter.revised)}</p>
           <h2>第 ${chapter.chapter} 章<br>${esc(chapter.title)}</h2>
           <p class="chapter-english">${esc(chapter.english)}</p>
-          <p>${esc(chapter.intro)}</p>
+          <p>${esc(chapter.intro)}</p>${chapter.editorialNote ? `\n          <p class="source-ref">${esc(chapter.editorialNote)}</p>` : ""}
           <dl class="chapter-meta"><div><dt>教材對照</dt><dd>第 ${chapter.chapter} 章 ${esc(bookChapter.title)}</dd></div><div><dt>預估時間</dt><dd>${esc(chapter.readingTime)}</dd></div><div><dt>更新日期</dt><dd>${esc(chapter.revised)}</dd></div></dl>
         </header>
         <section class="chapter-outcomes">

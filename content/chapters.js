@@ -1,688 +1,1149 @@
 const chapterDetails = [
   {
-    chapter: 1,
-    title: "從抽象層次到可執行的計算機",
-    english: "From Abstraction Layers to an Executing Computer",
-    revised: "2026-08-28",
-    readingTime: "約 280–340 分鐘",
-    intro: "一部現代計算機不是單一 CPU 方塊，而是一組跨越演算法、語言、ABI、ISA、microarchitecture、memory、I/O、interconnect 與實體電路的契約。程式執行時，architectural state 依指令逐步轉移；處理器內部則以 pipeline、speculation、cache 與平行資源加速，同時必須在 exception、interrupt 與故障邊界維持可恢復的精確狀態。本章建立可反覆使用的分析方法：先指出觀察層次與 interface，再列出可見 state，追蹤 fetch、decode、execute、memory、commit 與 exception，最後以 CPU time、throughput、energy、Amdahl's Law 及 failure domain 評估實作。內容也從 Moore 與 Dennard scaling 推導到 power wall、dark silicon、multicore 與 heterogeneous SoC，讓後續 MARIE、MIPS、pipeline、cache、I/O 與加速器都能放回同一端到端模型。",
-    outcomes: [
-      "能由應用程式一路說明到 transistor 的抽象層次，並指出相鄰層之間的 interface。",
-      "能區分 instruction set architecture 與 microarchitecture，不再把 ISA 名稱當成某一顆 CPU 的內部結構。",
-      "能用 PC、registers、memory 與 device state 描述 stored-program computer 的狀態。",
-      "能逐步追蹤 fetch–decode–execute，辨認每一步讀取與更新的狀態。",
-      "能區分 pipeline、SIMD/SIMT、multicore 與 distributed computing 所利用的平行層次。",
-      "能以 correctness、latency、throughput 與 energy 等不同觀察指標評估實作。",
-      "能沿 fetch、decode、operand read、execute、memory、write-back/retire 追蹤一條指令的資料與控制。",
-      "能區分 exception、interrupt、trap 與一般 branch，並說明 precise architectural state 的必要性。",
-      "能計算 CPU time、speedup、Amdahl 上限、dynamic power、energy 與 energy-delay product。",
-      "能區分 Moore's Law、Dennard scaling 與 clock-frequency growth，不把三者視為同一條定律。",
-      "能以 CPU、GPU/NPU、memory controller、I/O 與 NoC 的互動描述現代 heterogeneous SoC。"
+    "chapter": 1,
+    "title": "緒論：認識計算機系統",
+    "english": "Introduction to Computer Systems",
+    "revised": "2026-09-14",
+    "readingTime": "約 120–160 分鐘，含例題與練習",
+    "intro": "計算機組織與結構研究程式如何由硬體完成，以及系統設計如何影響我們能做的工作。本章依教師提供的《計算機組織與結構》第 4 版第 1 章教學投影片，按 1.1–1.11 的主題順序建立入門觀念。先認識處理器、記憶體與輸入輸出，再練習解讀規格和單位，理解標準組織與電腦發展史。接著透過課本的七個計算機階層連結軟體與硬體，比較雲端服務、馮紐曼與非馮紐曼模型，最後用平行處理及 Deep Blue、Watson 案例說明多個運算單元如何合作。例題採用另行設計的校園情境與數值；本章先掌握概念，指令格式、管線細節與系統軟體將於後續章節展開。",
+    "editorialNote": "教材依據：Linda Null、Julia Lobur 著，鍾崇斌譯，《計算機組織與結構》4/e，東華書局。章節範圍以教師提供的第 1 章教學投影片（85 頁）為準。本頁為另行撰寫的課程導讀，採自編文字、表格及題目，未收錄原投影片、書中插圖或原書習題。原教材權利歸原權利人所有；本頁不代表出版社官方版本。",
+    "outcomes": [
+      "能用具體設計問題區分計算機組織、計算機架構與 ISA。",
+      "能辨認處理器、記憶體、I/O 的角色，說明硬體與軟體實作的取捨。",
+      "能解讀 bit、byte、GB、GiB、GHz、ns、MT/s 等規格與單位。",
+      "能說明標準組織對不同廠牌設備互通的作用。",
+      "能依主要元件整理計算機世代，區分摩爾定律與效能成長。",
+      "能依第 6 至第 0 階層說明使用者、語言、系統軟體與硬體的關係。",
+      "能比較 SaaS、PaaS、IaaS 的管理責任及彈性。",
+      "能解釋內儲程式、擷取—解碼—執行週期及馮紐曼瓶頸。",
+      "能比較 Harvard 模型與共享／分散記憶體，說明平行加速的限制。",
+      "能以 Deep Blue 與 Watson 說明演算法、資料與平行硬體的配合。"
     ],
-    sections: [
+    "sections": [
       {
-        title: "1. 抽象不是忽略細節，而是固定介面",
-        paragraphs: [
-          "面對複雜系統時，我們不可能同時追蹤每一個 transistor、每一條控制線與每一個程式變數。抽象的做法是先選定一個觀察邊界：邊界上方只依賴一組明確承諾，邊界下方可以自由改變實作，只要仍然履行承諾。例如高階語言規定運算式與函式呼叫的語意，compiler 負責把語意翻成特定 ISA；程式通常不需要知道 add 指令在 CPU 內部用了 ripple-carry adder、carry-lookahead adder 或其他電路。",
-          "一個穩定 interface 至少要回答三件事：可以提出哪些 operation、operation 讀寫哪些 state、完成後可觀察到什麼結果。檔案 API 的 read() 是 interface；SSD 或網路檔案系統是 implementation。相同地，MIPS 的 register 名稱、instruction encoding、addressing rule 與 exception behavior 屬於 ISA interface；單週期、多週期或 pipeline datapath 屬於 implementation。",
-          "抽象並不保證下層細節永遠不重要。正確性通常只需要遵守 interface，但效能、功耗與安全性常會受到隱藏細節影響。程式逐列掃描陣列與逐欄掃描陣列可能產生相同答案，卻因 cache locality 不同而有巨大時間差。學習計算機組織的核心，就是知道什麼時候可以依賴抽象、什麼時候必須向下追蹤。"
+        "title": "1.1 概論：組織、架構與軟硬體互動",
+        "slideRange": "3–13",
+        "paragraphs": [
+          "同一段程式在兩部電腦上可能得到相同結果，卻花費不同時間。要解釋差異，需要同時理解程式做了哪些工作，以及硬體如何執行它們。例如影像處理可能受運算速度限制，也可能花大部分時間等待資料，單看處理器名稱無法判斷。",
+          "計算機組織偏重組件如何實際合作，例如暫存器如何讀寫、控制訊號如何選擇資料路徑、記憶體如何接收存取要求。計算機架構則研究系統結構、行為與設計取捨，從軟體可見的指令介面，到處理器及記憶體系統的整體安排，都可能出現在廣義的架構討論中。",
+          "ISA（指令集架構）是其中明確連結機器碼與硬體的介面，規定可用的指令、暫存器及運算行為。不要把廣義的 computer architecture 全部縮成 ISA，也不要因為某個議題涉及實體硬體，就認為它沒有架構層面的設計問題。",
+          "學習本章時，先用一句話描述問題，再指出觀察層次。寫編譯器需要了解目標指令，設計驅動程式需要了解 I/O，評估嵌入式系統則必須同時考慮反應時間、記憶體空間與成本。這些需求會引導後續章節的學習。"
         ],
-        figure: {
-          type: "hierarchy",
-          title: "計算系統的抽象堆疊",
-          items: [
-            { label: "Application / Algorithm", detail: "問題、資料結構、函式與並行工作" },
-            { label: "High-level Language", detail: "型別、控制結構與語言語意" },
-            { label: "Compiler / Assembler", detail: "翻譯、最佳化、符號與 machine code" },
-            { label: "ISA", detail: "指令、暫存器、位址、例外與 memory model" },
-            { label: "Microarchitecture", detail: "datapath、control、pipeline、cache" },
-            { label: "Digital Logic", detail: "gate、mux、adder、register、state machine" },
-            { label: "Circuit / Device", detail: "transistor、wire、timing、voltage" }
+        "figure": {
+          "type": "matrix",
+          "title": "同一部校園門禁設備的不同設計問題",
+          "columns": [
+            "觀點",
+            "自編問題",
+            "觀察依據"
           ],
-          caption: "每一層都以較穩定的 interface 隔開上下層。越往下越接近物理限制，越往上越接近問題語意。"
-        },
-        sourceRefs: ["S1", "S2"]
-      },
-      {
-        title: "2. Architecture 與 Organization 的真正分界",
-        paragraphs: [
-          "Computer architecture 在不同教材中有廣義與狹義用法。為了能精確分析，本講義把 software-visible contract 稱為 ISA，把完成這份 contract 的內部安排稱為 microarchitecture 或 organization。ISA 會規定可用指令、instruction format、programmer-visible registers、資料型別、addressing mode、控制轉移、exception 與 memory interaction。",
-          "Microarchitecture 決定同一份指令如何被執行：一條 add 是否在一個長 clock 內完成，或切成多個 stage；是否能同時 issue 多條指令；branch predictor 有多大；L1 cache 使用幾路 set-associative；ALU 是一份還是多份。這些選擇會改變 clock period、CPI、功耗與晶片面積，卻不應改變符合 ISA 的程式結果。",
-          "因此，ISA compatibility 與 performance 是兩個不同問題。兩顆 CPU 能執行相同 binary，表示它們實作相容 ISA；其中一顆更快，則要從 dynamic instruction count、CPI、clock period、memory behavior 等 organization 證據解釋。只說『都是 MIPS』或『clock 比較高』都不足以完成效能推論。",
-          "RISC-V 官方規格刻意盡量不綁定 cache、in-order、out-of-order 或特定製程，就是 interface 與 implementation 分離的現代例子。基礎 ISA 可以由教學用小核心、低功耗微控制器或高效能 superscalar CPU 實作；只要 observable behavior 符合規格，內部結構可以完全不同。"
-        ],
-        figure: {
-          type: "matrix",
-          title: "ISA 與 Microarchitecture 比較",
-          columns: ["問題", "ISA / Architecture", "Microarchitecture / Organization"],
-          rows: [
-            ["程式看見什麼？", "instructions、registers、addresses", "pipeline stages、ports、queues、cache banks"],
-            ["主要約束", "binary compatibility 與 observable behavior", "timing、area、energy、throughput"],
-            ["例子", "MIPS32、RV32I、x86-64", "single-cycle、5-stage、out-of-order"],
-            ["改變後是否重編譯？", "通常需要，或至少需要相容 translation", "相同 ISA 通常不需要"],
-            ["驗證重點", "每條指令結果與例外是否正確", "是否在所有 hazard 與 timing 下仍履行 ISA" ]
+          "rows": [
+            [
+              "架構與需求",
+              "需要支援哪些操作及反應時間？",
+              "功能、介面、資源取捨"
+            ],
+            [
+              "ISA",
+              "機器碼能使用哪些暫存器與指令？",
+              "軟體可見的執行規則"
+            ],
+            [
+              "組織",
+              "控制訊號如何讓資料送入加法器？",
+              "資料路徑與控制時序"
+            ]
           ],
-          caption: "ISA 是軟體可觀察的合約；microarchitecture 是合約的硬體實現。相容不等於等速。"
+          "caption": "分類用來釐清問題，並非把相關議題切成互不重疊的領域。"
         },
-        sourceRefs: ["S2", "S3"]
+        "sourceRefs": [
+          "P1"
+        ]
       },
       {
-        title: "3. 把計算機視為狀態轉移系統",
-        paragraphs: [
-          "要追蹤一段程式，最可靠的方法不是背硬體方塊，而是先列出 state。最小化的 architectural state 可以寫成 S = {PC, R, M, D}：PC 是下一個或目前指令的位置；R 是 programmer-visible registers；M 是可定址 memory；D 是會影響程式的 device 或 I/O state。不同 ISA 對 PC 定義與例外狀態略有不同，但分析方式相同。",
-          "執行一條 instruction 可以寫成 transition function：S(t+1) = Execute(S(t), instruction)。add 可能只更新一個 register 與 PC；store 會更新 memory 與 PC；branch 依比較結果選擇新的 PC；I/O instruction 或 memory-mapped I/O 可能同時改變 device state。沒有被指令指定的 architectural state 必須保持可觀察的一致性。",
-          "Microarchitecture 內部還有大量暫時 state，例如 pipeline registers、cache tags、branch predictor counters、reorder buffer entries。它們會影響何時完成與效能，但正常情況下不應讓程式看見違反 ISA 的中間結果。發生 branch misprediction 時，錯誤路徑上的暫時工作必須被取消；程式最後看見的 architectural state 應如同指令依規定順序執行。",
-          "這個 state transition 觀點也提供除錯順序：先找第一個與預期不同的 state，再問是哪個 transition 寫錯。若 register 已錯，往前查產生它的 instruction；若 memory 錯，查 address、write enable 與 store data；若控制流錯，查 PC update 與 branch condition。"
+        "title": "1.2 計算機的主要組件",
+        "slideRange": "14–16",
+        "paragraphs": [
+          "先把計算機分成處理器、記憶體與輸入輸出三種角色。處理器解讀並執行指令，記憶體保存執行所需的指令與資料，I/O 讓系統接收外部資訊並傳出結果。互連與匯流排把這些角色接在一起。",
+          "以校園自助借書機為例，掃描器輸入書籍識別碼，處理器執行借閱規則，主記憶體暫存本次操作，螢幕顯示結果，網路介面把紀錄送到伺服器。儲存裝置可長期保存資料，但不可因此把主記憶體和硬碟當成同一個部件。",
+          "硬體與軟體等效原則討論的是功能可用不同方式實現。例如一個固定運算可以交由專用電路，也可以寫成通用處理器上的程式。功能相同不表示速度、耗能、開發成本與修改難度相同，還要把資料傳送及控制成本算進去。",
+          "主機板提供組件連接，電源供應器提供適當電力，控制器協調裝置存取。它們都是系統正常運作所需的實體部分；三組件模型是為了理解功能，沒有宣稱一部電腦只有三顆晶片。"
         ],
-        figure: {
-          type: "flow",
-          title: "一條指令的狀態證據鏈",
-          items: ["S(t): PC / R / M", "Fetch instruction", "Decode operation", "Read operands", "Compute / access memory", "Commit S(t+1)"],
-          caption: "分析時每一箭頭都要回答：讀了哪個 state、經過什麼規則、最後寫回哪個 state。"
-        },
-        sourceRefs: ["S2", "S3"]
-      },
-      {
-        title: "4. Stored-program 與 von Neumann 模型",
-        paragraphs: [
-          "Stored-program 的關鍵不是 CPU、memory、I/O 三個方塊本身，而是 instruction 也被編碼成 bit pattern 放在可定址 memory 中。CPU 不必為每個新演算法重新接線，只要改變 memory 中的 instruction sequence，就能讓同一套 datapath 執行不同工作。程式因此成為可以載入、複製、儲存與產生的資料。",
-          "概念上的 von Neumann 模型讓 instruction 與 data 共享 memory 與傳輸路徑。現代處理器常在 L1 使用分離的 instruction cache 與 data cache，再於較低層匯合，這通常稱為 modified Harvard organization。它改善同時 fetch instruction 與存取 data 的 bandwidth，但 architectural address space 仍可呈現統一模型。不能因為看見兩個 L1 cache 就直接斷言 ISA 是 Harvard architecture。",
-          "共享傳輸資源帶來 von Neumann bottleneck：CPU 的運算能力可能大於 memory system 提供 instruction/data 的速度。現代系統用 cache、prefetch、wider buses、multiple channels、out-of-order execution 與 parallelism 隱藏或提高資料供應能力，但不能消除資料移動成本。後續 memory hierarchy 章會把這個現象量化為 hit time、miss rate 與 miss penalty。",
-          "程式與資料同為 bits 也帶來保護問題。若系統錯誤地把可寫資料當作指令執行，可能形成 code injection。現代作業系統與 ISA 透過 page permission、privilege mode 與不可執行頁面等機制限制哪些 memory region 能被 fetch。這些保護不改變 stored-program 的核心概念，卻讓介面更完整。"
-        ],
-        figure: {
-          type: "flow",
-          title: "Stored-program 的循環",
-          items: ["PC 提供位址", "Memory 回傳 instruction bits", "Control 解讀欄位", "Datapath 執行", "更新 register / memory", "選出 next PC"],
-          caption: "instruction 與 data 都是 memory 中的 bits；當下的取用方式決定它被視為操作還是資料。"
-        },
-        sourceRefs: ["S2", "S4"]
-      },
-      {
-        title: "5. CPU、Memory、I/O 與 Interconnect 如何合作",
-        paragraphs: [
-          "CPU 內部至少包含保存 state 的 registers、執行算術邏輯的 datapath，以及依 instruction 產生控制訊號的 control unit。Memory 可以抽象成由 address 選取的 word/byte 集合；I/O device 則與外界交換資料。真正讓它們合作的是 interconnect：它傳遞 address、data 與 transaction type，並處理 ready、valid、response 或 error 等狀態。",
-          "一次 memory read 不是『CPU 直接拿到值』這麼簡單。CPU 先提出 read request 與 address；cache 或 memory hierarchy 判斷是否命中；資料可能在本 cycle、數個 cycles 或更久之後回應。若 datapath 必須等待，control 就要 stall；若允許其他工作先執行，則需要追蹤 outstanding operation 與 dependency。介面的 latency 與 concurrency 會塑造整個 microarchitecture。",
-          "I/O 常透過 memory-mapped I/O 呈現：某些 address 不對應 DRAM，而對應 device register。CPU 使用一般 load/store 發出 request，interconnect 依 address 導向裝置。表面上都是 memory operation，但 device register 可能具有讀取即清除、寫 1 清除或異步更新等 side effect，因此不能任意 cache 或重排。",
-          "Bus 是共享 interconnect 的一種，不是所有系統連線的總稱。簡單 bus 成本低，但多個 master 同時請求時需要 arbitration，且總 bandwidth 被共享。較大型 SoC 常使用階層式 crossbar 或 network-on-chip，讓多筆 transaction 並行。第 4 版以 bus 建立基礎模型，現代實作則把相同 request/response 概念擴展到更複雜互連。"
-        ],
-        figure: {
-          type: "matrix",
-          title: "一次 transaction 需要的資訊",
-          columns: ["訊息", "作用", "錯誤時的現象"],
-          rows: [
-            ["Address", "選擇 memory location 或 device register", "讀錯資料、alignment fault"],
-            ["Command", "read、write、atomic 或 I/O operation", "方向或 side effect 錯誤"],
-            ["Write data / byte enable", "指定寫入內容與哪些 bytes 有效", "鄰近 bytes 被破壞"],
-            ["Response data", "回傳 load 或 device 結果", "register 得到過期或錯誤值"],
-            ["Handshake / status", "表示 request 接受、完成或失敗", "遺失 transaction、重複執行或永久等待"]
+        "figure": {
+          "type": "matrix",
+          "title": "借書機的一次操作",
+          "columns": [
+            "角色",
+            "接收或保存的內容",
+            "例子"
           ],
-          caption: "方塊圖只顯示連線；transaction 表才能說明資料何時有效、由誰接收以及失敗如何呈現。"
-        },
-        sourceRefs: ["S2", "S5"]
-      },
-      {
-        title: "6. ISA 這份合約到底包含什麼",
-        paragraphs: [
-          "初學時常把 ISA 縮成 instruction list，但完整 ISA 還要定義 programmer-visible state 與每個 operation 的 precise effect。典型內容包括 integer/floating-point registers、PC、instruction encoding、資料寬度、address space、load/store 規則、alignment、endianness、control flow、atomic operation、exception、privilege interface 與 memory ordering。",
-          "RISC-V 是很清楚的現代例子：base integer ISA 提供形成 compiler target 所需的整數計算、load/store 與 control flow，再以 M、A、F、D、C、V 等 extensions 增加乘除、atomic、floating point、compressed encoding 與 vector operation。extension 名稱描述 software-visible capability，而不是 CPU 內部有幾級 pipeline。",
-          "ISA 規格通常允許多個合法結果或 implementation choice。例如 misaligned access 可由硬體處理或觸發 exception，memory ordering 也可能需要 fence 才能約束。程式若依賴規格沒有保證的 timing 或內部排列，就可能在另一顆相容 CPU 上失敗。因此閱讀 ISA 時要區分 required behavior、reserved encoding、implementation-defined behavior 與 performance hint。",
-          "本課以 MIPS 說明固定 32-bit encoding、register file 與 load-store datapath，並使用 MARIE 看見更小的累加器模型。兩者不是誰『比較正確』，而是 interface 設計取捨不同：MARIE 隱含 AC，MIPS 明確指定多個 registers。比較 ISA 時應問 state 是否顯式、instruction 如何編碼、memory 如何定址，而不是只數 instruction 數量。"
-        ],
-        figure: {
-          type: "hierarchy",
-          title: "ISA 合約的五個層面",
-          items: [
-            { label: "Visible State", detail: "registers、PC、status、address space" },
-            { label: "Operations", detail: "arithmetic、logic、load/store、control flow" },
-            { label: "Encoding", detail: "instruction length、opcode、operand fields" },
-            { label: "Exceptional Behavior", detail: "fault、trap、privilege、interrupt interface" },
-            { label: "Ordering", detail: "memory visibility、atomicity、fence" }
+          "rows": [
+            [
+              "輸入",
+              "讀者與書籍的識別資料",
+              "掃描器、讀卡機"
+            ],
+            [
+              "處理器",
+              "借閱條件與操作指令",
+              "檢查是否可借閱"
+            ],
+            [
+              "主記憶體",
+              "處理中的資料與程式",
+              "目前讀者、本次書單"
+            ],
+            [
+              "輸出與通訊",
+              "處理結果",
+              "螢幕、網路介面"
+            ]
           ],
-          caption: "只有 operation name 不足以形成 ISA；state、encoding、exception 與 ordering 都會影響 binary 的可攜性。"
+          "caption": "以功能分類觀察系統，不以外殼或裝置數量分類。"
         },
-        sourceRefs: ["S1", "S3"]
+        "sourceRefs": [
+          "P1"
+        ]
       },
       {
-        title: "7. 一行程式如何穿過所有層次",
-        paragraphs: [
-          "考慮 C 敘述 A[i] = B[i] + 1。語言層關心 array element 與 integer addition；compiler 要選 registers、計算 byte offset、產生 load、add 與 store；assembler 把 register name、immediate 與 opcode 編成 bits；CPU fetch 這些 bits 並產生 datapath control；cache 根據 effective address 判斷 hit/miss；DRAM 或更低層只看 address 與 data transaction。",
-          "同一個語意可能產生不同 instruction sequence。compiler 可以把 i 保留在 register、把 4*i 改成 shift，也可能把 loop 展開或 vectorize。只要 observable result 與語言規則一致，翻譯就合法。這也表示 static source line 數不能直接推出 dynamic instruction count，更不能直接推出執行時間。",
-          "跨層追蹤時，先建立名稱對照：A base 在哪個 register、i 的數值與寬度、element size、effective address、load destination、ALU result、store address。接著逐 instruction 更新 state。最後才分析 cache line、pipeline hazard 與 cycles。跳過 state 直接猜效能，通常會把 address 錯誤與 cache miss 混在一起。",
-          "這條路徑也說明為何效能是跨層現象。演算法決定工作量，compiler 決定 instruction mix，ISA 決定可表達的 operation，microarchitecture 決定 CPI 與 clock，memory hierarchy 決定 stall。任何一層都可能是瓶頸，不能只靠 CPU 型號解釋。"
+        "title": "1.3 範例系統：規格與計算機術語",
+        "slideRange": "17–26",
+        "paragraphs": [
+          "閱讀規格表時，先分辨它描述容量、頻率、傳輸率還是介面。bit 是一個二進位值，byte 為 8 bits。GB 採十進位，1 GB = 10^9 bytes；GiB 採二進位，1 GiB = 2^30 bytes。同一份資料用不同單位表示，數字會不同，容量本身沒有改變。",
+          "常用十進位字首 k、M、G、T 依序代表 10^3、10^6、10^9、10^12；二進位 Ki、Mi、Gi、Ti 依序代表 2^10、2^20、2^30、2^40。時間的 ms、μs、ns、ps 分別是 10^-3、10^-6、10^-9、10^-12 秒，不能套用二進位倍數。",
+          "頻率表示每秒的週期數，週期時間 T = 1/f。2.5 GHz 對應 0.4 ns 的時脈週期，但一個週期不一定完成一條指令。多核心數量、快取、記憶體與程式特性都會影響實際速度。",
+          "SDRAM 是同步動態隨機存取記憶體，DDR 會利用時脈的兩個邊緣傳送資料。MT/s 表示每秒百萬次傳送，MHz 表示每秒百萬個週期，二者不能直接視為同一數量。RAM 容量、DDR 傳輸率及 L1／L2 快取容量也各自回答不同問題。",
+          "下表為教學假設，並非販售產品或採購建議。HDD 的 RPM 描述碟片轉速；SSD 沒有旋轉碟片。SATA、PCIe 與 USB 是連接相關名詞，GPU 負責圖形或適合的平行運算，畫面緩衝區保存待顯示影像，Ethernet 用於有線網路。原投影片的 DDR3、南橋及光碟機反映其教材年代，閱讀時應區分歷史配置與通用概念。"
         ],
-        figure: {
-          type: "flow",
-          title: "A[i] = B[i] + 1 的跨層證據",
-          items: ["Array semantics", "Compiler chooses registers", "ISA load / add / store", "Datapath control", "Cache lookup", "Memory transaction", "Architectural result"],
-          caption: "每一層都保留上一層需要的語意，但以更接近硬體的 state 與 operation 表達。"
-        },
-        sourceRefs: ["S1", "S3"]
-      },
-      {
-        title: "8. Parallelism 不是單一技術",
-        paragraphs: [
-          "Parallelism 的共同目標是讓多個工作片段在時間上重疊，但不同層次的『工作片段』並不相同。Pipeline 重疊多條 instruction 的不同 stages；superscalar 同 cycle issue 多條 independent instructions；SIMD 對多個 data lanes 套用同一 operation；SIMT 讓一群 threads 執行相同 kernel 並保有各自 state；multicore 同時執行多個 software threads；distributed system 則讓多台機器合作。",
-          "Pipeline 主要提高 throughput，不保證單一 instruction latency 等比例下降。SIMD/SIMT 需要 data-level parallelism，若各 lane/thread 在 branch 走不同路徑，部分執行資源會閒置。Multicore 需要工作可分割，還要支付 synchronization、communication 與 load imbalance 成本。使用更多 processing elements 不會自動得到線性 speedup。",
-          "NVIDIA 的 SIMT model 以 warp 組織 threads。thread 保有自己的 register state 與 control flow，但同一 warp 的 threads 共同推進 instruction；若 branch divergence，硬體要分別處理不同路徑並遮罩不參與的 threads。這是 architecture/programming model 與實際 hardware scheduling 交界的例子。",
-          "判斷平行類型時，問四個問題：同時進行的是 instructions、data elements、threads 還是 machines？它們共享哪些 state？需要如何同步？瓶頸是 compute、memory bandwidth 還是 communication？這四問比背 Flynn taxonomy 更能預測效能。"
-        ],
-        figure: {
-          type: "matrix",
-          title: "常見平行層次",
-          columns: ["層次", "同時處理的單位", "主要限制", "例子"],
-          rows: [
-            ["Pipeline", "不同 instructions 的 stages", "hazard、stage balance", "IF/ID/EX/MEM/WB"],
-            ["Superscalar / ILP", "同一 thread 的多條 instructions", "dependency、issue width", "多 ALU、out-of-order"],
-            ["SIMD / Vector", "多個 data elements", "vector length、mask、bandwidth", "vector add"],
-            ["SIMT", "同 kernel 的多個 threads", "divergence、occupancy、memory access", "GPU warp"],
-            ["Multicore", "software threads / tasks", "synchronization、coherence", "多核心 CPU"],
-            ["Distributed", "processes / machines", "network latency、failure", "cluster、cloud service"]
+        "figure": {
+          "type": "matrix",
+          "title": "自編教學機規格卡",
+          "columns": [
+            "標示",
+            "表示什麼",
+            "不能直接推出什麼"
           ],
-          caption: "不同平行層次可以同時存在，例如 GPU kernel 既有 SIMT，也有 pipeline、memory hierarchy 與多個 processing clusters。"
-        },
-        sourceRefs: ["S5", "S6"]
-      },
-      {
-        title: "9. Correctness 與 Performance 必須分開證明",
-        paragraphs: [
-          "Correctness 問的是結果是否符合 interface；performance 問的是完成結果需要多少時間、資源或能量。同一份 machine code 在 single-cycle 與 pipeline processor 上應得到相同 architectural state，但 cycle 數與 clock period 不同。若結果不同，首先是 correctness bug，而不是『效能比較』。",
-          "Latency 是一個工作從開始到完成的時間；throughput 是單位時間完成多少工作。Pipeline 常讓穩態 throughput 提升，但單一 instruction 仍要經過所有 stages。GPU 可提供很高 throughput，卻不一定讓單一短 request 的 latency 最小。評估前必須先指定 workload 與 metric。",
-          "clock rate、CPI、instruction count 都不是單獨的答案。CPU Time = Instruction Count × CPI × Clock Period。某設計提高 clock rate，若同時增加 pipeline depth 與 branch penalty，CPI 可能上升；某 ISA 用較少 instructions，若每條工作更複雜，也不一定更快。正確比較要把所有因子放回同一時間單位。",
-          "本章的結束標準不是能背出四大元件，而是能提出一條可驗證說明：指出 interface、列出 state、描述 transition、區分 architectural 與 temporary state，最後選擇合適 metric。這條推理鏈會貫穿本課所有章節。"
-        ],
-        figure: {
-          type: "factor",
-          title: "從程式到 CPU Time 的三個乘數",
-          items: [
-            { label: "Instruction Count", detail: "algorithm、compiler、ISA" },
-            { label: "Average CPI", detail: "pipeline、hazard、cache miss" },
-            { label: "Clock Period", detail: "critical path、technology" }
+          "rows": [
+            [
+              "4 核、2.5 GHz",
+              "核心數與指定工作頻率",
+              "每秒完成 100 億條指令"
+            ],
+            [
+              "16 GiB RAM",
+              "主記憶體容量",
+              "最多只能開幾個應用程式"
+            ],
+            [
+              "DDR、3200 MT/s",
+              "資料傳送速率",
+              "時脈就是 3200 MHz"
+            ],
+            [
+              "2 TB SSD",
+              "十進位標示的儲存容量",
+              "等於 2 TiB"
+            ],
+            [
+              "1 Gbit/s 網路",
+              "鏈路速率",
+              "檔案必定以 125 MB/s 完成傳輸"
+            ]
           ],
-          caption: "比較效能時三個乘數必須屬於同一 workload；只比較其中一項可能得到相反結論。"
+          "caption": "容量、時脈與傳輸率必須分別閱讀；實際效能仍需工作負載與量測。"
         },
-        sourceRefs: ["S1", "S2", "S10", "S20"]
+        "sourceRefs": [
+          "P1",
+          "S1",
+          "S2"
+        ]
       },
       {
-        title: "10. Instruction lifecycle 把資料路徑、控制與完成邊界串成一條證據鏈",
-        paragraphs: [
-          "教科書常把指令分成fetch、decode、execute三步，但可驗證的資料路徑需要更細。Fetch以PC形成instruction address並取得bits；decode辨認opcode、operand fields與立即數；operand read取得register或architectural source；execute由ALU、branch unit或其他functional unit產生result或effective address；memory階段執行load/store；write-back或retire才讓結果成為architecturally visible。不同microarchitecture可以合併、切分或重疊這些工作。",
-          "資料與控制必須同時追蹤。以load為例，register file提供base，immediate generator做sign extension，ALU計算effective address，memory hierarchy回傳data，destination register number與write-enable則要一路保留到完成點。若只畫data arrows而未標示哪個cycle允許寫入，圖無法解釋stall、exception或錯誤路徑為何不應更新state。",
-          "Single-cycle core讓一條指令的所有combinational work落在一個clock period內，clock不得短於最慢指令的critical path。Multi-cycle core重用ALU與memory port，把一條指令分成多cycles；pipeline再讓不同instructions同時占據不同stages。三者可實作相同ISA，差別是temporary state、resource sharing、clock period與steady-state throughput。",
-          "Modern out-of-order core允許較晚且ready的instruction先execute，卻通常按program order retire。rename registers與reorder buffer保存speculative results；branch prediction錯誤或exception發生時，尚未retire的較年輕工作可被丟棄。這使內部順序與architectural完成順序分離，也說明為何觀察execution trace時不能把functional-unit完成直接當成程式state已更新。"
+        "title": "1.4 標準組織與互通性",
+        "slideRange": "27–28",
+        "paragraphs": [
+          "不同廠商的設備要交換資料，必須對訊號、格式與行為有共同約定。標準讓設計者能在一致的介面上分工，也讓使用者有機會組合不同來源的產品。例如網路兩端都需要遵循相容的 Ethernet 規範。",
+          "IEEE 的標準工作涵蓋電機、電子與資訊領域，Ethernet 對應 IEEE 802.3。ITU 是聯合國負責資訊與通訊技術的專門機構。ISO 透過各國標準機構協作制定國際標準；ISO 是共同使用的短名，不是依英文全名逐字取首字母而來。",
+          "ANSI 協調美國的自願性標準與符合性評鑑體系，是民間非營利組織，不能由中文名稱誤認為美國政府機關。BSI 是英國的國家標準機構；CEN 則處理歐洲標準化工作。它們的地域與角色不同，不能把所有組織都當成同一種產品認證單位。",
+          "選擇或連接設備時，要看標準名稱、版本與必要功能是否一致。外觀相似或插頭相同，仍可能有速度與功能差異。標準有助於互通，但不會保證每一種產品組合具有完全相同的效能。"
         ],
-        figure: { type: "flow", title: "一條 load 指令由 PC 到 retire 的完整路徑", items: [{ label: "Fetch", detail: "PC → instruction bits" }, { label: "Decode", detail: "opcode + rd/rs + immediate" }, { label: "Read", detail: "base register + control" }, { label: "Execute", detail: "effective address" }, { label: "Memory", detail: "cache / memory response" }, { label: "Complete", detail: "data + status" }, { label: "Retire", detail: "rd and PC become visible" }], caption: "pipeline可以重疊各階段，但每條instruction的資料、destination與exception狀態仍須正確配對。" },
-        sourceRefs: ["S2", "S4", "S16"]
+        "figure": {
+          "type": "matrix",
+          "title": "標準工作涵蓋的不同範圍",
+          "columns": [
+            "組織",
+            "認識重點"
+          ],
+          "rows": [
+            [
+              "IEEE",
+              "技術社群及標準，例如 Ethernet"
+            ],
+            [
+              "ITU",
+              "國際電信與 ICT 協調"
+            ],
+            [
+              "ISO",
+              "各國標準機構合作"
+            ],
+            [
+              "ANSI",
+              "美國自願性標準體系的協調"
+            ],
+            [
+              "BSI／CEN",
+              "英國國家標準／歐洲標準化"
+            ]
+          ],
+          "caption": "先理解組織角色，再查找與問題直接相關的規範。"
+        },
+        "sourceRefs": [
+          "P1",
+          "S3",
+          "S4",
+          "S5",
+          "S6"
+        ]
       },
       {
-        title: "11. Exception 與 privilege 讓錯誤、外部事件和系統服務成為可恢復的控制轉移",
-        paragraphs: [
-          "Exception是由目前instruction或其執行環境同步引發的控制轉移，例如illegal instruction、alignment fault、page fault或arithmetic trap；interrupt通常由timer、I/O或外部controller非同步提出。不同ISA對trap一詞的分類略有差異，因此分析時應明示事件來源、是否同步、保存哪個PC、是否允許restart，而不只依名詞猜測。",
-          "Precise exception要求architectural state看起來像在某一條instruction邊界停下：較舊instructions已完成，faulting instruction與較新instructions尚未產生不允許的效果。處理器要保存exception PC與cause、切換到較高privilege mode、選擇handler address，並確保store或device side effect不會因replay而重複。Out-of-order execution讓這項要求更困難，reorder buffer的in-order retire正是常見解法之一。",
-          "Privilege分隔application、operating system、hypervisor與machine/firmware責任。User mode不能直接任意修改page tables、interrupt state或device control registers，而是以system call instruction進入受控handler；handler驗證參數後執行服務，再以architectural return恢復較低privilege。RISC-V privileged architecture與Arm exception levels的名稱不同，但都把software stack的權限邊界納入architecture contract。",
-          "Branch與exception都會改變PC，語意卻不同。Branch是program主動選擇的正常控制流；exception還要記錄cause、privilege與可恢復位置，可能改變address translation與interrupt-enable state。量測一次trap latency時也要分開入口、handler work、scheduler decision與return，不能把全部時間歸因於單一instruction。"
+        "title": "1.5 歷史發展與摩爾定律",
+        "slideRange": "29–48",
+        "paragraphs": [
+          "歷史脈絡可由「如何表示資料、如何執行步驟、如何改變工作」來理解。Pascal 與 Leibniz 的機械計算器協助算術運算；Babbage 的分析引擎設計把運算、儲存與程序控制放進同一構想。Ada Lovelace 的相關筆記呈現了以程序描述機器工作的思考。打孔卡則讓指令或資料能以機器可讀的形式輸入，Hollerith 將它用於大量資料處理。",
+          "真空管讓電子開關取代部分機械動作，ENIAC 是早期通用電子數位計算機的重要案例。後來電晶體縮小元件並改善耗電與可靠性，積體電路進一步把多個元件及連線整合在晶片上。世代分類描述主要技術逐漸普及的時期，並不表示某一年所有機器同時更換技術。",
+          "幾個日期需要分清楚：Bell Labs 在 1947 年完成早期電晶體工作，1948 年對外公布；Kilby 在 1958 年展示可工作的積體電路，Noyce 在 1959 年提出適於製造的單晶片互連構想。不要把發明、公開發表與廣泛採用混成同一個時間。",
+          "VLSI 增加單一晶片上的整合程度，使微處理器、個人電腦與更複雜系統得以發展。SSI、MSI、LSI、VLSI 是不同整合規模的歷史術語；SoC 表示把多種系統功能整合於晶片。1971 年的 Intel 4004 與 1981 年的 IBM PC 可作為微處理器和個人電腦發展的歷史節點。",
+          "Moore 在 1965 年提出元件整合數量成長的預測，1975 年調整為約每兩年倍增。常見的十八個月說法不宜當成原始定義。摩爾定律是技術與經濟條件下的趨勢觀察，不保證時脈、程式速度或效能也同比倍增。投影片提到的 Rock 定律提醒製造投資成本的壓力，同樣不宜當成必然成立的物理定律。",
+          "本章把量子、光學等方向視為替代技術的探索，不指定一個所有人都同意的「第五世代」起點，也不把早期的未來預測當成今天已完成的產品能力。"
         ],
-        figure: { type: "flow", title: "Precise exception 的 architectural state 邊界", items: [{ label: "Older instructions", detail: "retired" }, { label: "Faulting instruction", detail: "no forbidden effect" }, { label: "Save context", detail: "PC + cause + privilege" }, { label: "Handler", detail: "validate and service" }, { label: "Return or terminate", detail: "restart / resume / signal" }], caption: "精確邊界讓handler能修復page mapping後重試，或在明確state下終止process。" },
-        sourceRefs: ["S7", "S8", "S9"]
+        "figure": {
+          "type": "matrix",
+          "title": "依課本分期理解主要技術變化",
+          "columns": [
+            "課本分期",
+            "主要技術",
+            "觀察重點"
+          ],
+          "rows": [
+            [
+              "第 0 世代：1642–1945",
+              "機械式計算",
+              "算術、程序控制與輸入構想"
+            ],
+            [
+              "第 1 世代：1945–1953",
+              "真空管",
+              "電子運算及其體積、耗電限制"
+            ],
+            [
+              "第 2 世代：1954–1965",
+              "電晶體",
+              "縮小元件並提高可靠性"
+            ],
+            [
+              "第 3 世代：1965–1980",
+              "積體電路",
+              "元件整合及系統軟體發展"
+            ],
+            [
+              "第 4 世代：1980 起",
+              "VLSI",
+              "單晶片功能增多與個人運算普及"
+            ]
+          ],
+          "caption": "年份採課本教學分期，與元件的發明年份不同，各技術亦曾並存。"
+        },
+        "sourceRefs": [
+          "P1",
+          "S7",
+          "S8",
+          "S9",
+          "S10"
+        ]
       },
       {
-        title: "12. Power、energy 與 thermal limit 決定多少硬體能同時工作",
-        paragraphs: [
-          "CMOS切換的簡化dynamic power為P_dynamic≈αCV²f，其中α是activity factor、C是有效切換capacitance、V是supply voltage、f是clock frequency。電壓以平方影響功耗，所以單純提高frequency往往也需要更高voltage，成本可能超過線性。Static/leakage power與製程、溫度、transistor state相關，不能由dynamic公式涵蓋。",
-          "Energy是功率對時間的積分；固定平均功率時E=P×T。高效能設計若把時間縮短很多，即使瞬時power較高，total energy仍可能下降；反之，race-to-idle若需要大幅提高V，energy可能上升。Energy-delay product EDP=E×T會同時懲罰慢與耗能，但權重仍是設計選擇，不能取代明示的battery、thermal或latency constraint。",
-          "Thermal design power不是每條instruction的能量，也不是所有時刻的精確實測power。晶片temperature由power density、package、cooling與時間常數共同決定；達到thermal或electrical limit時，hardware可降低frequency/voltage或限制simultaneous activity。Benchmark若只跑數毫秒，可能量到boost狀態而非長時間sustained performance。",
-          "降低energy可在多層進行：algorithm減少work，compiler/vectorization減少instructions，clock gating降低α，power gating降低閒置leakage，DVFS調整V與f，specialized accelerator以較少data movement完成固定operation。比較方案時必須維持相同結果與workload，並同時報告time、energy、average/peak power與量測boundary。"
+        "title": "1.6 計算機階層",
+        "slideRange": "49–54",
+        "paragraphs": [
+          "一部計算機可以用多個抽象階層描述。上層使用下層提供的功能，不需要每次都重新討論電路。課本把這些觀察層次稱為虛擬機器，此處的意思比第 8 章用來執行客體作業系統的虛擬機更廣。",
+          "依課本由上而下共有第 6 到第 0 階層。使用者操作應用程式，高階語言描述演算法，組合語言以符號表示接近機器的操作，系統軟體提供資源管理與保護，ISA 定義機器指令，控制階層安排指令執行，數位邏輯實現基本運算及狀態保存。",
+          "這是一個理解功能與介面的模型，不表示每個程式執行時都要依序經過七個獨立程式。編譯器可以直接產生機器碼，普通算術指令通常不需要先呼叫作業系統。翻譯、執行和系統服務是相關但不同的活動。",
+          "控制單元可以使用硬接線邏輯，也可以用微程式組織控制步驟。兩種方式在設計與修改上有不同取捨；不能只憑名稱斷定所有實作的速度。這裡先辨認它們的位置，控制訊號與 MARIE 的實際流程留到第 4 章。"
         ],
-        figure: { type: "factor", title: "CMOS dynamic power 的四個乘數", items: [{ label: "Activity α", detail: "fraction of switching nodes" }, { label: "Capacitance C", detail: "transistors + wires" }, { label: "Voltage²", detail: "quadratic contribution" }, { label: "Frequency f", detail: "switching opportunities per second" }], caption: "P_dynamic≈αCV²f是分析模型；total chip power還包含leakage、I/O、memory與analog domains。" },
-        sourceRefs: ["S12", "S15"]
+        "figure": {
+          "type": "hierarchy",
+          "title": "課本七階層的功能索引",
+          "items": [
+            {
+              "label": "第 6 階層：使用者",
+              "detail": "操作應用程式，例如查詢借閱紀錄"
+            },
+            {
+              "label": "第 5 階層：高階語言",
+              "detail": "用變數、條件與函式描述工作"
+            },
+            {
+              "label": "第 4 階層：組合語言",
+              "detail": "以指令符號與標籤描述操作"
+            },
+            {
+              "label": "第 3 階層：系統軟體",
+              "detail": "管理程序、記憶體與裝置"
+            },
+            {
+              "label": "第 2 階層：機器／ISA",
+              "detail": "定義機器碼可要求的運算"
+            },
+            {
+              "label": "第 1 階層：控制",
+              "detail": "安排資料移動與執行步驟"
+            },
+            {
+              "label": "第 0 階層：數位邏輯",
+              "detail": "以邏輯閘及保存狀態的電路實現運作"
+            }
+          ],
+          "caption": "依課本層級整理的文字索引，各層說明採自編校園情境，未重製原圖。"
+        },
+        "sourceRefs": [
+          "P1"
+        ]
       },
       {
-        title: "13. Moore、Dennard 與 power wall 之後，現代系統以異質 SoC 延續效能",
-        paragraphs: [
-          "Moore在1965年的觀察與預測聚焦於經濟上適合整合的components數量隨時間快速成長；它不是clock frequency定律。Dennard scaling則描述理想等比例縮小MOSFET尺寸與voltage時，device delay、power與power density的縮放關係。後來voltage scaling放慢，transistor count仍能增加，卻無法讓所有transistors都以最高frequency同時切換。",
-          "Frequency growth在2000年代中期受power與thermal constraint限制，設計重心轉向multicore、wider SIMD、specialized accelerators與energy efficiency。Dark silicon不是晶片上永久無功能的黑色區域，而是power budget不足以讓所有可用transistors同時全速活動的現象；不同workload可啟用不同blocks。Amdahl's Law又限制只加速部分work所能得到的全域speedup。",
-          "現代SoC可整合performance/efficiency CPU cores、GPU、NPU、media engine、memory controller、security processor與I/O controllers，並由NoC或階層interconnect連接。每個engine對特定parallelism與data type效率較高，但把data搬到engine、格式轉換、同步、driver與memory bandwidth都有成本。Accelerator的峰值operations/s不等於application端到端速度。",
-          "因此現代計算機的基本單位不再只是『一顆CPU執行instructions』，而是software把work映射到多種execution engines並共享memory與power budget。分析時仍沿用本章方法：先辨認每個engine的interface與visible state，再畫出data movement、synchronization與failure boundary，最後用representative workload量測time、throughput、energy與tail behavior。"
+        "title": "1.7 雲計算：計算即服務",
+        "slideRange": "55–61",
+        "paragraphs": [
+          "雲端運算把可配置的運算資源以服務方式提供。使用者依需求取得資源，供應商以資源池支援不同客戶，並可依使用情況計量。隨需取得、彈性調整與可量測的服務，是辨認雲端模式的重要特徵；單純遠端連線到固定電腦，還不足以涵蓋這些特性。",
+          "SaaS 讓使用者直接使用應用功能；PaaS 提供部署自有應用的平台；IaaS 提供運算、儲存與網路等基礎資源，由客戶管理所需的作業系統及應用。三種模式的差異，主要在管理責任與可控制範圍。",
+          "例如校園社團可直接使用線上表單服務，也可把自行開發的活動系統部署到平台，或租用虛擬機自行安裝軟體。管理責任越多，通常能調整的項目也越多，但維護、更新及備份的工作亦隨之增加。備份不一定自動包含在所有服務方案中。",
+          "彈性表示能配合需求增減資源。成本評估仍要包含運算時間、儲存、資料傳輸與管理工作，不能預設雲端一定較便宜。SLA 說明服務承諾及處理方式，不等於系統永不故障。原投影片中的服務商名稱與功能屬當時案例，本頁以管理責任說明通用概念。"
         ],
-        figure: { type: "hierarchy", title: "Heterogeneous SoC 的共享資源與資料移動", items: [{ label: "Software / runtime", detail: "chooses CPU, GPU, NPU or fixed-function engine" }, { label: "Compute engines", detail: "different state, parallelism and precision" }, { label: "NoC / interconnect", detail: "address, data, coherence and QoS" }, { label: "Shared memory system", detail: "cache, DRAM bandwidth and protection" }, { label: "Power / thermal budget", detail: "limits simultaneous frequency and activity" }, { label: "I/O and storage", detail: "external data arrival and persistence" }], caption: "增加engine只增加潛在能力；端到端效能仍取決於資料位置、可平行比例與共享瓶頸。" },
-        sourceRefs: ["S11", "S13", "S14", "S17", "S18", "S19"]
+        "figure": {
+          "type": "matrix",
+          "title": "社團報名系統的三種服務選擇",
+          "columns": [
+            "模式",
+            "社團主要負責",
+            "供應商主要提供"
+          ],
+          "rows": [
+            [
+              "SaaS",
+              "帳號、內容、權限與設定",
+              "可直接使用的表單應用"
+            ],
+            [
+              "PaaS",
+              "應用程式、資料及部署設定",
+              "應用執行平台與底層環境"
+            ],
+            [
+              "IaaS",
+              "作業系統、應用及其維運",
+              "虛擬運算、儲存與網路資源"
+            ]
+          ],
+          "caption": "實際分工仍需依服務契約確認，使用者在任何模式下都需要管理資料與存取權限。"
+        },
+        "sourceRefs": [
+          "P1",
+          "S11"
+        ]
+      },
+      {
+        "title": "1.8 馮紐曼模型與內儲程式",
+        "slideRange": "62–67",
+        "paragraphs": [
+          "內儲程式把指令也編碼成可放入記憶體的資料。要讓通用機器執行另一項工作，可以載入另一個程式，而不必為每項工作重新接線。馮紐曼模型將這個觀念與 CPU、主記憶體、I/O 的合作方式結合。其歷史涉及 EDVAC 團隊及多位研究者，不宜只靠模型名稱歸功於單一人物。",
+          "CPU 內的 ALU 執行算術或邏輯操作，暫存器保存目前需要的資料，控制單元安排動作，程式計數器 PC 指示指令擷取的位置。記憶體同時保存指令與資料，系統依當下的操作來解讀位元。",
+          "基本指令週期可分成擷取、解碼與執行。控制單元依 PC 取得指令，辨認它要求的動作及運算元，安排操作並保存結果。順序執行時前往下一條指令，分支則可能改變位置。本章不假設所有 ISA 的指令都是 4 bytes，也不要求每種指令都一定使用 ALU 或資料記憶體。",
+          "系統匯流排模型區分位址、資料與控制的角色：位址指定目標，資料承載內容，控制訊號表達讀寫等要求。CPU 與記憶體間的有限傳輸能力可能限制整體速度，形成馮紐曼瓶頸。快取或分離通道能緩解某些等待，仍需考慮實際資料搬移。"
+        ],
+        "figure": {
+          "type": "matrix",
+          "title": "自編模型：讀取位置 40 的數值",
+          "columns": [
+            "動作",
+            "位址角色",
+            "資料角色",
+            "控制角色"
+          ],
+          "rows": [
+            [
+              "CPU 提出讀取",
+              "40",
+              "尚未取得數值",
+              "讀取要求"
+            ],
+            [
+              "記憶體回應",
+              "對應位置 40",
+              "例如數值 12",
+              "回應完成"
+            ],
+            [
+              "CPU 使用結果",
+              "視後續指令而定",
+              "12 進入所需暫存器",
+              "選擇資料去向"
+            ]
+          ],
+          "caption": "表格表示邏輯角色，沒有指定某一種實體匯流排協定或時脈數。"
+        },
+        "sourceRefs": [
+          "P1"
+        ]
+      },
+      {
+        "title": "1.9 非馮紐曼模型",
+        "slideRange": "69–70",
+        "paragraphs": [
+          "比較替代模型時，可以先問：指令與資料是否走相同通道？它們如何儲存？什麼條件會觸發運算？這些問題比把所有現代機器直接貼上某個標籤更有幫助。",
+          "Harvard 架構分開指令與資料的儲存及通道，因而可能同時擷取指令和存取資料。修改式 Harvard 常在較靠近核心的位置分開指令與資料路徑，例如分離快取，再於較低層共用主記憶體。比較時要說清楚正在觀察哪一層。",
+          "投影片也列出歸約、資料流、DSP、媒體處理、類神經網路、網格自動機及量子計算等方向。這些名稱有的描述計算模型，有的描述用途或實作，分類面向並不完全相同。例如神經網路也能在一般 CPU 上執行，DSP 亦可能使用不同記憶體架構。",
+          "資料流模型以運算所需的資料是否就緒來理解執行條件。類神經網路以大量節點與權重的運算描述模型；網格自動機依局部規則更新狀態。量子計算採量子資訊與演算法，適用問題及加速條件需分別討論，不能概括為所有工作都比一般電腦快。"
+        ],
+        "figure": {
+          "type": "matrix",
+          "title": "比較模型時先固定觀察問題",
+          "columns": [
+            "觀察面向",
+            "比較例子",
+            "判斷重點"
+          ],
+          "rows": [
+            [
+              "指令與資料路徑",
+              "馮紐曼／Harvard",
+              "儲存與通道是否分離"
+            ],
+            [
+              "執行的觸發條件",
+              "指令順序／資料流",
+              "由控制順序或資料就緒推動"
+            ],
+            [
+              "工作如何表示",
+              "一般程序／神經網路／網格自動機",
+              "程序、權重或局部規則"
+            ],
+            [
+              "資訊表示",
+              "傳統位元／量子位元",
+              "模型與適用演算法不同"
+            ]
+          ],
+          "caption": "用途、演算法與硬體架構是不同分類維度，彼此可以交叉。"
+        },
+        "sourceRefs": [
+          "P1"
+        ]
+      },
+      {
+        "title": "1.10 平行處理器與平行計算",
+        "slideRange": "71–77",
+        "paragraphs": [
+          "平行處理把可以同時進行的工作交給多個運算單元。多核心指一顆處理器晶片中含有多個核心；多處理器系統則可包含多顆處理器。計算數量時要先說清楚計算的是伺服器、處理器封裝、核心還是軟體執行緒。",
+          "共享記憶體系統讓處理器存取共同的位址空間，分散記憶體系統則由各節點管理自己的記憶體，透過通訊交換資料。叢集也可以同時具有節點內共享、節點間分散的結構。Blue Gene 是投影片採用的大型平行系統歷史案例，重點在規模與協作方式。",
+          "多工處理讓多件工作持續取得進展，多執行緒把程式分成多條執行流程，平行執行則要求有硬體資源讓工作在同一時間進行。單核心上的執行緒切換可以改善等待 I/O 時的利用率，卻不能因此推論多份純計算工作都能同時完成。",
+          "投影片第 76 頁已引入 Amdahl 定律的概念：只能改善一部分工作時，未改善部分仍限制總加速。例如整理影像可能先讀取清單，再平行處理影像，最後合併結果。增加處理影像的核心數不會自動消除清單讀取與合併時間。",
+          "本章以簡單時間分解理解這個限制。若固定工作中比例 p 能被加速 s 倍，且忽略額外成本，新時間比例為 (1−p)+p/s，總加速比為其倒數。這個簡式是自編補充，正式效能分析在第 7 章延伸。實際系統還需處理工作分配、同步、通訊及負載不均。"
+        ],
+        "figure": {
+          "type": "matrix",
+          "title": "一批影像工作如何協作",
+          "columns": [
+            "階段",
+            "是否容易分工",
+            "可能的限制"
+          ],
+          "rows": [
+            [
+              "讀取工作清單",
+              "先取得共同輸入",
+              "初始等待"
+            ],
+            [
+              "各自縮圖",
+              "不同圖片可分開處理",
+              "圖片大小不一、儲存速度"
+            ],
+            [
+              "合併結果索引",
+              "等待必要結果再整理",
+              "同步與合併成本"
+            ]
+          ],
+          "caption": "分工先依資料相依性判斷，不能只由核心數推算總加速。"
+        },
+        "sourceRefs": [
+          "P1"
+        ]
+      },
+      {
+        "title": "1.11 平行性與機器智慧：Deep Blue、Watson",
+        "slideRange": "78–83",
+        "paragraphs": [
+          "Deep Blue 與 Watson 展示不同問題如何結合演算法、資料與平行硬體。它們有明確任務及評估規則，不能只因在特定競賽取勝，就推論已具備所有人類智慧。",
+          "Deep Blue 在 1997 年的西洋棋對賽中擊敗世界冠軍 Garry Kasparov。西洋棋具有明確規則與可表示的局面，系統結合搜尋、局面評估及專用硬體，在有限時間內評估大量可能走法。平行資源讓更多候選局面得以處理，但仍需要好的搜尋與評估方法。",
+          "Watson 在 2011 年參加 Jeopardy! 並擊敗 Ken Jennings 與 Brad Rutter。問題涉及自然語言、雙關與大量知識，系統需要產生候選答案、蒐集證據並評估信心。它在競賽期間使用預先準備的資料，沒有連上網際網路即時搜尋答案。",
+          "IBM 記錄該系統使用 90 部伺服器，合計 2,880 個處理器核心。這是整體系統的數量。原投影片的記憶體敘述容易讓人把叢集資源誤讀為每核心獨占容量；本章以整體、節點及核心三種尺度區分，不把總記憶體重複乘上核心數。",
+          "比較兩個案例時，先指出輸入與答案如何表示，再說明哪些工作能同時做，最後檢查輸出品質及時間。增加硬體可縮短部分計算，但資料品質、演算法與問題定義仍會決定結果是否可靠。本章案例限定於當年的競賽系統。"
+        ],
+        "figure": {
+          "type": "matrix",
+          "title": "兩種任務的平行工作",
+          "columns": [
+            "面向",
+            "Deep Blue",
+            "Watson（2011 競賽系統）"
+          ],
+          "rows": [
+            [
+              "輸入",
+              "棋盤局面與合法走法",
+              "自然語言提示"
+            ],
+            [
+              "候選結果",
+              "可能走法及後續局面",
+              "可能答案及相關證據"
+            ],
+            [
+              "可分工工作",
+              "搜尋與評估不同局面",
+              "不同分析及證據評分"
+            ],
+            [
+              "輸出判斷",
+              "選擇走法",
+              "答案與作答信心"
+            ]
+          ],
+          "caption": "表格依問題流程自編，聚焦平行運算的用途，不重製競賽系統原圖。"
+        },
+        "sourceRefs": [
+          "P1",
+          "S12",
+          "S13",
+          "S14"
+        ]
       }
     ],
-    workedExamples: [
+    "workedExamples": [
       {
-        title: "例題一：相同 ISA，為何執行時間不同？",
-        prompt: "處理器 P 與 Q 都執行同一份 MIPS binary，共 8×10^8 條 dynamic instructions。P 的 clock=2.5 GHz、CPI=1.4；Q 的 clock=2.0 GHz、CPI=1.0。判斷 compatibility 與 performance。",
-        steps: [
-          "兩者能執行相同 binary，表示在題目範圍內具備相容的 ISA；clock 與 CPI 屬於 microarchitecture/performance 資訊。",
-          "P 的 cycles = 8×10^8 × 1.4 = 1.12×10^9 cycles。",
-          "P 的 time = 1.12×10^9 / 2.5×10^9 = 0.448 s。",
-          "Q 的 cycles = 8×10^8 × 1.0 = 8×10^8 cycles。",
-          "Q 的 time = 8×10^8 / 2.0×10^9 = 0.400 s。",
-          "Speedup(Q over P) = 0.448 / 0.400 = 1.12，因此 Q 對此 workload 快 12%。"
+        "title": "例題一：辨認借書機的組件",
+        "prompt": "掃描書籍後，系統確認資格、暫存清單、顯示成功並傳送紀錄。請按三組件模型分類。",
+        "steps": [
+          "掃描器取得外部資訊，屬於輸入。",
+          "借閱規則由處理器執行。",
+          "目前清單放在主記憶體，供處理中使用。",
+          "螢幕輸出結果，網路介面負責與伺服器交換資料。",
+          "若要長期保存紀錄，還需要可靠的儲存安排，不能只依靠暫存的 RAM。"
         ],
-        result: "相同 ISA 只保證程式可執行與結果相容，不保證效能相同。P 的 clock 較高，但 CPI 劣勢更大。"
+        "result": "同一次服務同時使用處理、記憶及 I/O，資料會在角色之間移動。"
       },
       {
-        title: "例題二：追蹤一條 add 的 architectural state",
-        prompt: "執行 add $t0,$t1,$t2 前，PC=0x00400020、$t1=7、$t2=−3、$t0=99。假設無例外且 MIPS 指令固定 4 bytes。列出 S(t)→S(t+1)。",
-        steps: [
-          "Fetch 使用 PC=0x00400020 取得 instruction bits；fetch 本身不應改變 general-purpose registers。",
-          "Decode 得知來源為 $t1、$t2，目的為 $t0，operation 為 signed/bitwise-equivalent 32-bit addition。",
-          "Read operands 得到 7 與 −3；ALU 計算 7+(−3)=4。",
-          "Write-back 將 $t0 由 99 更新為 4。",
-          "Sequential next PC = 0x00400020+4 = 0x00400024。",
-          "此指令不存取 data memory，因此 M 保持不變；其他 registers 保持不變。"
+        "title": "例題二：2 TB 換算成 GiB",
+        "prompt": "一個儲存裝置以十進位標示 2 TB。先忽略格式化與保留空間，換算成 GiB。",
+        "steps": [
+          "十進位容量為 2×10^12 bytes。",
+          "1 GiB = 2^30 = 1,073,741,824 bytes。",
+          "以位元組總量除以每 GiB 的位元組數。",
+          "2×10^12 ÷ 2^30 ≈ 1862.65 GiB。",
+          "數字變小源自單位變大；格式化及系統保留空間是另一項影響。"
         ],
-        result: "S(t+1) 與 S(t) 的 architectural 差異只有 $t0=4 與 PC=0x00400024。pipeline 內部可能同時改變許多 temporary registers，但不屬於此 ISA-level 答案。"
+        "result": "2 TB 約為 1862.65 GiB；容量換算不代表資料遺失。"
       },
       {
-        title: "例題三：由 C array operation 建立跨層追蹤",
-        prompt: "A 與 B 是 32-bit integer arrays，$s0=A base、$s1=B base、$t0=i=3。追蹤 A[i]=B[i]+1 的 address 與主要 state。",
-        steps: [
-          "每個 element 為 4 bytes，因此 byte offset = i×4 = 3×4 = 12。",
-          "可用 sll $t1,$t0,2 取得 offset 12；這是乘 2^2 的位移。",
-          "B[i] address = $s1+12。load 將 M[$s1+12 ... $s1+15] 組成 32-bit value 放入暫存器。",
-          "addi 將 loaded value 加 1。若只分析 correctness，要確認 32-bit overflow 語意與使用的 instruction。",
-          "A[i] address = $s0+12。store 把結果的四個 bytes 寫入該位置。",
-          "若 B[i] 與 A[i] 所在 block 已在 cache，memory hierarchy 可能完全不存取 DRAM；architectural result 仍相同。"
+        "title": "例題三：時脈週期與資料傳送",
+        "prompt": "假設 CPU 工作頻率為 2.5 GHz，另一條 DDR 資料介面的時脈為 800 MHz，每週期傳送兩次。求 CPU 週期及 DDR 傳輸率。",
+        "steps": [
+          "CPU 頻率為 2.5×10^9 cycles/s。",
+          "週期為 1/(2.5×10^9) s = 0.4 ns。",
+          "DDR 介面每秒有 800×10^6 個週期。",
+          "每週期兩次傳送，得到 1600×10^6 transfers/s，即 1600 MT/s。",
+          "CPU 與記憶體介面是不同時脈範圍；這些數值都不能直接當成每秒完成的指令數。"
         ],
-        result: "source-level 的一個 array assignment 展開成 offset、兩個 effective addresses、load、ALU update 與 store。cache hit/miss 是下一層效能證據。"
+        "result": "CPU 週期為 0.4 ns，DDR 傳輸率為 1600 MT/s。"
       },
       {
-        title: "例題四：辨認平行層次與限制",
-        prompt: "某 GPU kernel 對 1,000,000 個元素各做相同公式，但公式內含依資料決定的 if/else。系統把 threads 以 32 個一組執行。這是哪種平行方式，主要風險是什麼？",
-        steps: [
-          "每個 element 可由一個 thread 處理，因此問題有 data parallelism。",
-          "threads 以群組共同推進 instruction，符合 SIMT programming/execution model。",
-          "每個 thread 保有自己的 register state 與 element index，因此不是單一 scalar state。",
-          "若同一組 32 threads 對 if/else 做出不同選擇，就產生 branch divergence。",
-          "硬體必須對不同路徑分別執行並遮罩未參與 threads；correctness 不變，但有效利用率下降。",
-          "改善前還要檢查 memory access 是否連續，因為 bandwidth 可能比 divergence 更主要。"
+        "title": "例題四：影像的原始儲存量",
+        "prompt": "自編影像大小為 1280×720 像素，每像素使用 24 bits。忽略壓縮、檔頭與列對齊，計算一張影像的容量。",
+        "steps": [
+          "像素總數為 1280×720 = 921,600。",
+          "每像素 24 bits = 3 bytes。",
+          "總容量為 921,600×3 = 2,764,800 bytes。",
+          "除以 10^6 得 2.7648 MB；除以 2^20 得約 2.6367 MiB。",
+          "實際檔案或畫面緩衝區可能有額外資料，題目數值只涵蓋假設中的像素內容。"
         ],
-        result: "此例主要是 SIMT/data parallelism；限制包括 divergence 與 memory behavior。不能只因 thread 數很多就假設 speedup 線性。"
+        "result": "原始像素內容為 2,764,800 bytes，MB 與 MiB 的數字不同。"
       },
       {
-        title: "例題五：由 stage delays 比較 single-cycle 與 pipeline clock",
-        prompt: "五項工作延遲依序為IF=250 ps、ID=120 ps、EX=180 ps、MEM=300 ps、WB=100 ps；每個pipeline register另加20 ps。求single-cycle最短period、5-stage pipeline period與理想穩態throughput。",
-        steps: [
-          "Single-cycle load依序經過全部五項工作，combinational總延遲=250+120+180+300+100=950 ps。",
-          "若題目不另給single-cycle register overhead，最短period以950 ps建立簡化下界。",
-          "Pipeline period由最慢stage加pipeline-register overhead決定。",
-          "最慢stage是MEM 300 ps，因此T_pipe=300+20=320 ps。",
-          "理想填滿後每cycle完成一條instruction，throughput=1/320 ps=3.125×10^9 instructions/s。",
-          "單一instruction仍需約5×320=1600 ps穿過五級，pipeline提高throughput卻未降低此load的latency。"
+        "title": "例題五：把校園查詢放回七個階層",
+        "prompt": "學生操作應用程式查詢空教室，開發者以高階語言撰寫，系統呼叫提供網路服務。說明相關階層。",
+        "steps": [
+          "學生看到的是第 6 階層的應用功能。",
+          "程式的條件與函式位於第 5 階層，組合語言表示位於第 4 階層。",
+          "網路資源管理與系統服務屬於第 3 階層。",
+          "處理器執行第 2 階層的 ISA 指令，由第 1 階層控制執行。",
+          "第 0 階層提供數位邏輯。這是功能分層，並非每條算術指令都要先呼叫作業系統。"
         ],
-        result: "Single-cycle period至少950 ps；pipeline period 320 ps、理想穩態3.125 GIPS，但單條load latency約1.6 ns。"
+        "result": "同一項使用者功能，可在不同階層提出不同的實作問題。"
       },
       {
-        title: "例題六：建立 precise page-fault state",
-        prompt: "指令I1已retire，I2是load並發生page fault，I3已speculatively execute但尚未retire。進入handler前哪些效果可保留？",
-        steps: [
-          "先以program order標出I1<I2<I3。",
-          "I1較舊且已retire，其register/memory效果屬於architectural state，必須保留。",
-          "I2是faulting instruction；若要修復mapping後restart，load destination不能先留下不完整的新值。",
-          "I3雖已execute，卻比faulting instruction年輕且未retire，其speculative result必須隱藏或丟棄。",
-          "hardware保存I2的exception PC、page-fault cause與必要privilege state。",
-          "handler建立mapping後返回I2重試；完成後I3才能重新執行並依序retire。"
+        "title": "例題六：社團選擇雲端服務",
+        "prompt": "甲直接使用線上報名應用，乙上傳自寫程式到代管平台，丙租虛擬機自行安裝作業系統環境與網站。分類三者。",
+        "steps": [
+          "甲主要使用現成應用，對應 SaaS。",
+          "乙負責應用程式，平台管理執行環境，對應 PaaS。",
+          "丙管理作業系統與應用，對應 IaaS。",
+          "三者都仍需要正確設定資料及存取權限。",
+          "選擇時還要比較管理人力、需求及契約，不能只靠月租價格。"
         ],
-        result: "進入handler時architectural state停在I1之後、I2之前；I3的內部完成不等於architectural完成。"
+        "result": "服務模式由責任邊界判斷，不由品牌名稱判斷。"
       },
       {
-        title: "例題七：用 Amdahl's Law 計算加速上限",
-        prompt: "程式有35%時間可由新accelerator加速8倍，其餘65%不變。求overall speedup與accelerator無限快時的上限。",
-        steps: [
-          "將原始execution time正規化為1。",
-          "未改善部分時間為1−0.35=0.65。",
-          "改善部分新時間為0.35/8=0.04375。",
-          "新總時間=0.65+0.04375=0.69375。",
-          "overall speedup=1/0.69375≈1.44144。",
-          "若accelerator無限快，改善部分趨近0，上限=1/0.65≈1.53846。"
+        "title": "例題七：追蹤簡化內儲程式",
+        "prompt": "自編機器每個位置存一個字，PC 初值為 20；位置 20、21、22 依序為「讀取位置 70」「加上位置 71」「寫回位置 72」。位置 70、71 的值為 6、9。",
+        "steps": [
+          "依 PC=20 擷取指令，解碼後把位置 70 的數值 6 讀入工作暫存器。",
+          "順序前進到位置 21，取得加法指令。",
+          "讀取位置 71 的數值 9，工作暫存器得到 6+9=15。",
+          "位置 22 的指令將結果 15 寫到位置 72。",
+          "三條指令完成後，假設順序前進，PC=23。本例採按字定址的自編模型，並非 MIPS 或 MARIE 的完整指令規格。"
         ],
-        result: "局部8倍只讓全程約1.441倍；65%未改善部分把任何accelerator的上限鎖在約1.538倍。"
+        "result": "位置 72 得到 15，指令與資料同在記憶體中，各依用途解讀。"
       },
       {
-        title: "例題八：比較 DVFS 前後的 dynamic power",
-        prompt: "activity與capacitance不變。模式A為1.0 V、2.0 GHz；模式B為0.8 V、1.5 GHz。以αCV²f求P_B/P_A。",
-        steps: [
-          "相同比例中α與C相消。",
-          "P_B/P_A=(V_B/V_A)²×(f_B/f_A)。",
-          "電壓比平方=(0.8/1.0)²=0.64。",
-          "頻率比=1.5/2.0=0.75。",
-          "兩者相乘0.64×0.75=0.48。",
-          "此結果只涵蓋dynamic component；leakage與完成時間改變仍須另算。"
+        "title": "例題八：有限的平行加速",
+        "prompt": "處理一批圖片原需 100 秒，其中 25 秒無法分工，75 秒可平均分給 5 個核心。忽略額外成本，求新時間及加速比。",
+        "steps": [
+          "先把原時間分成 25 秒循序工作及 75 秒可平行工作。",
+          "循序部分仍需 25 秒。",
+          "可平行部分理想上為 75/5=15 秒。",
+          "總時間為 25+15=40 秒，加速比為 100/40=2.5。",
+          "即使可平行部分趨近零，總時間仍至少 25 秒，因此理想上限為 4 倍。"
         ],
-        result: "模式B的dynamic power約為模式A的48%。"
+        "result": "5 個核心不保證 5 倍加速；本例忽略通訊與管理成本，得到理想估計。"
       },
       {
-        title: "例題九：由 power 與 time 比較 energy 及 EDP",
-        prompt: "設計A平均80 W、完成時間2.0 s；設計B平均110 W、完成時間1.2 s。比較energy與energy-delay product。",
-        steps: [
-          "A energy=80×2.0=160 J。",
-          "B energy=110×1.2=132 J。",
-          "B雖然power較高，因時間縮短而少用28 J，energy降低17.5%。",
-          "A EDP=160×2.0=320 J·s。",
-          "B EDP=132×1.2=158.4 J·s。",
-          "EDP_B/EDP_A=158.4/320=0.495，因此B在此metric也較佳。"
+        "title": "例題九：節點與核心數",
+        "prompt": "假設某教學叢集有 6 個節點，每節點 2 顆處理器，每顆 8 核，每節點配置 64 GiB RAM。求核心總數與配置的 RAM 總量。",
+        "steps": [
+          "每節點核心數為 2×8=16。",
+          "6 個節點共有 6×16=96 個核心。",
+          "每節點 RAM 為 64 GiB，配置總量為 6×64=384 GiB。",
+          "不能再將 384 GiB 乘上 96，因為核心數不代表相同 RAM 被複製。",
+          "各節點可能有獨立位址空間，因此總容量不保證任一程序可以直接存取全部容量。"
         ],
-        result: "B同時較快且總energy較低；只比較80 W與110 W會得到錯誤結論。"
+        "result": "共有 96 核及 384 GiB 配置容量，必須區分加總與可直接存取的範圍。"
       },
       {
-        title: "例題十：加速器含資料搬移時的 break-even",
-        prompt: "CPU直接處理一批資料需30 ms。Accelerator compute需6 ms，但每次另有8 ms輸入搬移、5 ms輸出搬移與3 ms啟動成本。是否值得offload？",
-        steps: [
-          "先列出offload完整critical path，而不是只看accelerator kernel。",
-          "輸入搬移8 ms。",
-          "啟動與排程3 ms。",
-          "accelerator compute 6 ms。",
-          "輸出搬移5 ms。",
-          "總offload time=8+3+6+5=22 ms；speedup=30/22≈1.3636。",
-          "若資料已在accelerator-local memory，可省搬移而更快；若batch更小，固定啟動成本可能使offload反而變慢。"
+        "title": "例題十：判斷平行問答系統的工作",
+        "prompt": "自編問答系統同時用 4 種方法搜尋候選答案，再綜合證據。哪些部分可能加速，哪些判斷仍然必要？",
+        "steps": [
+          "四種方法若可獨立處理，就能分配到不同執行資源。",
+          "候選答案及其證據仍需要交換或彙整。",
+          "輸出前要評估答案品質及信心，不能把最早完成的結果直接當成正確答案。",
+          "某一方法較慢時，是否必須等待它，取決於系統的決策規則。",
+          "增加核心主要增加可同時處理的工作，不會自動補足錯誤或不足的資料。"
         ],
-        result: "本批次offload可由30 ms降至22 ms，約1.364倍；kernel本身的5倍並不是端到端speedup。"
+        "result": "平行硬體要配合資料與評估方法，才有助於在時間限制內得到可靠答案。"
       }
     ],
-    misconceptions: [
-      ["Architecture 就是 CPU 方塊圖。", "方塊圖多半呈現 organization；ISA 才是 software-visible architecture contract。廣義用語可能涵蓋兩者，分析時仍要明確命名。"],
-      ["clock rate 高的 CPU 一定比較快。", "CPU Time 同時受 instruction count、CPI 與 clock period 影響；workload 與 memory stall 也必須相同才能比較。"],
-      ["von Neumann machine 只能有一條實體 bus。", "核心是 stored-program 與 instruction/data 的概念模型。現代 CPU 可有分離 L1、multiple buses 與 network-on-chip。"],
-      ["Pipeline 同時做五條指令，所以單一指令快五倍。", "Pipeline 主要改善 throughput；單一 instruction latency 仍包含所有 stages 與 pipeline-register overhead。"],
-      ["ISA 相同代表 cache、pipeline 與核心數相同。", "這些多半是 microarchitecture 選擇。同一 ISA 可有非常小或非常高效能的不同 implementations。"],
-      ["程式與資料都是 bits，所以任何資料都能安全執行。", "stored-program 允許 bits 被解讀為 instruction，但 privilege、page permission、alignment 與 valid encoding 仍限制合法 execution。"],
-      ["Fetch、decode、execute 一定是三個實體 clock stages。", "它們是理解 instruction semantics 的概念工作。實作可把工作合併、拆分成更多 stages，或讓多條 instructions 重疊進行。"],
-      ["Instruction execute 完成就等於程式已看見結果。", "Out-of-order CPU 可先完成較年輕 instruction，但仍要等到安全 retire/commit 才更新 architectural state。"],
-      ["Exception 只是跳到另一段程式，和 branch 沒有差別。", "Branch 是正常 control-flow operation；exception 還要保存 cause、faulting PC 與 privilege state，並建立可恢復的 architectural boundary。"],
-      ["Interrupt 發生時可以留下半條 instruction 的 architectural 更新。", "支援 precise interrupt 的系統會在 instruction boundary 呈現一致狀態；較舊指令已完成，較年輕指令尚未生效。"],
-      ["Power 與 energy 是同一個量。", "Power 是 energy 使用速率，單位 watt；energy 是 power 對時間的積分，固定平均功率時 E=P×T，單位 joule。"],
-      ["降低 power 必然降低完成工作的 energy。", "較低 power 若使執行時間大幅拉長，energy 仍可能增加；必須同時計算 power 與 elapsed time。"],
-      ["TDP 就是每個程式執行時的實測 power。", "TDP 是散熱與產品設計相關規格，不是任意 workload 的瞬時或平均耗電讀值。"],
-      ["Moore's Law 預測 clock rate 每兩年加倍。", "原始觀察談的是積體電路可經濟整合的元件數；clock growth 還受 device delay、power density 與設計限制影響。"],
-      ["Transistor 變多就會自動遵循 Dennard scaling 而不增加功耗。", "Dennard scaling 依賴尺寸與電壓等比例縮小；電壓縮放放緩後，更多 transistors 不代表都能同時以最高頻率啟用。"],
-      ["Dark silicon 是晶片上已經故障的區域。", "它描述受 power/thermal budget 限制、不能同時以目標效能啟用的電路資源，不等於製造缺陷。"],
-      ["Accelerator 的 peak throughput 就是應用程式 speedup。", "端到端結果還包含可加速比例、資料搬移、啟動、同步與未改善工作；必須用完整 critical path 或 Amdahl's Law 計算。"]
+    "misconceptions": [
+      [
+        "Architecture 就是 ISA 的另一種拼法。",
+        "ISA 是明確的軟硬體介面，廣義架構還包含系統結構與設計取捨。"
+      ],
+      [
+        "硬體與軟體功能等效，所以速度與成本相同。",
+        "功能等效不代表執行時間、耗能、開發費用及修改難度相同。"
+      ],
+      [
+        "1 GB 與 1 GiB 可以任意互換。",
+        "GB 採 10^9 bytes，GiB 採 2^30 bytes，換算時必須寫明單位。"
+      ],
+      [
+        "GHz 越高，所有程式一定越快。",
+        "頻率只是影響因素之一，還需考慮工作內容與其他硬體資源。"
+      ],
+      [
+        "七階層是一條每條指令都必須逐站通過的路線。",
+        "它是抽象模型，翻譯、系統服務和指令執行應分別理解。"
+      ],
+      [
+        "雲端服務會自動替客戶處理所有備份及權限。",
+        "實際責任依模式與契約而定，客戶仍要管理資料與存取設定。"
+      ],
+      [
+        "內儲程式表示 CPU 永遠一次只能進行一件事。",
+        "內儲程式說明指令的儲存方式，現代實作仍可能使用多核心或其他平行技術。"
+      ],
+      [
+        "增加核心就能使任意程式同比加速。",
+        "循序工作、通訊、同步及負載不均都可能限制速度。"
+      ],
+      [
+        "摩爾定律保證每隔固定時間程式速度倍增。",
+        "它關注元件整合的歷史趨勢，並非程式速度的保證。"
+      ],
+      [
+        "競賽問答獲勝就證明機器能正確回答所有問題。",
+        "特定任務的結果有其資料、規則及適用範圍，仍需評估其他情境。"
+      ]
     ],
-    exercises: [
+    "exercises": [
       {
-        level: "基礎",
-        question: "將 compiler、ISA、register file、adder、transistor、C function 依抽象層次由高到低排序。",
-        solution: ["C function → compiler → ISA → register file → adder → transistor。", "compiler 是翻譯系統而非執行硬體，但在這條路徑中位於語言與 ISA 之間；register file 與 adder 屬於 microarchitecture/digital logic。"]
+        "level": "理解",
+        "question": "設計者決定新增一種機器指令，另一位工程師安排控制訊號。兩者分別主要涉及什麼？",
+        "solution": [
+          "新增指令改變 ISA 介面，涉及架構設計。",
+          "控制訊號的實現涉及組織；二者仍須合作才能完成系統。"
+        ]
       },
       {
-        level: "基礎",
-        question: "下列哪些通常屬於 ISA：L1 cache 大小、register 數量、instruction encoding、pipeline stage 數、exception behavior？",
-        solution: ["通常屬於 ISA：programmer-visible register 數量、instruction encoding、exception behavior。", "L1 cache 大小與 pipeline stage 數通常屬於 microarchitecture。"]
+        "level": "理解",
+        "question": "校園感測站讀取溫度、計算平均並傳送結果，請辨認三種基本角色。",
+        "solution": [
+          "感測與傳送屬 I/O，計算平均由處理器執行。",
+          "程式及處理中的數值由記憶體保存。"
+        ]
       },
       {
-        level: "基礎",
-        question: "為何 instruction 與 integer 在 memory 中都只是 bits，CPU 卻能區分它們？",
-        solution: ["bits 本身沒有型別；當 CPU 以 PC 作為位址進行 fetch，回傳 bits 會依 instruction encoding 解碼。", "當 load 把相同 bits 讀入 register，後續 instruction 可把它解讀為 signed、unsigned、address 或其他資料。context 與 operation 決定意義。"]
+        "level": "理解",
+        "question": "同一個影像濾鏡可以用專用電路或一般程式完成，選擇時還要比較什麼？",
+        "solution": [
+          "比較執行時間、能源、資料搬移與開發成本。",
+          "也要考慮需求變更及修改難度，功能等效不代表成本相同。"
+        ]
       },
       {
-        level: "基礎",
-        question: "某 fixed-length 32-bit ISA 使用 byte addressing。若目前 PC=0x1000 且沒有 branch，下一個 PC 是多少？",
-        solution: ["32 bits = 4 bytes，因此 next PC = 0x1000 + 4 = 0x1004。", "不能寫成 +1；+1 只前進一個 byte。"]
+        "level": "計算",
+        "question": "容量為 512 MiB 的緩衝區共有多少 bytes？若改用 MB 表示是多少？",
+        "solution": [
+          "512×2^20=536,870,912 bytes。",
+          "除以 10^6，得到 536.870912 MB。"
+        ]
       },
       {
-        level: "理解",
-        question: "兩顆處理器都能執行同一份 RV32I binary，但一顆是 3-stage pipeline，另一顆是 8-stage pipeline。這是否矛盾？",
-        solution: ["不矛盾。RV32I 定義 software-visible ISA；pipeline depth 是 microarchitecture。", "只要兩者對每條 instruction、exception 與 memory behavior 產生規格允許的 observable result，就能相容。"]
+        "level": "計算",
+        "question": "某介面的時脈為 250 MHz，每個週期長度是多少 ns？",
+        "solution": [
+          "週期為 1/(250×10^6) 秒。",
+          "換算得 4 ns，不等於每次應用操作都只花 4 ns。"
+        ]
       },
       {
-        level: "理解",
-        question: "為何分離 instruction cache 與 data cache 不一定表示程式看見兩個 address spaces？",
-        solution: ["cache 是 microarchitecture 中的暫存層。instruction/data L1 可分離以提高 bandwidth，再於較低 memory hierarchy 匯合。", "ISA 仍可提供統一的 architectural address space；因此要區分 programmer-visible address model 與內部 cache organization。"]
+        "level": "計算",
+        "question": "500 Mbit/s 的鏈路，理想位元組傳輸率是多少 MB/s？",
+        "solution": [
+          "每 byte 為 8 bits，所以 500/8=62.5 MB/s。",
+          "這是未扣協定與其他等待的理想速率，實際檔案傳輸通常還有額外成本。"
+        ]
       },
       {
-        level: "理解",
-        question: "對 register-register add，列出至少四個可能改變的 microarchitectural state，以及真正必須改變的 architectural state。",
-        solution: ["microarchitectural state 可能包括 IF/ID、ID/EX、EX/MEM、MEM/WB pipeline registers、scoreboard、reorder buffer 或 predictor metadata。", "architectural state 至少更新 destination register 與 PC；其他 programmer-visible state 依 ISA 規定保持不變。"]
+        "level": "理解",
+        "question": "為何知道裝置符合某個標準後，仍應檢查版本與支援功能？",
+        "solution": [
+          "同一標準可能有不同版本、速率及選用功能。",
+          "互通與效能要依實際組合判斷，不能只看名稱或接頭。"
+        ]
       },
       {
-        level: "計算",
-        question: "CPU A 執行 2×10^9 instructions，CPI=1.2，clock=3 GHz。CPU B 執行同工作需 1.5×10^9 instructions，CPI=1.8，clock=3.6 GHz。誰較快？",
-        solution: ["A time = 2×10^9×1.2 / 3×10^9 = 0.8 s。", "B time = 1.5×10^9×1.8 / 3.6×10^9 = 0.75 s。", "B 較快，speedup = 0.8/0.75 ≈ 1.067，約快 6.7%。"]
+        "level": "理解",
+        "question": "真空管、電晶體、積體電路在課本世代分類中依什麼順序出現？",
+        "solution": [
+          "主要採用技術的順序為真空管、電晶體、積體電路。",
+          "分類年代描述普及時期，不能直接當成每項元件的發明年。"
+        ]
       },
       {
-        level: "應用",
-        question: "一個 device status register 讀取後會自動清除。為何 CPU 不應把它當成一般 DRAM 任意重讀或 cache？",
-        solution: ["每次 read 都有 side effect；重讀會改變 device state，cache 回傳舊值也可能隱藏新事件。", "因此 device mapping 通常需要特定 memory type、ordering 與不可 cache 規則，compiler/CPU 也不能任意移動 access。"]
+        "level": "理解",
+        "question": "如果單晶片可整合的元件數量增加一倍，可以直接宣稱程式速度加倍嗎？",
+        "solution": [
+          "不能，摩爾定律的觀察對象不是指定程式的執行時間。",
+          "運算、記憶體、I/O 與軟體如何利用新增資源都會影響結果。"
+        ]
       },
       {
-        level: "應用",
-        question: "矩陣加法每個 element 完全獨立，適合哪些平行層次？若每個 element 都有不同長度的迴圈，哪個限制會變嚴重？",
-        solution: ["可用 SIMD/vector、SIMT/GPU threads，也可把區塊分給 multicore tasks。", "若同一 SIMD/SIMT group 內工作長度不同，會產生 lane underutilization 或 divergence/load imbalance；最慢工作可能決定群組完成時間。"]
+        "level": "理解",
+        "question": "在課本七階層中，ISA、系統軟體與控制階層各是第幾層？",
+        "solution": [
+          "ISA 是第 2 層，系統軟體是第 3 層，控制是第 1 層。",
+          "層次表示功能分工，不表示程式必須依編號逐層呼叫。"
+        ]
       },
       {
-        level: "整合",
-        question: "一段程式換新 CPU 後答案相同但慢了 20%。請列出由上到下至少五項應蒐集的證據。",
-        solution: ["確認 workload/input 與 compiler options 相同。", "比較 dynamic instruction count 與 instruction mix。", "比較 average CPI，分解 branch、dependency 與 cache/memory stalls。", "比較 clock period/rate。", "比較 cache miss、memory bandwidth、page fault 與 I/O wait。", "最後以 CPU Time 或 wall-clock time 的同一 metric 整合，不先假設單一原因。"]
+        "level": "理解",
+        "question": "同學直接使用線上試算表，與自行管理租用虛擬機上的作業系統，服務模式如何區分？",
+        "solution": [
+          "前者通常屬 SaaS，後者屬 IaaS。",
+          "差異在使用者和供應商的管理責任，仍須確認實際契約。"
+        ]
       },
       {
-        level: "整合",
-        question: "用 S={PC,R,M,D} 描述 store instruction 正常完成後哪些 state 可能改變；再說明 page fault 時有何不同。",
-        solution: ["正常 store 會更新指定 memory bytes M，並讓 PC 前進或依 ISA 決定 next PC；source registers 通常不變。device-mapped address 可能改變 D。", "page fault 時 store 可能尚未成為 architectural effect；control 轉入 exception handler，exception/privileged state 與 PC 保存方式依 ISA 規定更新。恢復後要確保 instruction 可被精確重試，不可重複產生已完成的 side effect。"]
+        "level": "理解",
+        "question": "請說明內儲程式與程式計數器如何共同支援指令執行。",
+        "solution": [
+          "指令以編碼形式存放於記憶體，PC 提供擷取位置。",
+          "解碼及執行後依正常順序或控制轉移規則決定下一個位置。"
+        ]
       },
       {
-        level: "計算",
-        question: "四級 pipeline 的工作延遲為 180、240、150、210 ps，pipeline register overhead 為 25 ps。求 clock period、理想 throughput 與單條 instruction 的 pipeline latency。",
-        solution: ["Clock period 由最慢工作加 register overhead 決定：T=240+25=265 ps。", "理想穩態 throughput=1/265 ps≈3.7736×10^9 instructions/s。", "單條 instruction 經四級的 latency≈4×265=1060 ps；這再次說明 throughput 與 latency 不能互換。"]
+        "level": "理解",
+        "question": "CPU 讀取記憶體時，位址、資料與控制分別扮演什麼角色？",
+        "solution": [
+          "位址指定位置，資料承載該位置回傳的內容。",
+          "控制表達讀取要求及交易狀態，三者的角色不能混為一談。"
+        ]
       },
       {
-        level: "理解",
-        question: "I1 已 retire，I2 的 divide-by-zero 會觸發 exception，I3 已算出結果但未 retire。Precise exception 進入 handler 時應呈現什麼狀態？",
-        solution: ["I1 的效果保留；I2 不留下正常完成結果，系統保存 I2 的位置與 cause。", "I3 比 faulting instruction 年輕，即使 execution unit 已算完，其結果也不得進入 architectural state。handler 看見的是 I1 之後、I2 之前的一致邊界。"]
+        "level": "理解",
+        "question": "系統有分離的指令與資料快取，但共用主記憶體，如何描述比較精確？",
+        "solution": [
+          "說明它在快取層分開路徑，較低層則共用記憶體。",
+          "可用修改式 Harvard 理解；不能僅憑快取分離就推論全系統有兩套獨立儲存空間。"
+        ]
       },
       {
-        level: "計算",
-        question: "某最佳化可讓原本占 60% 的執行時間加速 5 倍，其餘不變。求 overall speedup 與該部分無限快時的上限。",
-        solution: ["新時間比例=(1−0.60)+0.60/5=0.40+0.12=0.52。", "Overall speedup=1/0.52≈1.92308。", "若改善部分無限快，上限=1/0.40=2.5；未改善的 40% 仍是硬上限。"]
+        "level": "理解",
+        "question": "共享記憶體與分散記憶體系統交換資料的方式有何差異？",
+        "solution": [
+          "共享模型讓處理器存取共同位址空間，仍需正確協調。",
+          "分散模型各節點有自己的記憶體，通常透過訊息或網路傳送交換資料。"
+        ]
       },
       {
-        level: "計算",
-        question: "Activity 與 capacitance 不變，電壓由 1.0 V 降至 0.9 V，頻率由 2.0 GHz 升至 2.4 GHz。Dynamic power 比例是多少？",
-        solution: ["依 P_dyn≈αCV²f，比值=(0.9/1.0)²×(2.4/2.0)。", "0.81×1.2=0.972，因此 dynamic power 約為原來 97.2%。", "頻率提高抵銷大部分降壓效益；此比例仍未包含 leakage。"]
+        "level": "計算",
+        "question": "固定工作原需 80 秒，其中 20 秒循序執行，60 秒可平分到 4 個核心。忽略額外成本，求加速比。",
+        "solution": [
+          "新時間為 20+60/4=35 秒。",
+          "加速比 80/35≈2.286；循序部分仍存在，理想上限為 80/20=4 倍。"
+        ]
       },
       {
-        level: "計算",
-        question: "處理器 X 平均 65 W、需 3.0 s；Y 平均 90 W、需 1.8 s。比較 energy 與 EDP。",
-        solution: ["X energy=65×3.0=195 J；Y energy=90×1.8=162 J，所以 Y 少 33 J。", "X EDP=195×3.0=585 J·s；Y EDP=162×1.8=291.6 J·s。", "Y 的 power 較高，卻因更快完成而同時具有較低 energy 與 EDP。"]
+        "level": "計算",
+        "question": "4 個節點各有 12 核與 32 GiB RAM。核心總數與 RAM 配置總量是多少？",
+        "solution": [
+          "共 4×12=48 核，RAM 配置總量為 4×32=128 GiB。",
+          "分散記憶體下不能由總容量推論單一程序能直接存取全部 128 GiB。"
+        ]
       },
       {
-        level: "整合",
-        question: "一項工作在 CPU 上需 24 ms。NPU compute 只需 4 ms，但輸入、輸出、啟動分別需 7、5、3 ms。計算 offload speedup，並指出批次變小時首先要重新檢查的成本。",
-        solution: ["Offload 總時間=7+3+4+5=19 ms；端到端 speedup=24/19≈1.2632。", "NPU compute 本身雖為 CPU 時間的六分之一，完整 speedup 只有約 1.263 倍。", "批次變小時，固定啟動成本與資料搬移占比會升高，應先重新量測這三項，而不是只引用 NPU peak throughput。"]
+        "level": "整合",
+        "question": "比較 Deep Blue 與 Watson 時，為何不能只比較核心數來判斷哪個更聰明？",
+        "solution": [
+          "兩者的輸入、問題空間、演算法與成功規則不同。",
+          "核心數描述硬體資源，應另評估其任務品質、資料與完成時間。"
+        ]
       }
     ],
-    glossary: [
-      ["Abstraction", "以穩定 interface 隱藏實作細節，讓上層只依賴規定的 operation 與 behavior。"],
-      ["Interface", "兩層之間可使用的 operation、可見 state 與結果規則。"],
-      ["ISA", "Instruction Set Architecture；software-visible 的指令、state、encoding、exception 與 memory interaction 合約。"],
-      ["Microarchitecture", "實作 ISA 的內部 datapath、control、pipeline、cache、queue 與 predictor 安排。"],
-      ["Architectural state", "依 ISA 可由程式觀察或影響的 state，例如 PC、registers 與 memory。"],
-      ["Microarchitectural state", "用於執行與最佳化、通常不直接暴露給程式的內部 state。"],
-      ["Stored-program", "把 instruction 以資料形式存入可定址 memory，CPU 依 PC fetch 並解讀。"],
-      ["Datapath", "保存、搬移與運算資料的硬體路徑，包含 register、ALU、mux 等。"],
-      ["Control unit", "解讀 instruction 與目前狀態，產生 datapath、memory 與 next-PC 控制訊號。"],
-      ["Latency", "單一工作從開始到完成所需時間。"],
-      ["Throughput", "單位時間內完成的工作數量。"],
-      ["SIMT", "Single Instruction, Multiple Threads；多個 threads 執行相同 kernel 並保有各自 state 的模型。"],
-      ["Branch divergence", "同一 SIMT group 中 threads 選擇不同 control paths，造成部分 lanes 暫時無法有效工作。"],
-      ["Interconnect", "在 CPU、memory、I/O 或 cores 間傳遞 request、address、data 與 response 的連接結構。"],
-      ["ABI", "Application Binary Interface；規定 binary 層級的 calling convention、register usage、資料配置與系統介面。"],
-      ["Fetch", "以 PC 指定的位置取得 instruction bits 的工作。"],
-      ["Decode", "辨認 opcode、operand fields 與該 instruction 所需 operation 的工作。"],
-      ["Execute", "進行 ALU、branch decision、address calculation 或其他功能運算的工作。"],
-      ["Retire / Commit", "讓已完成 instruction 的結果依架構允許的順序成為 architectural state。"],
-      ["Pipeline register", "保存相鄰 pipeline stages 之間資料與控制狀態的 sequential element。"],
-      ["Critical path", "決定 clock period 下限或某項工作 latency 的最長相依延遲路徑。"],
-      ["CPI", "Cycles Per Instruction；完成每條 dynamic instruction 平均需要的 clock cycles。"],
-      ["Clock period", "一個 clock cycle 的時間，與 clock rate 互為倒數。"],
-      ["Dynamic instruction count", "程式對特定 input 實際執行的 instruction 數量。"],
-      ["Speedup", "舊 execution time 除以新 execution time；大於 1 表示新系統較快。"],
-      ["Amdahl's Law", "以可改善比例與局部加速倍數計算整體 speedup 及其上限。"],
-      ["Exception", "由目前 instruction 或同步執行條件引發、需要轉移到 handler 的事件。"],
-      ["Interrupt", "通常由 timer 或 device 等外部來源異步提出的處理請求。"],
-      ["Trap", "不同 ISA 用法略異；常指刻意 instruction、system call 或 exception 造成的受控 handler transfer。"],
-      ["Precise exception", "handler 所見狀態等同於某一清楚 instruction boundary：較舊者完成，faulting 與較年輕者未留下不當效果。"],
-      ["Privilege mode", "限制可執行 operations 與可存取 resources 的 architectural authority level。"],
-      ["System call", "user program 透過受控 trap 請求 operating system service 的介面。"],
-      ["Speculation", "在結果尚未確定前先執行可能需要的工作，錯誤推測不得污染 architectural state。"],
-      ["Reorder buffer", "Out-of-order CPU 中追蹤 in-flight instructions 並支援依序 retire 與 precise state 的結構。"],
-      ["Dynamic power", "電路節點切換時充放電所消耗的功率，常以 αCV²f 建立一階模型。"],
-      ["Static power", "即使不切換仍因 leakage 等機制消耗的功率。"],
-      ["Activity factor", "α；每個 clock 週期中某等效 capacitance 發生切換的比例。"],
-      ["DVFS", "Dynamic Voltage and Frequency Scaling；依需求調整 voltage 與 frequency 的功耗管理方法。"],
-      ["Energy", "完成工作消耗的能量；power 對時間的積分，單位 joule。"],
-      ["EDP", "Energy-Delay Product；同時懲罰 energy 與 execution time 的複合指標。"],
-      ["Power wall", "Voltage scaling 放緩後，clock 與同時啟用電路受 power density 和散熱限制的現象。"],
-      ["Moore's Law", "積體電路可經濟整合元件數隨時間快速成長的歷史觀察與產業目標。"],
-      ["Dennard scaling", "MOSFET 尺寸與電壓等比例縮小時，維持近似 power density 的縮放模型。"],
-      ["Dark silicon", "因 power/thermal budget 而不能同時以目標效能啟用的晶片資源。"],
-      ["SoC", "System on Chip；把 CPU、accelerator、memory controller、I/O 與 interconnect 等整合在同一晶片或封裝系統。"],
-      ["Accelerator", "為特定 operation 或 workload 提供較高 throughput 或 energy efficiency 的專用運算單元。"],
-      ["NoC", "Network on Chip；以封包化 routers 與 links 連接 SoC 內多個 initiators 和 targets。"],
-      ["Heterogeneous computing", "讓不同 ISA、core type 或 accelerator 依其優勢協同執行工作的計算方式。"],
-      ["Failure domain", "單一故障可直接影響的一組 components 或 state 範圍。"]
+    "glossary": [
+      [
+        "Computer organization／計算機組織",
+        "組件、資料路徑與控制如何實際完成運算。"
+      ],
+      [
+        "Computer architecture／計算機架構",
+        "系統的結構、可見行為與設計取捨。"
+      ],
+      [
+        "ISA／指令集架構",
+        "機器碼與硬體之間的指令介面。"
+      ],
+      [
+        "CPU／中央處理單元",
+        "解讀並執行指令的處理單元。"
+      ],
+      [
+        "ALU／算術邏輯單元",
+        "執行算術與邏輯運算的電路。"
+      ],
+      [
+        "Register／暫存器",
+        "處理器內保存目前資料或狀態的儲存位置。"
+      ],
+      [
+        "PC／程式計數器",
+        "用來決定指令擷取位置的狀態。"
+      ],
+      [
+        "Control unit／控制單元",
+        "安排指令執行及資料移動。"
+      ],
+      [
+        "Main memory／主記憶體",
+        "保存目前執行所需的程式與資料。"
+      ],
+      [
+        "I/O／輸入輸出",
+        "系統與外界交換資訊的機制。"
+      ],
+      [
+        "Bus／匯流排",
+        "組件交換位址、資料或控制資訊的連接方式。"
+      ],
+      [
+        "Bit／位元",
+        "一個二進位值。"
+      ],
+      [
+        "Byte／位元組",
+        "8 個位元。"
+      ],
+      [
+        "GB／Gigabyte",
+        "10^9 bytes。"
+      ],
+      [
+        "GiB／Gibibyte",
+        "2^30 bytes。"
+      ],
+      [
+        "Hz／赫茲",
+        "每秒週期數。"
+      ],
+      [
+        "MT/s",
+        "每秒百萬次傳送。"
+      ],
+      [
+        "SDRAM",
+        "與時脈協同運作的動態隨機存取記憶體。"
+      ],
+      [
+        "DDR",
+        "以時脈兩個邊緣傳送資料的技術。"
+      ],
+      [
+        "Cache／快取",
+        "保存較常使用資料以減少存取等待的儲存層。"
+      ],
+      [
+        "GPU",
+        "適用於圖形及部分平行工作的處理單元。"
+      ],
+      [
+        "Frame buffer／畫面緩衝區",
+        "保存待顯示影像內容的記憶體區域。"
+      ],
+      [
+        "HDD／SSD",
+        "分別以磁性碟片／固態儲存元件保存資料的裝置。"
+      ],
+      [
+        "IEEE",
+        "推動電機電子專業與相關標準的組織。"
+      ],
+      [
+        "ISO",
+        "透過各國標準機構合作的國際標準化組織。"
+      ],
+      [
+        "ANSI",
+        "協調美國自願性標準體系的民間非營利組織。"
+      ],
+      [
+        "ITU",
+        "聯合國的資訊與通訊技術專門機構。"
+      ],
+      [
+        "IC／積體電路",
+        "將多個電子元件及連接整合在一起的電路。"
+      ],
+      [
+        "VLSI",
+        "超大型積體電路的整合規模術語。"
+      ],
+      [
+        "SoC",
+        "把多種系統功能整合到同一晶片。"
+      ],
+      [
+        "Moore’s Law／摩爾定律",
+        "關於單晶片元件整合成長的歷史趨勢觀察。"
+      ],
+      [
+        "Abstraction／抽象",
+        "以明確功能與介面描述系統，省略當下無須處理的細節。"
+      ],
+      [
+        "Hardwired control／硬接線控制",
+        "由邏輯電路組織產生控制訊號。"
+      ],
+      [
+        "Microprogrammed control／微程式控制",
+        "以微指令安排硬體控制步驟。"
+      ],
+      [
+        "SaaS",
+        "直接提供可使用的應用服務。"
+      ],
+      [
+        "PaaS",
+        "提供部署與執行應用的平台服務。"
+      ],
+      [
+        "IaaS",
+        "提供可配置的運算、儲存與網路資源。"
+      ],
+      [
+        "Elasticity／彈性",
+        "配合需求增減使用資源的能力。"
+      ],
+      [
+        "SLA",
+        "服務水準承諾及其相關處理方式的約定。"
+      ],
+      [
+        "Stored program／內儲程式",
+        "把指令編碼並保存於可供機器擷取的記憶體。"
+      ],
+      [
+        "von Neumann bottleneck／馮紐曼瓶頸",
+        "CPU 與記憶體間有限資料傳輸對速度造成的限制。"
+      ],
+      [
+        "Harvard architecture",
+        "分離指令與資料儲存及通道的架構。"
+      ],
+      [
+        "Multicore／多核心",
+        "單一處理器晶片包含多個處理核心。"
+      ],
+      [
+        "Multithreading／多執行緒",
+        "以多條執行流程組織程式，是否同時運行取決於硬體與排程。"
+      ],
+      [
+        "Shared memory／共享記憶體",
+        "多個處理器可以存取共同位址空間的模型。"
+      ],
+      [
+        "Distributed memory／分散記憶體",
+        "各節點擁有自己的記憶體並交換資料的模型。"
+      ],
+      [
+        "Amdahl’s Law／安朵定律",
+        "只有部分工作被加速時，整體改善受到其比例限制。"
+      ],
+      [
+        "Deep Blue",
+        "IBM 用於西洋棋搜尋與評估的歷史系統。"
+      ],
+      [
+        "Watson／2011 競賽系統",
+        "結合自然語言處理、候選答案與證據評分的 IBM 問答系統。"
+      ]
     ],
-    sources: [
+    "sources": [
       {
-        key: "S1",
-        title: "UC Berkeley CS 61C Course Notes: Great Idea of Abstraction and RISC-V Introduction",
-        url: "https://notes.cs61c.org/content/rv-intro/",
-        accessed: "2026-08-16",
-        use: "抽象層次、ISA 作為 software/hardware interface，以及 RISC 教學脈絡。"
+        "key": "P1",
+        "title": "《計算機組織與結構》4/e，第 1 章教學投影片（教師提供，85 頁）",
+        "kind": "provided",
+        "accessed": "2026-09-14",
+        "use": "Linda Null、Julia Lobur 著，鍾崇斌譯，東華書局。用於確認 1.1–1.11 的主題範圍與課本七階層；原檔不提供公開下載。頁碼對照見各節標示。"
       },
       {
-        key: "S2",
-        title: "MIT OpenCourseWare 6.004: Designing an Instruction Set",
-        url: "https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/pages/c9/",
-        accessed: "2026-08-16",
-        use: "stored-program、von Neumann model、datapath/control 與 instruction cycle。"
+        "key": "S1",
+        "title": "NIST：二進位字首",
+        "url": "https://physics.nist.gov/cuu/Units/binary.html",
+        "use": "GB／GiB 等單位的區分。",
+        "accessed": "2026-09-14"
       },
       {
-        key: "S3",
-        title: "RISC-V Instruction Set Manual, Volume I, Official Release 20260120",
-        url: "https://docs.riscv.org/reference/isa/unpriv/unpriv-index.html",
-        accessed: "2026-08-16",
-        use: "ISA 與 microarchitecture 分離、base ISA、extensions 與 programmer-visible state。"
+        "key": "S2",
+        "title": "Kingston：MT/s 與 MHz",
+        "url": "https://www.kingston.com/en/blog/pc-performance/mts-vs-mhz",
+        "use": "DDR 傳輸率與時脈頻率的區分。",
+        "accessed": "2026-09-14"
       },
       {
-        key: "S4",
-        title: "MIT OpenCourseWare 6.004: The von Neumann Model",
-        url: "https://ocw.mit.edu/courses/6-004-computation-structures-spring-2017/pages/c9/c9s1/",
-        accessed: "2026-08-16",
-        use: "instruction/data stored as bits、PC fetch 與 control/datapath 分工。"
+        "key": "S3",
+        "title": "IEEE 802.3：Ethernet 標準",
+        "url": "https://standards.ieee.org/ieee/802.3/7071/",
+        "use": "Ethernet 的標準歸屬。",
+        "accessed": "2026-09-14"
       },
       {
-        key: "S5",
-        title: "NVIDIA CUDA Programming Guide: Programming Model",
-        url: "https://docs.nvidia.com/cuda/cuda-programming-guide/01-introduction/programming-model.html",
-        accessed: "2026-08-16",
-        use: "現代 SIMT、thread state、warp execution 與 branch divergence。"
+        "key": "S4",
+        "title": "ITU：組織介紹",
+        "url": "https://www.itu.int/en/about/Pages/default.aspx",
+        "use": "ITU 在資訊與通訊技術領域的角色。",
+        "accessed": "2026-09-14"
       },
       {
-        key: "S6",
-        title: "NVIDIA CUDA Toolkit Documentation",
-        url: "https://docs.nvidia.com/cuda/",
-        accessed: "2026-08-28",
-        use: "目前 CUDA programming model 與工具鏈版本脈絡。"
+        "key": "S5",
+        "title": "ISO：組織介紹",
+        "url": "https://www.iso.org/about",
+        "use": "ISO 的國際標準合作方式。",
+        "accessed": "2026-09-14"
       },
       {
-        key: "S7",
-        title: "Arm: Introducing the Arm Architecture",
-        url: "https://developer.arm.com/-/media/Arm%20Developer%20Community/PDF/Learn%20the%20Architecture/Introducing%20the%20Arm%20architecture.pdf",
-        accessed: "2026-08-28",
-        use: "Architecture contract、instruction processing、register、exception 與 privilege 的現代說明。"
+        "key": "S6",
+        "title": "ANSI：組織介紹",
+        "url": "https://www.ansi.org/about/introduction",
+        "use": "ANSI 的民間非營利性質與協調角色。",
+        "accessed": "2026-09-14"
       },
       {
-        key: "S8",
-        title: "RISC-V Instruction Set Manual, Volume II: Privileged Architecture, Release 20260120",
-        url: "https://docs.riscv.org/reference/isa/v20260120/priv/priv-preface.html",
-        accessed: "2026-08-28",
-        use: "Trap、privilege mode、precise state 與 privileged architectural interface。"
+        "key": "S7",
+        "title": "Bell Labs：技術歷史",
+        "url": "https://www.nokia.com/bell-labs/about/history/",
+        "use": "1947 年電晶體的歷史節點。",
+        "accessed": "2026-09-14"
       },
       {
-        key: "S9",
-        title: "Intel 64 and IA-32 Architectures Software Developer Manuals",
-        url: "https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html",
-        accessed: "2026-08-28",
-        use: "Instruction execution environment、exceptions、interrupts 與 software-visible state。"
+        "key": "S8",
+        "title": "Texas Instruments：積體電路的起源",
+        "url": "https://www.ti.com/about-ti/behind-chip/articles/from-idea-to-invention-the-origin-story-of-the-tiny-chip-that-changed-the-world.html",
+        "use": "Kilby 於 1958 年展示可工作的積體電路。",
+        "accessed": "2026-09-14"
       },
       {
-        key: "S10",
-        title: "SPEC CPU 2026 Overview",
-        url: "https://www.spec.org/cpu2026/Docs/overview.html",
-        accessed: "2026-08-28",
-        use: "目前 CPU-intensive benchmark suite、speed/rate metrics 與可比較量測原則。"
+        "key": "S9",
+        "title": "Computer History Museum：半導體時間軸",
+        "url": "https://www.computerhistory.org/siliconengine/timeline/",
+        "use": "電晶體、積體電路與 1959 年 Noyce 設計的歷史。",
+        "accessed": "2026-09-14"
       },
       {
-        key: "S11",
-        title: "Gene Amdahl: Validity of the Single Processor Approach to Achieving Large-Scale Computing Capabilities",
-        url: "https://doi.org/10.1145/1465482.1465560",
-        accessed: "2026-08-28",
-        use: "不可改善工作限制整體 speedup 的原始論證。"
+        "key": "S10",
+        "title": "Intel：Moore’s Law",
+        "url": "https://www.intel.com/content/www/us/en/newsroom/resources/moores-law.html",
+        "use": "1965 年預測及 1975 年調整。",
+        "accessed": "2026-09-14"
       },
       {
-        key: "S12",
-        title: "Dennard et al.: Design of Ion-Implanted MOSFET's with Very Small Physical Dimensions",
-        url: "https://doi.org/10.1109/JSSC.1974.1050511",
-        accessed: "2026-08-28",
-        use: "Constant-field device scaling 與 power density 推導的原始研究。"
+        "key": "S11",
+        "title": "NIST SP 800-145：雲端運算定義",
+        "url": "https://csrc.nist.gov/pubs/sp/800/145/final",
+        "use": "雲端特徵及 SaaS、PaaS、IaaS 的責任差異。",
+        "accessed": "2026-09-14"
       },
       {
-        key: "S13",
-        title: "Gordon Moore: Cramming More Components onto Integrated Circuits",
-        url: "https://ieeemilestones.ethw.org/File:Moore_1965_Electronics_Article.pdf",
-        accessed: "2026-08-28",
-        use: "元件整合密度歷史觀察的原始 1965 年文章。"
+        "key": "S12",
+        "title": "IBM：Deep Blue 歷史",
+        "url": "https://www.ibm.com/history/deep-blue",
+        "use": "1997 年西洋棋競賽與系統設計。",
+        "accessed": "2026-09-14"
       },
       {
-        key: "S14",
-        title: "Dark Silicon and the End of Multicore Scaling",
-        url: "https://cseweb.ucsd.edu/~hadi/doc/paper/2011-isca-dark_silicon.pdf",
-        accessed: "2026-08-28",
-        use: "Voltage scaling 放緩、power budget 與 dark silicon 的架構後果。"
+        "key": "S13",
+        "title": "IBM：Watson 的 Jeopardy! 競賽",
+        "url": "https://www.ibm.com/history/watson-jeopardy",
+        "use": "2011 年問答案例、伺服器與核心總數。",
+        "accessed": "2026-09-14"
       },
       {
-        key: "S15",
-        title: "Mark Horowitz: Computing's Energy Problem and What We Can Do About It",
-        url: "https://doi.org/10.1109/ISSCC.2014.6757323",
-        accessed: "2026-08-28",
-        use: "Operation 與 data movement energy、energy-efficient architecture 的量化背景。"
-      },
-      {
-        key: "S16",
-        title: "UC Berkeley CS 61C Course Notes: Pipelining",
-        url: "https://notes.cs61c.org/content/pipeline/",
-        accessed: "2026-08-28",
-        use: "Pipeline stage、clock period、latency 與 throughput 的教學模型。"
-      },
-      {
-        key: "S17",
-        title: "UC Berkeley CS 61C Course Notes: Parallelism and Amdahl's Law",
-        url: "https://notes.cs61c.org/content/parallel-performance/",
-        accessed: "2026-08-28",
-        use: "Speedup、可平行比例與 Amdahl 計算。"
-      },
-      {
-        key: "S18",
-        title: "Arm AMBA Architecture",
-        url: "https://developer.arm.com/Architectures/AMBA",
-        accessed: "2026-08-28",
-        use: "SoC component communication、bus 與 network-on-chip interface。"
-      },
-      {
-        key: "S19",
-        title: "UC Berkeley CS 61C, Spring 2026",
-        url: "https://cs61c.org/?redirect=false",
-        accessed: "2026-08-28",
-        use: "目前大學部 computer architecture 課程脈絡與公開教材入口。"
-      },
-      {
-        key: "S20",
-        title: "SPEC Releases CPU 2026 Benchmark Suite",
-        url: "https://www.spec.org/pressreleases/2026/20260505-spec-releases-cpu-2026-benchmark-suite/",
-        accessed: "2026-08-28",
-        use: "SPEC CPU 2026 的發佈日期、52 個 benchmarks 與四個 suites。"
+        "key": "S14",
+        "title": "IBM：Watson 硬體與系統設計",
+        "url": "https://www.ibm.com/support/pages/ibm-watson-how-replicate-watson-hardware-and-systems-design-your-own-use-your-basement",
+        "use": "節點合作及競賽時不連上網際網路的條件。",
+        "accessed": "2026-09-14"
       }
     ]
   },

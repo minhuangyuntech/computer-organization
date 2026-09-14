@@ -2,8 +2,8 @@ const semesterSchedule = {
   term: "115 學年度第 1 學期",
   chapters: [1, 4, 5, 6, 7, 8],
   weeks: [
-    { week: 1, date: "2026-09-07", type: "class", chapters: [1], title: "計算機系統導論與抽象層次", outcome: "辨認 CPU、記憶體、I/O 與互連的分工，區分 ISA 與微架構，說明 stored-program 與 von Neumann 模型。" },
-    { week: 2, date: "2026-09-14", type: "class", chapters: [1], title: "指令生命週期與系統效能觀念", outcome: "追蹤程式由軟體到硬體的執行路徑，區分 latency 與 throughput，運用 CPU time 與 Amdahl's Law 分析基本效能。" },
+    { week: 1, date: "2026-09-07", type: "class", chapters: [1], title: "計算機組件、規格、標準與歷史", outcome: "對應第 1 章 1.1–1.5：區分組織與架構，辨認主要組件，解讀容量與速度單位，認識標準組織、計算機世代與摩爾定律。" },
+    { week: 2, date: "2026-09-14", type: "class", chapters: [1], title: "計算機階層、雲端與平行運算", outcome: "對應第 1 章 1.6–1.11：說明七階層、雲端服務、馮紐曼與非馮紐曼模型，理解平行加速限制，討論 Deep Blue 與 Watson。" },
     { week: 3, date: "2026-09-21", type: "class", chapters: [4], title: "MARIE 架構、暫存器與指令週期", outcome: "辨認 MARIE 暫存器與匯流排，解讀 16-bit 指令格式，追蹤 fetch、decode、execute 的 register transfers。" },
     { week: 4, date: "2026-09-28", type: "holiday", chapters: [], title: "放假", outcome: "" },
     { week: 5, date: "2026-10-05", type: "class", chapters: [4], title: "MARIE 指令與組合語言程式", outcome: "以 Load、Store、Add、Input、Output、Skipcond 與 Jump 完成算術、條件判斷與迴圈，逐步追蹤 PC、AC 與記憶體。" },
